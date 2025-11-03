@@ -1,19 +1,18 @@
 # Introduction
 
 Transformer models power today's most impactful AI applications—from language
-models like ChatGPT to code generation tools like GitHub Copilot. Understanding
-how these architectures work isn't just academic curiosity; it's a practical
-skill that enables you to:
+models like ChatGPT to code generation tools like GitHub Copilot. Maybe you've
+been asked to adapt one of these models for your team, or you want to understand
+what's actually happening when you call an inference API. Either way, building a
+transformer from scratch is one of the best ways to truly understand how they
+work.
 
-- **Adapt models** to your specific use cases and constraints
-- **Debug performance issues** by understanding what's happening under the hood
-- **Make informed architecture decisions** when designing ML systems
-- **Optimize deployment** by knowing which components matter most
-
-GPT-2, released by OpenAI in 2019, remains an excellent learning vehicle. It's
-large enough to demonstrate real transformer architecture patterns, yet small
-enough to understand completely. Every modern language model—from GPT-4 to
-Llama—builds on these same fundamental components.
+This guide walks you through implementing GPT-2 using Modular's MAX framework.
+You'll build each component yourself—embeddings, attention mechanisms,
+feed-forward layers—and see how they fit together into a complete language
+model. By the end, you'll be able to adapt models to your specific needs, debug
+performance issues by understanding what's happening under the hood, and make
+informed architecture decisions when designing ML systems.
 
 > **Learning by building**: This tutorial follows a format popularized by Andrej
 > Karpathy's educational work and Sebastian Raschka's hands-on approach. Rather
@@ -22,14 +21,22 @@ Llama—builds on these same fundamental components.
 
 ## Why MAX?
 
-The Modular Platform accelerates AI inference and abstracts hardware complexity
-to make AI development faster and more portable. Unlike traditional ML
-frameworks that evolved organically over time, MAX was built from the ground up
-to address modern AI development challenges.
+Traditional ML development often feels like stitching together tools that
+weren't designed to work together. You write your model in PyTorch, optimize in
+CUDA, convert to ONNX for deployment, then use separate serving tools. Each
+handoff introduces complexity.
 
-By implementing GPT-2 in MAX, you'll learn not just transformer architecture,
-but also how MAX represents and optimizes neural networks. These skills transfer
-directly to building your own custom architecture. 
+MAX Framework takes a different approach: everything happens in one unified
+system. You write Python code to define your model, load weights, and run
+inference—all in MAX's Python API. The Engine handles optimization
+automatically, while MAX Serve manages deployment. No context switching, no
+incompatible toolchains.
+
+When you build GPT-2 in this guide, you'll load pretrained weights from
+HuggingFace, implement the architecture, and run text generation—all in the same
+environment. The skills transfer directly to building custom architectures. Once
+you understand how GPT-2's components fit together, you can mix and match these
+patterns for whatever model you need.
 
 ## Why Puzzles?
 
@@ -53,22 +60,22 @@ useful independently while building toward a complete implementation.
 
 This tutorial guides you through building GPT-2 in manageable steps:
 
-| Step | Component                           | What you'll learn                                                        |
-|------|-------------------------------------|--------------------------------------------------------------------------|
-| 1    | Model configuration                 | Define architecture hyperparameters matching HuggingFace GPT-2           |
-| 2    | Causal masking                      | Create attention masks to prevent looking at future tokens               |
-| 3    | Layer normalization                 | Stabilize activations for effective training                             |
-| 4    | GPT-2 MLP (feed-forward network)    | Build the position-wise feed-forward network with GELU activation        |
-| 5    | Token embeddings                    | Convert token IDs to continuous vector representations                   |
-| 6    | Position embeddings                 | Encode sequence order information                                        |
-| 7    | Query/Key/Value projections         | Transform embeddings for attention computation (single head)             |
-| 8    | Attention mechanism                 | Implement scaled dot-product attention with causal masking               |
-| 9    | Multi-head attention                | Extend to multiple parallel attention heads                              |
-| 10   | Residual connections & layer norm   | Enable training deep networks with skip connections                      |
-| 11   | Transformer block                   | Combine attention and MLP into the core building block                   |
-| 12   | Stacking transformer blocks         | Create the complete 12-layer GPT-2 model                                 |
-| 13   | Language model head                 | Project hidden states to vocabulary logits                               |
-| 14   | Text generation                     | Generate text autoregressively with temperature sampling                 |
+| Step | Component                         | What you'll learn                                                 |
+|------|-----------------------------------|-------------------------------------------------------------------|
+| 1    | Model configuration               | Define architecture hyperparameters matching HuggingFace GPT-2    |
+| 2    | Causal masking                    | Create attention masks to prevent looking at future tokens        |
+| 3    | Layer normalization               | Stabilize activations for effective training                      |
+| 4    | GPT-2 MLP (feed-forward network)  | Build the position-wise feed-forward network with GELU activation |
+| 5    | Token embeddings                  | Convert token IDs to continuous vector representations            |
+| 6    | Position embeddings               | Encode sequence order information                                 |
+| 7    | Query/Key/Value projections       | Transform embeddings for attention computation (single head)      |
+| 8    | Attention mechanism               | Implement scaled dot-product attention with causal masking        |
+| 9    | Multi-head attention              | Extend to multiple parallel attention heads                       |
+| 10   | Residual connections & layer norm | Enable training deep networks with skip connections               |
+| 11   | Transformer block                 | Combine attention and MLP into the core building block            |
+| 12   | Stacking transformer blocks       | Create the complete 12-layer GPT-2 model                          |
+| 13   | Language model head               | Project hidden states to vocabulary logits                        |
+| 14   | Text generation                   | Generate text autoregressively with temperature sampling          |
 
 Each step includes:
 
@@ -80,13 +87,11 @@ Each step includes:
 By the end, you'll have a complete GPT-2 implementation and practical experience
 with MAX's Python API—skills you can immediately apply to your own projects.
 
-## Validating Your Work
+## How This Works
 
-Each step includes automated tests that verify your implementation is correct
-before moving forward. This immediate feedback helps you catch issues early and
-build confidence as you progress.
-
-### Running Tests
+Each step includes automated tests that verify your implementation before moving
+forward. This immediate feedback helps you catch issues early and build
+confidence.
 
 To validate a step, use the corresponding test command. For example, to test
 Step 01:
@@ -95,40 +100,31 @@ Step 01:
 pixi run s01
 ```
 
-### Understanding Test Output
+Initially, tests will fail because the implementation isn't complete:
 
-**Successful completion** shows all checks passing with ✅ marks:
-
-```bash
-Running tests for Step 01: Create Model Configuration...
-
-Results:
-✅ dataclass is correctly imported from dataclasses
-✅ GPT2Config has the @dataclass decorator
-✅ vocab_size is correct
-✅ n_positions is correct
-✅ n_embd is correct
-✅ n_layer is correct
-✅ n_head is correct
-✅ n_inner is correct
-✅ layer_norm_epsilon is correct
-```
-
-**Incomplete or incorrect implementation** shows specific failures with ❌ marks:
-
-```bash
+```sh
+✨ Pixi task (s01): python tests/test.step_01.py
 Running tests for Step 01: Create Model Configuration...
 
 Results:
 ❌ dataclass is not imported from dataclasses
 ❌ GPT2Config does not have the @dataclass decorator
 ❌ vocab_size is incorrect: expected match with Hugging Face model configuration, got None
-❌ n_positions is incorrect: expected match with Hugging Face model configuration, got None
-❌ n_embd is incorrect: expected match with Hugging Face model configuration, got None
-❌ n_layer is incorrect: expected match with Hugging Face model configuration, got None
-❌ n_head is incorrect: expected match with Hugging Face model configuration, got None
-❌ n_inner is incorrect: expected match with Hugging Face model configuration, got None
-❌ layer_norm_epsilon is incorrect: expected match with Hugging Face model configuration, got None
+# ...
+```
+
+Each failure tells you exactly what to implement. When your implementation is
+correct, you'll see:
+
+```output
+✨ Pixi task (s01): python tests/test.step_01.py                                                                         
+Running tests for Step 01: Create Model Configuration...
+
+Results:
+✅ dataclass is correctly imported from dataclasses
+✅ GPT2Config has the @dataclass decorator
+✅ vocab_size is correct
+# ...
 ```
 
 The test output tells you exactly what needs to be fixed, making it easy to
@@ -149,4 +145,5 @@ Whether you're exploring MAX for the first time or deepening your understanding
 of model architecture, this tutorial provides hands-on experience you can apply
 to current projects and learning priorities.
 
-Ready to build? Let's get started with [Step 01: Model configuration](./step_01.md).
+Ready to build? Let's get started with
+[Step 01: Model configuration](./step_01.md).

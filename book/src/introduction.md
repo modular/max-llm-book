@@ -72,6 +72,7 @@ This tutorial guides you through building GPT-2 in manageable steps:
 | 10   | [Stacking transformer blocks](./step_10.md)       | Create the complete 12-layer GPT-2 model.                          |
 | 11   | [Language model head](./step_11.md)               | Project hidden states to vocabulary logits.                        |
 | 12   | [Text generation](./step_12.md)                   | Generate text autoregressively with temperature sampling.          |
+| 00   | Serve your model                                  | Run GPT-2 as an endpoint with MAX Serve.... coming soon.           |
 
 By the end, you'll have a complete GPT-2 implementation and practical experience
 with MAX's Python API. These are skills you can immediately apply to your own projects.

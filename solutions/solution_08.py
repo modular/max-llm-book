@@ -1,5 +1,5 @@
 """
-Solution for Step 10: Residual Connections and Layer Normalization
+Solution for Step 08: Residual Connections and Layer Normalization
 
 This module implements layer normalization and demonstrates residual connections,
 which are essential for training deep transformer networks.

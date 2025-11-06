@@ -1,5 +1,5 @@
 """
-Solution for Step 14: Text Generation
+Solution for Step 12: Text Generation
 
 This module implements autoregressive text generation using the GPT-2 model.
 """

@@ -1,5 +1,5 @@
 """
-Solution for Step 09: Multi-head Attention
+Solution for Step 07: Multi-head Attention
 
 This module implements multi-head attention, which allows the model to jointly
 attend to information from different representation subspaces at different positions.

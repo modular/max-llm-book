@@ -1,5 +1,5 @@
 """
-Solution for Step 12: Stacking Transformer Blocks
+Solution for Step 10: Stacking Transformer Blocks
 
 This module stacks multiple transformer blocks and adds embeddings
 to create the complete GPT-2 transformer architecture.

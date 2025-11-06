@@ -1,5 +1,5 @@
 """
-Solution for Step 11: Transformer Block
+Solution for Step 09: Transformer Block
 
 This module implements a complete GPT-2 transformer block, combining
 multi-head attention, MLP, layer normalization, and residual connections.

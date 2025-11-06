@@ -1,5 +1,5 @@
 """
-Solution for Step 13: Language Model Head
+Solution for Step 11: Language Model Head
 
 This module adds the final projection layer that converts hidden states
 to vocabulary logits for predicting the next token.

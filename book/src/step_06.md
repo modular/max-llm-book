@@ -8,15 +8,29 @@ Learn to create position embeddings that encode the order of tokens in a sequenc
 
 ## Implementing position embeddings
 
-In this step you'll create position embeddings to encode where each token appears in the sequence. While token embeddings tell the model "what" each token is, position embeddings tell it "where" the token is located. These position vectors are added to token embeddings before entering the transformer blocks.
+In this step you'll create position embeddings to encode where each token
+appears in the sequence. While token embeddings tell the model "what" each token
+is, position embeddings tell it "where" the token is located. These position
+vectors are added to token embeddings before entering the transformer blocks.
 
-Transformers process all positions in parallel through attention, unlike Recurrent Neural Networks (RNNs) that process sequentially. This parallelism enables faster training but loses positional information. Position embeddings restore this information so the model can distinguish "dog bites man" from "man bites dog".
+Transformers process all positions in parallel through attention, unlike
+Recurrent Neural Networks (RNNs) that process sequentially. This parallelism
+enables faster training but loses positional information. Position embeddings
+restore this information so the model can distinguish "dog bites man" from "man
+bites dog".
 
 ## Understanding position embeddings
 
-Position embeddings work like token embeddings: a lookup table with shape [1024, 768] where 1024 is the maximum sequence length. Position 0 gets the first row, position 1 gets the second row, and so on.
+Position embeddings work like token embeddings: a lookup table with shape
+[1024, 768] where 1024 is the maximum sequence length. Position 0 gets the first
+row, position 1 gets the second row, and so on.
 
-GPT-2 uses learned position embeddings, meaning these vectors are initialized randomly and trained alongside the model. This differs from the original Transformer which used fixed sinusoidal position encodings. Learned embeddings let the model discover optimal position representations for its specific task, though they cannot generalize beyond the maximum length seen during training (1024 tokens).
+GPT-2 uses learned position embeddings, meaning these vectors are initialized
+randomly and trained alongside the model. This differs from the original
+Transformer which used fixed sinusoidal position encodings. Learned embeddings
+let the model discover optimal position representations for its specific task,
+though they cannot generalize beyond the maximum length seen during training
+(1024 tokens).
 
 **Key parameters**:
 - Maximum sequence length: 1,024 positions
@@ -42,11 +56,15 @@ You'll use the following MAX operations to complete this task:
 
 You'll implement the position embeddings in several steps:
 
-1. **Import required modules**: Import `Tensor`, `Embedding`, and `Module` from MAX libraries.
+1. **Import required modules**: Import `Tensor`, `Embedding`, and `Module` from
+   MAX libraries.
 
-2. **Create position embedding layer**: Use `Embedding(config.n_positions, dim=config.n_embd)` and store in `self.wpe`.
+2. **Create position embedding layer**: Use
+   `Embedding(config.n_positions, dim=config.n_embd)` and store in `self.wpe`.
 
-3. **Implement forward pass**: Call `self.wpe(position_ids)` to lookup position embeddings. Input shape: [seq_length] or [batch, seq_length]. Output shape: [seq_length, n_embd] or [batch, seq_length, n_embd].
+3. **Implement forward pass**: Call `self.wpe(position_ids)` to lookup position
+   embeddings. Input shape: [seq_length] or [batch, seq_length]. Output shape:
+   [seq_length, n_embd] or [batch, seq_length, n_embd].
 
 **Implementation** (`step_06.py`):
 

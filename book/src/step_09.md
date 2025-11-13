@@ -2,17 +2,27 @@
 
 <div class="note">
 
-Learn to combine attention, MLP, layer normalization, and residual connections into a complete transformer block.
+Learn to combine attention, MLP, layer normalization, and residual connections
+into a complete transformer block.
 
 </div>
 
 ## Building the transformer block
 
-In this step, you'll build the `GPT2Block` class - the fundamental repeating unit of GPT-2. Each block combines multi-head attention and a feed-forward network, with layer normalization and residual connections around each.
+In this step, you'll build the `GPT2Block` class. This is a fundamental
+repeating unit of GPT-2. Each block combines multi-head attention and a
+feed-forward network, with layer normalization and residual connections around
+each.
 
-The block processes input through two sequential operations. First, it applies layer norm, runs multi-head attention, then adds the result back to the input (residual connection). Second, it applies another layer norm, runs the MLP, and adds that result back. This pattern is `x = x + sublayer(layer_norm(x))`, called pre-normalization.
+The block processes input through two sequential operations. First, it applies
+layer norm, runs multi-head attention, then adds the result back to the input
+(residual connection). Second, it applies another layer norm, runs the MLP, and
+adds that result back. This pattern is `x = x + sublayer(layer_norm(x))`, called
+pre-normalization.
 
-GPT-2 uses pre-norm because it stabilizes training in deep networks. By normalizing before each sublayer instead of after, gradients flow more smoothly through the network's 12 stacked blocks.
+GPT-2 uses pre-norm because it stabilizes training in deep networks. By
+normalizing before each sublayer instead of after, gradients flow more smoothly
+through the network's 12 stacked blocks.
 
 ## Understanding the components
 
@@ -26,7 +36,9 @@ The transformer block consists of four components, applied in this order:
 
 **Feed-forward network (`mlp`)**: The position-wise MLP from Step 04. Expands to 3,072 dimensions internally (4× the embedding size), then projects back to 768.
 
-The block maintains a constant 768-dimensional representation throughout. Input shape `[batch, seq_length, 768]` stays the same after each sublayer, which is essential for stacking 12 blocks together.
+The block maintains a constant 768-dimensional representation throughout. Input
+shape `[batch, seq_length, 768]` stays the same after each sublayer, which is
+essential for stacking 12 blocks together.
 
 ## Understanding the flow
 
@@ -37,15 +49,22 @@ Each sublayer follows the pre-norm pattern:
 3. Process through the sublayer (attention or MLP)
 4. Add the original `residual` back to the output
 
-This happens twice per block, once for attention and once for the MLP. The residual connections let gradients flow directly through the network, preventing vanishing gradients in deep models.
+This happens twice per block, once for attention and once for the MLP. The
+residual connections let gradients flow directly through the network, preventing
+vanishing gradients in deep models.
 
-Component names (`ln_1`, `attn`, `ln_2`, `mlp`) match Hugging Face's GPT-2 implementation. This matters for loading pretrained weights in later steps.
+Component names (`ln_1`, `attn`, `ln_2`, `mlp`) match Hugging Face's GPT-2
+implementation. This matters for loading pretrained weights in later steps.
 
 ## Implementing the block
 
-You'll create the `GPT2Block` class by composing the components from earlier steps. The block takes `GPT2Config` and creates four sublayers, then applies them in sequence with residual connections.
+You'll create the `GPT2Block` class by composing the components from earlier
+steps. The block takes `GPT2Config` and creates four sublayers, then applies
+them in sequence with residual connections.
 
-First, import the required modules. You'll need `Module` from MAX, plus the previously implemented components: `GPT2Config`, `GPT2MLP`, `GPT2MultiHeadAttention`, and `LayerNorm`.
+First, import the required modules. You'll need `Module` from MAX, plus the
+previously implemented components: `GPT2Config`, `GPT2MLP`,
+`GPT2MultiHeadAttention`, and `LayerNorm`.
 
 In the `__init__` method, create the four sublayers:
 - `ln_1`: `LayerNorm(config.n_embd, eps=config.layer_norm_epsilon)`

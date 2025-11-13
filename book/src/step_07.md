@@ -2,31 +2,63 @@
 
 <div class="note">
 
-Learn to use multi-head [attention](https://docs.modular.com/glossary/ai/attention/), enabling the model to attend to different representation subspaces.
+Learn to use multi-head
+[attention](https://docs.modular.com/glossary/ai/attention/), enabling the model
+to attend to different representation subspaces.
 
 </div>
 
 ## Building multi-head attention
 
-In this step, you'll implement the `GPT2MultiHeadAttention` class that runs 12 attention operations in parallel. Instead of computing attention once over the full 768-dimensional space, you split the dimensions into 12 heads of 64 dimensions each. Each head learns to focus on different patterns.
+In this step, you'll implement the `GPT2MultiHeadAttention` class that runs 12
+attention operations in parallel. Instead of computing attention once over the
+full 768-dimensional space, you split the dimensions into 12 heads of 64
+dimensions each. Each head learns to focus on different patterns.
 
-GPT-2 uses 12 heads with 768-dimensional embeddings, giving each head 768 ÷ 12 = 64 dimensions. The Q, K, V tensors are reshaped to split the embedding dimension across heads, attention is computed for all heads in parallel, then the outputs are concatenated back together. This happens in a single efficient operation using tensor reshaping and broadcasting.
+GPT-2 uses 12 heads with 768-dimensional embeddings, giving each head 768 ÷ 12 =
+64 dimensions. The Q, K, V tensors are reshaped to split the embedding dimension
+across heads, attention is computed for all heads in parallel, then the outputs
+are concatenated back together. This happens in a single efficient operation
+using tensor reshaping and broadcasting.
 
-Multiple heads let the model learn complementary attention strategies. Different heads can specialize in different relationships, such as one that might attend to adjacent tokens, another to syntactic patterns, and another to semantic similarity. This increases the model's capacity without dramatically increasing computation.
+Multiple heads let the model learn complementary attention strategies. Different
+heads can specialize in different relationships, such as one that might attend
+to adjacent tokens, another to syntactic patterns, and another to semantic
+similarity. This increases the model's capacity without dramatically increasing
+computation.
 
 ## Understanding the architecture
 
-Multi-head attention splits the embedding dimension, computes attention independently for each head, then merges the results. This requires careful tensor reshaping to organize the computation efficiently.
+Multi-head attention splits the embedding dimension, computes attention
+independently for each head, then merges the results. This requires careful
+tensor reshaping to organize the computation efficiently.
 
-**Head splitting**: Transform from `[batch, seq_length, 768]` to `[batch, 12, seq_length, 64]`. First reshape to add the head dimension: `[batch, seq_length, 12, 64]`. Then transpose to move heads before sequence: `[batch, 12, seq_length, 64]`. Now each of the 12 heads operates independently on its 64-dimensional subspace.
+**Head splitting**: Transform from `[batch, seq_length, 768]` to
+`[batch, 12, seq_length, 64]`. First reshape to add the head dimension:
+`[batch, seq_length, 12, 64]`. Then transpose to move heads before sequence:
+`[batch, 12, seq_length, 64]`. Now each of the 12 heads operates independently
+on its 64-dimensional subspace.
 
-**Parallel attention**: With shape `[batch, num_heads, seq_length, head_dim]`, you can compute attention for all heads simultaneously. The matrix multiplication `Q @ K^T` operates on the last two dimensions `[seq_length, head_dim] @ [head_dim, seq_length]`, broadcasting across the batch and head dimensions. All 12 heads computed in a single efficient operation.
+**Parallel attention**: With shape `[batch, num_heads, seq_length, head_dim]`,
+you can compute attention for all heads simultaneously. The matrix
+multiplication `Q @ K^T` operates on the last two dimensions
+`[seq_length, head_dim] @ [head_dim, seq_length]`, broadcasting across the batch
+and head dimensions. All 12 heads computed in a single efficient operation.
 
-**Head merging**: Reverse the splitting to go from `[batch, 12, seq_length, 64]` back to `[batch, seq_length, 768]`. First transpose to `[batch, seq_length, 12, 64]`, then reshape to flatten the head dimension: `[batch, seq_length, 768]`. This concatenates all head outputs back into the original dimension.
+**Head merging**: Reverse the splitting to go from
+`[batch, 12, seq_length, 64]` back to `[batch, seq_length, 768]`. First
+transpose to `[batch, seq_length, 12, 64]`, then reshape to flatten the head
+dimension: `[batch, seq_length, 768]`. This concatenates all head outputs back
+into the original dimension.
 
-**Output projection (`c_proj`)**: After merging heads, apply a learned linear transformation that maps `[batch, seq_length, 768]` to `[batch, seq_length, 768]`. This lets the model mix information across heads, combining the different perspectives each head learned.
+**Output projection (`c_proj`)**: After merging heads, apply a learned linear
+transformation that maps `[batch, seq_leßngth, 768]` to
+`[batch, seq_length, 768]`. This lets the model mix information across heads,
+combining the different perspectives each head learned.
 
-The layer names `c_attn` (combined Q/K/V projection) and `c_proj` (output projection) match Hugging Face's GPT-2 implementation. This naming is essential for loading pretrained weights.
+The layer names `c_attn` (combined Q/K/V projection) and `c_proj` (output
+projection) match Hugging Face's GPT-2 implementation. This naming is essential
+for loading pretrained weights.
 
 <div class="note">
 
@@ -102,4 +134,5 @@ Run `pixi run s07` to verify your implementation.
 
 </details>
 
-**Next**: In [Step 08](./step_08.md), you'll implement residual connections and layer normalization to enable training deep transformer networks.
+**Next**: In [Step 08](./step_08.md), you'll implement residual connections and
+layer normalization to enable training deep transformer networks.

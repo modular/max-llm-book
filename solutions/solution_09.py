@@ -9,8 +9,8 @@ from max.nn.module_v3 import Module
 
 from solutions.solution_01 import GPT2Config
 from solutions.solution_04 import GPT2MLP
-from solutions.solution_09 import GPT2MultiHeadAttention
-from solutions.solution_10 import LayerNorm
+from solutions.solution_07 import GPT2MultiHeadAttention
+from solutions.solution_08 import LayerNorm
 
 
 class GPT2Block(Module):

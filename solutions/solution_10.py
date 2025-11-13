@@ -9,10 +9,8 @@ from max.experimental.tensor import Tensor
 from max.nn.module_v3 import Embedding, Module, Sequential
 
 from solutions.solution_01 import GPT2Config
-from solutions.solution_05 import GPT2Embeddings
-from solutions.solution_06 import GPT2PositionEmbeddings
-from solutions.solution_10 import LayerNorm
-from solutions.solution_11 import GPT2Block
+from solutions.solution_08 import LayerNorm
+from solutions.solution_09 import GPT2Block
 
 
 class GPT2Model(Module):

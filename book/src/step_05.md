@@ -8,13 +8,22 @@ Learn to create token embeddings that convert discrete token IDs into continuous
 
 ## Implementing token embeddings
 
-In this step you'll create the `Embedding` class. This converts discrete token IDs (integers) into continuous vector representations that the model can process. The embedding layer is a lookup table with shape [50257, 768] where 50257 is GPT-2's vocabulary size and 768 is the embedding dimension.
+In this step you'll create the `Embedding` class. This converts discrete token
+IDs (integers) into continuous vector representations that the model can
+process. The embedding layer is a lookup table with shape [50257, 768] where
+50257 is GPT-2's vocabulary size and 768 is the embedding dimension.
 
-Neural networks operate on continuous values, not discrete symbols. Token embeddings convert discrete token IDs into dense vectors that can be processed by matrix operations. During training, these embeddings naturally cluster semantically similar words closer together in vector space.
+Neural networks operate on continuous values, not discrete symbols. Token
+embeddings convert discrete token IDs into dense vectors that can be processed
+by matrix operations. During training, these embeddings naturally cluster
+semantically similar words closer together in vector space.
 
 ## Understanding embeddings
 
-The embedding layer stores one vector per vocabulary token. When you pass in token ID 1000, it returns row 1000 as the embedding vector. The layer name `wte` stands for "word token embeddings" and matches the naming in the original GPT-2 code for weight loading compatibility.
+The embedding layer stores one vector per vocabulary token. When you pass in
+token ID 1000, it returns row 1000 as the embedding vector. The layer name `wte`
+stands for "word token embeddings" and matches the naming in the original GPT-2
+code for weight loading compatibility.
 
 **Key parameters**:
 - Vocabulary size: 50,257 tokens (byte-pair encoding)

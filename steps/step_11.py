@@ -32,12 +32,12 @@ class MaxGPT2LMHeadModel(Module):
 
         # TODO: Create the transformer
         # Hint: Use GPT2Model(config)
-        self.transformer = None  # Line 32-33
+        self.transformer = None
 
         # TODO: Create language modeling head
         # Hint: Use Linear(config.n_embd, config.vocab_size, bias=False)
         # Projects from hidden dimension to vocabulary size
-        self.lm_head = None  # Line 36-38
+        self.lm_head = None
 
     def __call__(self, input_ids):
         """Forward pass through transformer and LM head.
@@ -50,11 +50,11 @@ class MaxGPT2LMHeadModel(Module):
         """
         # TODO: Get hidden states from transformer
         # Hint: hidden_states = self.transformer(input_ids)
-        pass  # Line 51-52
+        pass
 
         # TODO: Project to vocabulary logits
         # Hint: logits = self.lm_head(hidden_states)
-        pass  # Line 55-56
+        pass
 
         # TODO: Return logits
-        return None  # Line 59
+        return None

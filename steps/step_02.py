@@ -63,6 +63,6 @@ def causal_mask(
 
     # 5: Apply band_part to create the causal (lower triangular) structure and return the mask
     # TODO: Use F.band_part() with num_lower=None, num_upper=0, exclude=True
-    # https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.broadcast_to
+    # https://docs.modular.com/max/api/python/experimental/functional/#max.experimental.functional.band_part
     # Hint: This keeps only the lower triangle, allowing attention to past tokens only
     return None

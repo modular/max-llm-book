@@ -40,19 +40,19 @@ class GPT2Block(Module):
 
         # TODO: Create first layer norm (before attention)
         # Hint: Use LayerNorm(hidden_size, eps=config.layer_norm_epsilon)
-        self.ln_1 = None  # Line 40-41
+        self.ln_1 = None
 
         # TODO: Create multi-head attention
         # Hint: Use GPT2MultiHeadAttention(config)
-        self.attn = None  # Line 44-45
+        self.attn = None
 
         # TODO: Create second layer norm (before MLP)
         # Hint: Use LayerNorm(hidden_size, eps=config.layer_norm_epsilon)
-        self.ln_2 = None  # Line 48-49
+        self.ln_2 = None
 
         # TODO: Create MLP
         # Hint: Use GPT2MLP(inner_dim, config)
-        self.mlp = None  # Line 52-53
+        self.mlp = None
 
     def __call__(self, hidden_states):
         """Apply transformer block.
@@ -68,14 +68,14 @@ class GPT2Block(Module):
         # Hint: hidden_states = self.ln_1(hidden_states)
         # Hint: attn_output = self.attn(hidden_states)
         # Hint: hidden_states = attn_output + residual
-        pass  # Line 67-71
+        pass
 
         # TODO: MLP block with residual connection
         # Hint: residual = hidden_states
         # Hint: hidden_states = self.ln_2(hidden_states)
         # Hint: feed_forward_hidden_states = self.mlp(hidden_states)
         # Hint: hidden_states = residual + feed_forward_hidden_states
-        pass  # Line 74-78
+        pass
 
         # TODO: Return the output
-        return None  # Line 81
+        return None

@@ -1,6 +1,6 @@
 # GPT-2 in MAX: A step-by-step guide
 
-Build GPT-2 from scratch using Modular's MAX platform. This hands-on tutorial teaches transformer architecture through 14 progressive steps, from basic embeddings to text generation.
+Build GPT-2 from scratch using Modular's MAX platform. This hands-on tutorial teaches transformer architecture through 12 progressive steps, from basic embeddings to text generation.
 
 ## What you'll learn
 
@@ -36,7 +36,7 @@ Each step has a skeleton file to implement and a test to verify:
 # Run tests for a specific step
 pixi run s01  # Step 1: Model configuration
 pixi run s05  # Step 5: Token embeddings
-pixi run s14  # Step 14: Text generation
+pixi run s12  # Step 12: Text generation
 
 # View the tutorial book
 pixi run book
@@ -50,9 +50,9 @@ The tutorial follows a progressive learning path:
 |-------|-------|----------------|
 | 01-04 | **Foundations** | Configuration, layer norm, MLP, causal masking |
 | 05-06 | **Embeddings** | Token and position embeddings |
-| 07-09 | **Attention** | Q/K/V projections, attention mechanism, multi-head attention |
-| 10-11 | **Composition** | Residual connections, transformer blocks |
-| 12-14 | **Complete model** | Stacking blocks, language model head, text generation |
+| 07 | **Attention** | Multi-head attention |
+| 08-09 | **Composition** | Residual connections, transformer blocks |
+| 10-12 | **Complete model** | Stacking blocks, language model head, text generation |
 
 Each step includes:
 - **Conceptual explanation**: What and why
@@ -67,17 +67,17 @@ max-gpt2/
 ├── book/                  # mdBook tutorial documentation
 │   └── src/
 │       ├── introduction.md
-│       ├── step_01.md ... step_14.md
+│       ├── step_01.md ... step_12.md
 │       └── SUMMARY.md
 ├── steps/                 # Skeleton files for learners
 │   ├── step_01.py
-│   └── ... step_14.py
+│   └── ... step_12.py
 ├── solutions/             # Complete reference implementations
 │   ├── solution_01.py
-│   └── ... solution_14.py
+│   └── ... solution_12.py
 ├── tests/                 # Validation tests for each step
 │   ├── test.step_01.py
-│   └── ... test.step_14.py
+│   └── ... test.step_12.py
 ├── main.py               # Complete working GPT-2 implementation
 ├── pixi.toml             # Project dependencies and tasks
 └── README.md             # This file
@@ -151,14 +151,16 @@ ModuleNotFoundError: No module named 'max'
 If tests fail unexpectedly, ensure you're in the correct directory and have completed the step's TODOs.
 
 ### Device compatibility
-The examples use CPU for simplicity. For GPU acceleration, update `device=CPU()` to `device=GPU()` where appropriate.
+
+The examples use CPU for simplicity.
+For GPU acceleration, update `device=CPU()` to `device=GPU()` where appropriate.
 
 ## Learning resources
 
-- **MAX Documentation**: [docs.modular.com/max](https://docs.modular.com/max/)
+- **MAX Documentation**: [docs.modular.com/](https://docs.modular.com/)
 - **Tutorial Book**: Run `pixi run book` for the full interactive guide
 - **HuggingFace GPT-2**: [huggingface.co/gpt2](https://huggingface.co/gpt2)
-- **Attention Is All You Need**: Original transformer paper
+- **Attention Is All You Need**: [Original transformer paper](https://arxiv.org/abs/1706.03762)
 
 ## Contributing
 
@@ -170,16 +172,12 @@ Found an issue or want to improve the tutorial? Contributions welcome:
 
 ## Next steps after completion
 
-Once you've completed all 14 steps:
+Once you've completed all 12 steps:
 
-1. **Experiment with generation**: Modify temperature, sampling strategies in Step 14
+1. **Experiment with generation**: Modify temperature, sampling strategies in Step 12
 2. **Analyze attention**: Visualize attention weights from your model
 3. **Optimize performance**: Profile and optimize with MAX's compilation tools
 4. **Build something new**: Apply these patterns to custom architectures
-
-## License
-
-This tutorial is part of the Modular MAX examples repository.
 
 ---
 

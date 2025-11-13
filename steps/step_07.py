@@ -42,11 +42,11 @@ class GPT2MultiHeadAttention(Module):
 
         # TODO: Create combined Q/K/V projection
         # Hint: Use Linear(self.embed_dim, 3 * self.embed_dim, bias=True)
-        self.c_attn = None  # Line 38-39
+        self.c_attn = None
 
         # TODO: Create output projection
         # Hint: Use Linear(self.embed_dim, self.embed_dim, bias=True)
-        self.c_proj = None  # Line 42-43
+        self.c_proj = None
 
     def _split_heads(self, tensor, num_heads, attn_head_size):
         """Split the last dimension into (num_heads, head_size).
@@ -62,11 +62,11 @@ class GPT2MultiHeadAttention(Module):
         # TODO: Add head dimension
         # Hint: new_shape = tensor.shape[:-1] + [num_heads, attn_head_size]
         # Hint: tensor = tensor.reshape(new_shape)
-        pass  # Line 58-60
+        pass
 
         # TODO: Move heads dimension to position 1
         # Hint: return tensor.transpose(-3, -2)
-        return None  # Line 63-64
+        return None
 
     def _merge_heads(self, tensor, num_heads, attn_head_size):
         """Merge attention heads back to original shape.
@@ -81,12 +81,12 @@ class GPT2MultiHeadAttention(Module):
         """
         # TODO: Move heads dimension back
         # Hint: tensor = tensor.transpose(-3, -2)
-        pass  # Line 79-80
+        pass
 
         # TODO: Flatten head dimensions
         # Hint: new_shape = tensor.shape[:-2] + [num_heads * attn_head_size]
         # Hint: return tensor.reshape(new_shape)
-        return None  # Line 83-85
+        return None
 
     def _attn(self, query, key, value):
         """Compute attention for all heads in parallel.
@@ -120,23 +120,23 @@ class GPT2MultiHeadAttention(Module):
         # TODO: Project to Q, K, V
         # Hint: qkv = self.c_attn(hidden_states)
         # Hint: query, key, value = F.split(qkv, [self.split_size, self.split_size, self.split_size], axis=-1)
-        pass  # Line 117-119
+        pass
 
         # TODO: Split into multiple heads
         # Hint: query = self._split_heads(query, self.num_heads, self.head_dim)
         # Hint: key = self._split_heads(key, self.num_heads, self.head_dim)
         # Hint: value = self._split_heads(value, self.num_heads, self.head_dim)
-        pass  # Line 122-125
+        pass
 
         # TODO: Apply attention
         # Hint: attn_output = self._attn(query, key, value)
-        pass  # Line 128-129
+        pass
 
         # TODO: Merge heads back
         # Hint: attn_output = self._merge_heads(attn_output, self.num_heads, self.head_dim)
-        pass  # Line 132-133
+        pass
 
         # TODO: Output projection
         # Hint: attn_output = self.c_proj(attn_output)
         # Hint: return attn_output
-        return None  # Line 136-138
+        return None

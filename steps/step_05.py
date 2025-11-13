@@ -26,7 +26,7 @@ class GPT2Embeddings(Module):
         # TODO: Create token embedding layer
         # Hint: Use Embedding(config.vocab_size, dim=config.n_embd)
         # This creates a lookup table that converts token IDs to embedding vectors
-        self.wte = None  # Line 24-26
+        self.wte = None
 
     def __call__(self, input_ids):
         """Convert token IDs to embeddings.
@@ -39,4 +39,4 @@ class GPT2Embeddings(Module):
         """
         # TODO: Return the embedded tokens
         # Hint: Simply call self.wte with input_ids
-        return None  # Line 39-41
+        return None

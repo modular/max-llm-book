@@ -35,11 +35,11 @@ class LayerNorm(Module):
 
         # TODO: Create learnable scale parameter (weight)
         # Hint: Use Tensor.ones([dim])
-        self.weight = None  # Line 33-34
+        self.weight = None
 
         # TODO: Create learnable shift parameter (bias)
         # Hint: Use Tensor.zeros([dim])
-        self.bias = None  # Line 37-38
+        self.bias = None
 
     def __call__(self, x: Tensor) -> Tensor:
         """Apply layer normalization.
@@ -52,7 +52,7 @@ class LayerNorm(Module):
         """
         # TODO: Apply layer normalization
         # Hint: Use F.layer_norm(x, gamma=self.weight, beta=self.bias, epsilon=self.eps)
-        return None  # Line 50-51
+        return None
 
 
 class ResidualBlock(Module):
@@ -69,7 +69,7 @@ class ResidualBlock(Module):
 
         # TODO: Create layer normalization
         # Hint: Use LayerNorm(dim, eps=eps)
-        self.ln = None  # Line 68-69
+        self.ln = None
 
     def __call__(self, x: Tensor, sublayer_output: Tensor) -> Tensor:
         """Apply residual connection.
@@ -83,7 +83,7 @@ class ResidualBlock(Module):
         """
         # TODO: Add input and sublayer output (residual connection)
         # Hint: return x + sublayer_output
-        return None  # Line 83-84
+        return None
 
 
 def apply_residual_connection(input_tensor: Tensor, sublayer_output: Tensor) -> Tensor:
@@ -98,4 +98,4 @@ def apply_residual_connection(input_tensor: Tensor, sublayer_output: Tensor) -> 
     """
     # TODO: Add the two tensors
     # Hint: return input_tensor + sublayer_output
-    return None  # Line 97-98
+    return None

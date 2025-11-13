@@ -33,35 +33,35 @@ def generate_next_token(model, input_ids, temperature=1.0, do_sample=True):
     """
     # TODO: Get logits from model
     # Hint: logits = model(input_ids)
-    pass  # Line 32-33
+    pass
 
     # TODO: Get logits for last position
     # Hint: next_token_logits = logits[0, -1, :]
-    pass  # Line 36-37
+    pass
 
     # TODO: If sampling with temperature
     if do_sample and temperature > 0:
         # TODO: Apply temperature scaling
         # Hint: temp_tensor = Tensor.constant(temperature, dtype=next_token_logits.dtype, device=next_token_logits.device)
         # Hint: next_token_logits = next_token_logits / temp_tensor
-        pass  # Line 42-44
+        pass
 
         # TODO: Convert to probabilities
         # Hint: probs = F.softmax(next_token_logits)
-        pass  # Line 47-48
+        pass
 
         # TODO: Sample from distribution
         # Hint: probs_np = np.from_dlpack(probs.to(CPU()))
         # Hint: next_token_id = np.random.choice(len(probs_np), p=probs_np)
         # Hint: next_token_tensor = Tensor.constant(next_token_id, dtype=DType.int64, device=input_ids.device)
-        pass  # Line 51-54
+        pass
     else:
         # TODO: Greedy decoding (select most likely token)
         # Hint: next_token_tensor = F.argmax(next_token_logits)
-        pass  # Line 57-58
+        pass
 
     # TODO: Return the next token
-    return None  # Line 61
+    return None
 
 
 def generate_tokens(
@@ -81,23 +81,23 @@ def generate_tokens(
     """
     # TODO: Initialize generated tokens with input
     # Hint: generated_tokens = input_ids
-    pass  # Line 77-78
+    pass
 
     # TODO: Generation loop
     # Hint: for _ in range(max_new_tokens):
-    pass  # Line 81-82
+    pass
 
     # TODO: Generate next token
     # Hint: next_token = generate_next_token(model, generated_tokens, temperature=temperature, do_sample=do_sample)
-    pass  # Line 85-86
+    pass
 
     # TODO: Reshape to [1, 1] for concatenation
     # Hint: next_token_2d = next_token.reshape([1, -1])
-    pass  # Line 89-90
+    pass
 
     # TODO: Append to sequence
     # Hint: generated_tokens = F.concat([generated_tokens, next_token_2d], axis=1)
-    pass  # Line 93-94
+    pass
 
     # TODO: Return generated sequence
-    return None  # Line 97
+    return None

@@ -11,7 +11,7 @@ Tasks:
 Run: pixi run s01
 """
 
-# 1. Import dataclass from the dataclasses module\
+# 1. Import dataclass from the dataclasses module
 
 # 2. Add the Python @dataclass decorator to the GPT2Config class
 

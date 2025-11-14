@@ -1,0 +1,13 @@
+# pixi environments
+.pixi
+*.egg-info
+# misc
+*.DS_Store
+__pycache__
+
+# Book artifacts
+book/book
+book/html
+
+# Claude
+Claude.md

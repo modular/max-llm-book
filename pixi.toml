@@ -1,0 +1,39 @@
+[workspace]
+channels = ["https://conda.modular.com/max-nightly", "conda-forge"]
+name = "max-llm-book"
+platforms = ["linux-64", "osx-arm64"]
+version = "0.1.0"
+
+[tasks]
+build-book = "cd book && mdbook build"
+book = { cmd = "cd book && mdbook serve --open", depends-on = ["build-book"] }
+
+huggingface = "python scripts/hugging-face-model.py"
+
+# Test tasks for each step
+s01 = "python tests/test.step_01.py"
+s02 = "python tests/test.step_02.py"
+s03 = "python tests/test.step_03.py"
+s04 = "python tests/test.step_04.py"
+s05 = "python tests/test.step_05.py"
+s06 = "python tests/test.step_06.py"
+s07 = "python tests/test.step_07.py"
+s08 = "python tests/test.step_08.py"
+s09 = "python tests/test.step_09.py"
+s10 = "python tests/test.step_10.py"
+s11 = "python tests/test.step_11.py"
+s12 = "python tests/test.step_12.py"
+
+# Run all tests
+test-all = "python tests/test.step_01.py && python tests/test.step_02.py && python tests/test.step_03.py && python tests/test.step_04.py && python tests/test.step_05.py && python tests/test.step_06.py && python tests/test.step_07.py && python tests/test.step_08.py && python tests/test.step_09.py && python tests/test.step_10.py && python tests/test.step_11.py && python tests/test.step_12.py"
+
+# Format python
+fmt = "ruff format ."
+
+[dependencies]
+modular = "25.7.*"
+transformers = ">=4.57.0,<5"
+pytorch = ">=2.8.0,<3"
+numpy = ">=2.3.3,<3"
+mdbook = ">=0.4.0"
+ruff = ">=0.14.1,<0.15"

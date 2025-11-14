@@ -4,6 +4,13 @@ Transformer models power today's most impactful AI applications, from language m
 
 This guide walks you through implementing GPT-2 using Modular's MAX framework. You'll build each component yourself: embeddings, attention mechanisms, and feed-forward layers. You'll see how they fit together into a complete language model by completing the sequential coding challenges in the tutorial [GitHub repository](https://github.com/modular/max-gpt2).
 
+> **Note on API stability**: This tutorial is built on the MAX Experimental API,
+> which we expect to change over time and expand to include new features and
+> functionality. As it evolves, we plan to update the tutorial accordingly.
+> When this API comes out of experimental development, the tutorial content
+> will also enter a more stable state.  While in development, this tutorial will
+> be pinned to a major release version.
+
 ## Why GPT-2?
 
 It's the architectural foundation for modern language models. LLaMA, Mistral, GPT-4; they're all built on the same core components you'll implement here:

@@ -1,0 +1,467 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Stacking transformer blocks - Build an LLM from scratch with MAX</title>
+
+
+        <!-- Custom HTML head -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap"
+            rel="stylesheet">
+        
+        <link rel="stylesheet" href="theme/css/custom.css">
+        <link rel="stylesheet" href="theme/css/highlight.css">
+        <link rel="stylesheet" id="theme">
+        
+        <!-- Additional meta tags -->
+        <meta property="og:title" content="Build LLMs from scratch with MAX">
+        <meta property="og:description" content="Learn by building LLMs from scratch with Modular's MAX Framework">
+        <meta property="og:image" content="https://gpt2.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
+        <meta property="og:url" content="https://gtp2.modular.com/">
+        <meta name="twitter:card" content="summary">
+        <meta name="twitter:image:alt" content="Build LLMs from scratch with MAX Tutorial">
+        <meta name="twitter:title" content="Building GPT-2 with MAX">
+        <meta name="twitter:description" content="Learn by building LLMs from scratch with Modular's MAX Framework">
+        <meta name="twitter:image" content="https://gpt2.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
+        <link rel="icon" type="image/png" href="https://gpt2.modular.com/assets/icons/modular-logo.png">
+
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/css/custom.css">
+        <link rel="stylesheet" href="theme/css/highlight.css">
+        <link rel="stylesheet" href="theme/css/tabs.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "ayu";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc.js"></script>
+    </head>
+    <body>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden" checked>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <button class="collapse-sidebar" aria-label="Collapse sidebar"></button>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Toggle color mode and talk to us buttons -->
+        <script>
+            document.addEventListener('click', function (event) {
+                if (!event.target.matches('.theme-toggle')) return;
+                event.preventDefault();
+                const prevTheme = theme;
+                html.classList.remove(theme);
+                const newTheme = prevTheme === 'ayu' ? 'light' : 'ayu'
+                html.classList.add(newTheme);
+                theme = newTheme
+                localStorage.setItem('mdbook-theme', theme);
+            }, false);
+            document.addEventListener('click', function() {
+                if (!event.target.matches('.log-in')) return;
+                event.preventDefault();
+                window.amplitude.logEvent('LoginClickedFromGPT2Tutorial');
+                window.open('https://developer.modular.com', '_blank');
+            });
+        </script>
+
+        <div class="page-header">
+            <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                <i class="fa fa-bars"></i>
+            </label>
+            <div id="menu-bar" class="menu-bar">
+                <div class="left-buttons">
+                    <div class="logo-section">
+                        <a class="desktop-logo-link" href="https://modular.com"></a>
+                        <a class="mobile-logo-link" href="https://builds.modular.com"></a>
+                        <div class="slash">/</div>
+                        <a class="internal-link" href="">MAX GPT-2</a>
+                    </div>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Dark</button></li>
+                        </ul>
+                    </div>
+                <div class="right-buttons">
+                    <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                        <i class="fa fa-search"></i>
+                    </button>
+                    <button id="theme-toggle" class="icon-button theme-toggle-btn" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="false" aria-expanded="false">
+                        <i class="theme-toggle"></i>
+                    </button>
+                    <a class="menu-btn print" href="print.html" title="Print this book" aria-label="Print this book">
+                        <i id="print-button" class="fa fa-print"></i>
+                    </a>
+                    <a class="menu-btn" href="https://github.com/modular/max-llm-book" title="Git repository" aria-label="Git repository">
+                        <i id="git-repository-button" class="fa fa-github"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-wrapper" class="page-wrapper">
+            <div class="page">
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="step-10-stacking-transformer-blocks"><a class="header" href="#step-10-stacking-transformer-blocks">Step 10: Stacking transformer blocks</a></h1>
+<div class="note">
+<p>Learn to stack 12 transformer blocks with embeddings and final normalization to create the complete GPT-2 model.</p>
+</div>
+<h2 id="building-the-complete-model"><a class="header" href="#building-the-complete-model">Building the complete model</a></h2>
+<p>In this step, you’ll create the <code>GPT2Model</code> class - the complete transformer that takes token IDs as input and outputs contextualized representations. This class combines embeddings, 12 stacked transformer blocks, and final layer normalization.</p>
+<p>The model processes input in four stages: convert token IDs to embeddings, add position information, pass through 12 transformer blocks sequentially, and normalize the final output. Each transformer block refines the representation, building up from surface patterns in early layers to semantic understanding in later layers.</p>
+<p>GPT-2 uses 12 layers because this depth allows the model to learn complex patterns while remaining trainable. Fewer layers would limit the model’s capacity. More layers would increase training difficulty without proportional gains in quality for a 117M parameter model.</p>
+<h2 id="understanding-the-components"><a class="header" href="#understanding-the-components">Understanding the components</a></h2>
+<p>The complete model has four main components:</p>
+<p><strong>Token embeddings (<code>wte</code>)</strong>: Maps each token ID to a 768-dimensional vector using a lookup table with 50,257 entries (one per vocabulary token).</p>
+<p><strong>Position embeddings (<code>wpe</code>)</strong>: Maps each position (0 to 1,023) to a 768-dimensional vector. These are added to token embeddings so the model knows token order.</p>
+<p><strong>Transformer blocks (<code>h</code>)</strong>: 12 identical blocks stacked using MAX’s <a href="https://docs.modular.com/max/api/python/nn/module_v3#max.nn.module_v3.Sequential"><code>Sequential</code></a> module. Sequential applies blocks in order, passing each block’s output to the next.</p>
+<p><strong>Final layer norm (<code>ln_f</code>)</strong>: Normalizes the output after all blocks. This stabilizes the representation before the language model head (added in Step 11) projects to vocabulary logits.</p>
+<h2 id="understanding-the-forward-pass"><a class="header" href="#understanding-the-forward-pass">Understanding the forward pass</a></h2>
+<p>The forward method processes token IDs through the model:</p>
+<p>First, create position indices using <a href="https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.arange"><code>Tensor.arange</code></a>. Generate positions [0, 1, 2, …, seq_length-1] matching the input’s dtype and device. This ensures compatibility when adding to embeddings.</p>
+<p>Next, look up embeddings. Get token embeddings with <code>self.wte(input_ids)</code> and position embeddings with <code>self.wpe(position_indices)</code>. Add them together element-wise, as both are shape <code>[batch, seq_length, 768]</code>.</p>
+<p>Then, pass through the transformer blocks with <code>self.h(x)</code>. Sequential applies all 12 blocks in order, each refining the representation.</p>
+<p>Finally, normalize the output with <code>self.ln_f(x)</code> and return the result. The output shape matches the input: <code>[batch, seq_length, 768]</code>.</p>
+<div class="note">
+<div class="title">MAX operations</div>
+<p>You’ll use the following MAX operations to complete this task:</p>
+<p><strong>Module composition</strong>:</p>
+<ul>
+<li><a href="https://docs.modular.com/max/api/python/nn/module_v3#max.nn.module_v3.Sequential"><code>Sequential(*modules)</code></a>: Chains transformer blocks in sequence</li>
+</ul>
+<p><strong>Embeddings</strong>:</p>
+<ul>
+<li><a href="https://docs.modular.com/max/api/python/nn/module_v3#max.nn.module_v3.Embedding"><code>Embedding(num_embeddings, dim)</code></a>: Token and position embeddings</li>
+</ul>
+<p><strong>Position generation</strong>:</p>
+<ul>
+<li><a href="https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.arange"><code>Tensor.arange(seq_length, dtype, device)</code></a>: Creates position indices</li>
+</ul>
+</div>
+<h2 id="implementing-the-model"><a class="header" href="#implementing-the-model">Implementing the model</a></h2>
+<p>You’ll create the <code>GPT2Model</code> class by composing embedding layers, transformer blocks, and layer normalization. The class builds on all the components from previous steps.</p>
+<p>First, import the required modules. You’ll need <code>Tensor</code> for position indices, <code>Embedding</code>, <code>Module</code>, and <code>Sequential</code> from MAX’s neural network module, plus the previously implemented <code>GPT2Config</code>, <code>LayerNorm</code>, and <code>GPT2Block</code>.</p>
+<p>In the <code>__init__</code> method, create the four components:</p>
+<ul>
+<li>Token embeddings: <code>Embedding(config.vocab_size, dim=config.n_embd)</code> stored as <code>self.wte</code></li>
+<li>Position embeddings: <code>Embedding(config.n_positions, dim=config.n_embd)</code> stored as <code>self.wpe</code></li>
+<li>Transformer blocks: <code>Sequential(*(GPT2Block(config) for _ in range(config.n_layer)))</code> stored as <code>self.h</code></li>
+<li>Final layer norm: <code>LayerNorm(config.n_embd, eps=config.layer_norm_epsilon)</code> stored as <code>self.ln_f</code></li>
+</ul>
+<p>The <code>Sequential</code> module takes a generator expression that creates 12 identical <code>GPT2Block</code> instances. The <code>*</code> unpacks them as arguments to <code>Sequential</code>.</p>
+<p>In the <code>forward</code> method, implement the four-stage processing:</p>
+<ol>
+<li>Get the sequence length from <code>input_ids.shape</code></li>
+<li>Create position indices: <code>Tensor.arange(seq_length, dtype=input_ids.dtype, device=input_ids.device)</code></li>
+<li>Look up embeddings and add them: <code>x = self.wte(input_ids) + self.wpe(position_indices)</code></li>
+<li>Apply transformer blocks: <code>x = self.h(x)</code></li>
+<li>Apply final normalization: <code>x = self.ln_f(x)</code></li>
+<li>Return <code>x</code></li>
+</ol>
+<p>The position indices must match the input’s dtype and device to ensure the tensors are compatible for addition.</p>
+<p><strong>Implementation</strong> (<code>step_10.py</code>):</p>
+<pre><code class="language-python">"""
+Step 10: Stacking Transformer Blocks
+
+Stack multiple transformer blocks with embeddings to create
+the complete GPT-2 model architecture.
+
+Tasks:
+1. Import Tensor, Embedding, Module, Sequential, and previous components
+2. Create token and position embeddings
+3. Stack n_layer transformer blocks using Sequential
+4. Create final layer normalization
+5. Implement forward pass: embeddings -&gt; blocks -&gt; layer norm
+
+Run: pixi run s10
+"""
+
+# TODO: Import required modules
+# Hint: You'll need Tensor from max.experimental.tensor
+# Hint: You'll need Embedding, Module, Sequential from max.nn.module_v3
+# Hint: Import GPT2Config from solutions.solution_01
+# Hint: Import LayerNorm from solutions.solution_08
+# Hint: Import GPT2Block from solutions.solution_09
+
+
+class GPT2Model(Module):
+    """Complete GPT-2 transformer model."""
+
+    def __init__(self, config: GPT2Config):
+        """Initialize GPT-2 model.
+
+        Args:
+            config: GPT2Config containing model hyperparameters
+        """
+        super().__init__()
+
+        # TODO: Create token embeddings
+        # Hint: Use Embedding(config.vocab_size, dim=config.n_embd)
+        self.wte = None
+
+        # TODO: Create position embeddings
+        # Hint: Use Embedding(config.n_positions, dim=config.n_embd)
+        self.wpe = None
+
+        # TODO: Stack transformer blocks
+        # Hint: Use Sequential(*(GPT2Block(config) for _ in range(config.n_layer)))
+        # This creates config.n_layer blocks (12 for GPT-2 base)
+        self.h = None
+
+        # TODO: Create final layer normalization
+        # Hint: Use LayerNorm(config.n_embd, eps=config.layer_norm_epsilon)
+        self.ln_f = None
+
+    def __call__(self, input_ids):
+        """Forward pass through the transformer.
+
+        Args:
+            input_ids: Token IDs, shape [batch, seq_length]
+
+        Returns:
+            Hidden states, shape [batch, seq_length, n_embd]
+        """
+        # TODO: Get batch size and sequence length
+        # Hint: batch_size, seq_length = input_ids.shape
+        pass
+
+        # TODO: Get token embeddings
+        # Hint: tok_embeds = self.wte(input_ids)
+        pass
+
+        # TODO: Get position embeddings
+        # Hint: Create position indices with Tensor.arange(seq_length, dtype=input_ids.dtype, device=input_ids.device)
+        # Hint: pos_embeds = self.wpe(position_indices)
+        pass
+
+        # TODO: Combine embeddings
+        # Hint: x = tok_embeds + pos_embeds
+        pass
+
+        # TODO: Apply transformer blocks
+        # Hint: x = self.h(x)
+        pass
+
+        # TODO: Apply final layer norm
+        # Hint: x = self.ln_f(x)
+        pass
+
+        # TODO: Return the output
+        return None
+</code></pre>
+<h3 id="validation"><a class="header" href="#validation">Validation</a></h3>
+<p>Run <code>pixi run s10</code> to verify your implementation.</p>
+<details>
+<summary>Show solution</summary>
+<pre><code class="language-python">"""
+Solution for Step 10: Stacking Transformer Blocks
+
+This module stacks multiple transformer blocks and adds embeddings
+to create the complete GPT-2 transformer architecture.
+"""
+
+from max.experimental.tensor import Tensor
+from max.nn.module_v3 import Embedding, Module, Sequential
+
+from solutions.solution_01 import GPT2Config
+from solutions.solution_08 import LayerNorm
+from solutions.solution_09 import GPT2Block
+
+
+class GPT2Model(Module):
+    """Complete GPT-2 transformer model matching HuggingFace structure.
+
+    Architecture:
+    1. Token embeddings + position embeddings
+    2. Stack of n_layer transformer blocks
+    3. Final layer normalization
+    """
+
+    def __init__(self, config: GPT2Config):
+        """Initialize GPT-2 model.
+
+        Args:
+            config: GPT2Config containing model hyperparameters
+        """
+        super().__init__()
+
+        # Token embeddings (vocabulary -&gt; embeddings)
+        self.wte = Embedding(config.vocab_size, dim=config.n_embd)
+        # Position embeddings (positions -&gt; embeddings)
+        self.wpe = Embedding(config.n_positions, dim=config.n_embd)
+
+        # Stack of transformer blocks
+        self.h = Sequential(*(GPT2Block(config) for _ in range(config.n_layer)))
+
+        # Final layer normalization
+        self.ln_f = LayerNorm(config.n_embd, eps=config.layer_norm_epsilon)
+
+    def __call__(self, input_ids):
+        """Forward pass through the transformer.
+
+        Args:
+            input_ids: Token IDs, shape [batch, seq_length]
+
+        Returns:
+            Hidden states, shape [batch, seq_length, n_embd]
+        """
+        batch_size, seq_length = input_ids.shape
+
+        # Get token embeddings
+        tok_embeds = self.wte(input_ids)
+
+        # Get position embeddings
+        pos_embeds = self.wpe(
+            Tensor.arange(seq_length, dtype=input_ids.dtype, device=input_ids.device)
+        )
+
+        # Combine embeddings
+        x = tok_embeds + pos_embeds
+
+        # Apply transformer blocks
+        x = self.h(x)
+
+        # Final layer norm
+        x = self.ln_f(x)
+
+        return x
+</code></pre>
+</details>
+<p><strong>Next</strong>: In <a href="./step_11.html">Step 11</a>, you’ll add the language modeling head that projects hidden states to vocabulary logits for text generation.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="step_09.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="step_11.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="step_09.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="step_11.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="theme/code-highlighting.js"></script>
+        <script src="theme/sidebar.js"></script>
+        <script src="theme/init-amplitude.js"></script>
+        <script src="theme/tabs.js"></script>
+
+
+    </div>
+    </body>
+</html>

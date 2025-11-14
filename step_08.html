@@ -1,0 +1,540 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Residual connections and layer normalization - Build an LLM from scratch with MAX</title>
+
+
+        <!-- Custom HTML head -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap"
+            rel="stylesheet">
+        
+        <link rel="stylesheet" href="theme/css/custom.css">
+        <link rel="stylesheet" href="theme/css/highlight.css">
+        <link rel="stylesheet" id="theme">
+        
+        <!-- Additional meta tags -->
+        <meta property="og:title" content="Build LLMs from scratch with MAX">
+        <meta property="og:description" content="Learn by building LLMs from scratch with Modular's MAX Framework">
+        <meta property="og:image" content="https://gpt2.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
+        <meta property="og:url" content="https://gtp2.modular.com/">
+        <meta name="twitter:card" content="summary">
+        <meta name="twitter:image:alt" content="Build LLMs from scratch with MAX Tutorial">
+        <meta name="twitter:title" content="Building GPT-2 with MAX">
+        <meta name="twitter:description" content="Learn by building LLMs from scratch with Modular's MAX Framework">
+        <meta name="twitter:image" content="https://gpt2.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
+        <link rel="icon" type="image/png" href="https://gpt2.modular.com/assets/icons/modular-logo.png">
+
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/css/custom.css">
+        <link rel="stylesheet" href="theme/css/highlight.css">
+        <link rel="stylesheet" href="theme/css/tabs.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "ayu";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc.js"></script>
+    </head>
+    <body>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden" checked>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <button class="collapse-sidebar" aria-label="Collapse sidebar"></button>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Toggle color mode and talk to us buttons -->
+        <script>
+            document.addEventListener('click', function (event) {
+                if (!event.target.matches('.theme-toggle')) return;
+                event.preventDefault();
+                const prevTheme = theme;
+                html.classList.remove(theme);
+                const newTheme = prevTheme === 'ayu' ? 'light' : 'ayu'
+                html.classList.add(newTheme);
+                theme = newTheme
+                localStorage.setItem('mdbook-theme', theme);
+            }, false);
+            document.addEventListener('click', function() {
+                if (!event.target.matches('.log-in')) return;
+                event.preventDefault();
+                window.amplitude.logEvent('LoginClickedFromGPT2Tutorial');
+                window.open('https://developer.modular.com', '_blank');
+            });
+        </script>
+
+        <div class="page-header">
+            <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                <i class="fa fa-bars"></i>
+            </label>
+            <div id="menu-bar" class="menu-bar">
+                <div class="left-buttons">
+                    <div class="logo-section">
+                        <a class="desktop-logo-link" href="https://modular.com"></a>
+                        <a class="mobile-logo-link" href="https://builds.modular.com"></a>
+                        <div class="slash">/</div>
+                        <a class="internal-link" href="">MAX GPT-2</a>
+                    </div>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Dark</button></li>
+                        </ul>
+                    </div>
+                <div class="right-buttons">
+                    <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                        <i class="fa fa-search"></i>
+                    </button>
+                    <button id="theme-toggle" class="icon-button theme-toggle-btn" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="false" aria-expanded="false">
+                        <i class="theme-toggle"></i>
+                    </button>
+                    <a class="menu-btn print" href="print.html" title="Print this book" aria-label="Print this book">
+                        <i id="print-button" class="fa fa-print"></i>
+                    </a>
+                    <a class="menu-btn" href="https://github.com/modular/max-llm-book" title="Git repository" aria-label="Git repository">
+                        <i id="git-repository-button" class="fa fa-github"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-wrapper" class="page-wrapper">
+            <div class="page">
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="step-08-residual-connections-and-layer-normalization"><a class="header" href="#step-08-residual-connections-and-layer-normalization">Step 08: Residual connections and layer normalization</a></h1>
+<div class="note">
+<p>Learn to implement residual connections and layer normalization to enable
+training deep transformer networks.</p>
+</div>
+<h2 id="building-the-residual-pattern"><a class="header" href="#building-the-residual-pattern">Building the residual pattern</a></h2>
+<p>In this step, you’ll combine residual connections and layer normalization into a
+reusable pattern for transformer blocks. Residual connections add the input
+directly to the output using <code>output = input + layer(input)</code>, creating shortcuts
+that let gradients flow through deep networks. You’ll implement this alongside
+the layer normalization from Step 03.</p>
+<p>GPT-2 uses pre-norm architecture where layer norm is applied before each
+sublayer (attention or MLP). The pattern is <code>x = x + sublayer(layer_norm(x))</code>:
+normalize first, process, then add the original input back. This is more stable
+than post-norm alternatives for deep networks.</p>
+<p>Residual connections solve the vanishing gradient problem. During
+backpropagation, gradients flow through the identity path (<code>x = x + ...</code>)
+without being multiplied by layer weights. This allows training networks with
+12+ layers. Without residuals, gradients would diminish exponentially as they
+propagate through many layers.</p>
+<p>Layer normalization works identically during training and inference because it
+normalizes each example independently. No batch statistics, no running averages,
+just consistent normalization that keeps activation distributions stable
+throughout training.</p>
+<h2 id="understanding-the-pattern"><a class="header" href="#understanding-the-pattern">Understanding the pattern</a></h2>
+<p>The pre-norm residual pattern combines three operations in sequence:</p>
+<p><strong>Layer normalization</strong>: Normalize the input with
+<code>F.layer_norm(x, gamma=self.weight, beta=self.bias, epsilon=self.eps)</code>. This
+uses learnable weight (gamma) and bias (beta) parameters to scale and shift the
+normalized values. You already implemented this in Step 03.</p>
+<p><strong>Sublayer processing</strong>: Pass the normalized input through a sublayer (attention
+or MLP). The sublayer transforms the data while the layer norm keeps its input
+well-conditioned.</p>
+<p><strong>Residual addition</strong>: Add the original input back to the sublayer output using
+simple element-wise addition: <code>x + sublayer_output</code>. Both tensors must have
+identical shapes <code>[batch, seq_length, embed_dim]</code>.</p>
+<p>The complete pattern is <code>x = x + sublayer(layer_norm(x))</code>. This differs from
+post-norm <code>x = layer_norm(x + sublayer(x))</code>, as pre-norm is more stable because
+normalization happens before potentially unstable sublayer operations.</p>
+<div class="note">
+<div class="title">MAX operations</div>
+<p>You’ll use the following MAX operations to complete this task:</p>
+<p><strong>Layer normalization</strong>:</p>
+<ul>
+<li><a href="https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.layer_norm"><code>F.layer_norm(x, gamma, beta, epsilon)</code></a>: Normalizes across feature dimension</li>
+</ul>
+<p><strong>Tensor initialization</strong>:</p>
+<ul>
+<li><a href="https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.ones"><code>Tensor.ones([dim])</code></a>: Creates weight parameter</li>
+<li><a href="https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.zeros"><code>Tensor.zeros([dim])</code></a>: Creates bias parameter</li>
+</ul>
+</div>
+<h2 id="implementing-the-pattern"><a class="header" href="#implementing-the-pattern">Implementing the pattern</a></h2>
+<p>You’ll implement three classes that demonstrate the residual pattern:
+<code>LayerNorm</code> for normalization, <code>ResidualBlock</code> that combines norm and residual
+addition, and a standalone <code>apply_residual_connection</code> function.</p>
+<p>First, import the required modules. You’ll need <code>functional as F</code> for layer
+norm, <code>Tensor</code> for parameters, <code>DimLike</code> for type hints, and <code>Module</code> as the
+base class.</p>
+<p><strong>LayerNorm implementation</strong>:</p>
+<p>In <code>__init__</code>, create the learnable parameters:</p>
+<ul>
+<li>Weight: <code>Tensor.ones([dim])</code> stored as <code>self.weight</code></li>
+<li>Bias: <code>Tensor.zeros([dim])</code> stored as <code>self.bias</code></li>
+<li>Store <code>eps</code> for numerical stability</li>
+</ul>
+<p>In <code>forward</code>, apply normalization with
+<code>F.layer_norm(x, gamma=self.weight, beta=self.bias, epsilon=self.eps)</code>. Returns
+a normalized tensor with the same shape as input.</p>
+<p><strong>ResidualBlock implementation</strong>:</p>
+<p>In <code>__init__</code>, create a <code>LayerNorm</code> instance:
+<code>self.ln = LayerNorm(dim, eps=eps)</code>. This will normalize inputs before
+sublayers.</p>
+<p>In <code>forward</code>, implement the pre-norm pattern:</p>
+<ol>
+<li>Normalize: <code>normalized = self.ln(x)</code></li>
+<li>Process: <code>sublayer_output = sublayer(normalized)</code></li>
+<li>Add residual: <code>return x + sublayer_output</code></li>
+</ol>
+<p><strong>Standalone function</strong>:</p>
+<p>Implement <code>apply_residual_connection(input_tensor, sublayer_output)</code> that
+returns <code>input_tensor + sublayer_output</code>. This demonstrates the residual pattern
+as a simple function.</p>
+<p><strong>Implementation</strong> (<code>step_08.py</code>):</p>
+<pre><code class="language-python">"""
+Step 08: Residual Connections and Layer Normalization
+
+Implement layer normalization and residual connections, which enable
+training deep transformer networks by stabilizing gradients.
+
+Tasks:
+1. Import F (functional), Tensor, DimLike, and Module
+2. Create LayerNorm class with learnable weight and bias parameters
+3. Implement layer norm using F.layer_norm
+4. Implement residual connection (simple addition)
+
+Run: pixi run s08
+"""
+
+# TODO: Import required modules
+# Hint: You'll need F from max.experimental
+# Hint: You'll need Tensor from max.experimental.tensor
+# Hint: You'll need DimLike from max.graph
+# Hint: You'll need Module from max.nn.module_v3
+
+
+class LayerNorm(Module):
+    """Layer normalization module matching HuggingFace GPT-2."""
+
+    def __init__(self, dim: DimLike, *, eps: float = 1e-5):
+        """Initialize layer normalization.
+
+        Args:
+            dim: Dimension to normalize (embedding dimension)
+            eps: Small epsilon for numerical stability
+        """
+        super().__init__()
+        self.eps = eps
+
+        # TODO: Create learnable scale parameter (weight)
+        # Hint: Use Tensor.ones([dim])
+        self.weight = None
+
+        # TODO: Create learnable shift parameter (bias)
+        # Hint: Use Tensor.zeros([dim])
+        self.bias = None
+
+    def __call__(self, x: Tensor) -&gt; Tensor:
+        """Apply layer normalization.
+
+        Args:
+            x: Input tensor, shape [..., dim]
+
+        Returns:
+            Normalized tensor, same shape as input
+        """
+        # TODO: Apply layer normalization
+        # Hint: Use F.layer_norm(x, gamma=self.weight, beta=self.bias, epsilon=self.eps)
+        return None
+
+
+class ResidualBlock(Module):
+    """Demonstrates residual connections with layer normalization."""
+
+    def __init__(self, dim: int, eps: float = 1e-5):
+        """Initialize residual block.
+
+        Args:
+            dim: Dimension of the input/output
+            eps: Epsilon for layer normalization
+        """
+        super().__init__()
+
+        # TODO: Create layer normalization
+        # Hint: Use LayerNorm(dim, eps=eps)
+        self.ln = None
+
+    def __call__(self, x: Tensor, sublayer_output: Tensor) -&gt; Tensor:
+        """Apply residual connection.
+
+        Args:
+            x: Input tensor (the residual)
+            sublayer_output: Output from sublayer applied to ln(x)
+
+        Returns:
+            x + sublayer_output
+        """
+        # TODO: Add input and sublayer output (residual connection)
+        # Hint: return x + sublayer_output
+        return None
+
+
+def apply_residual_connection(input_tensor: Tensor, sublayer_output: Tensor) -&gt; Tensor:
+    """Apply a residual connection by adding input to sublayer output.
+
+    Args:
+        input_tensor: Original input (the residual)
+        sublayer_output: Output from a sublayer (attention, MLP, etc.)
+
+    Returns:
+        input_tensor + sublayer_output
+    """
+    # TODO: Add the two tensors
+    # Hint: return input_tensor + sublayer_output
+    return None
+</code></pre>
+<h3 id="validation"><a class="header" href="#validation">Validation</a></h3>
+<p>Run <code>pixi run s08</code> to verify your implementation.</p>
+<details>
+<summary>Show solution</summary>
+<pre><code class="language-python">"""
+Solution for Step 08: Residual Connections and Layer Normalization
+
+This module implements layer normalization and demonstrates residual connections,
+which are essential for training deep transformer networks.
+"""
+
+from max.experimental import functional as F
+from max.experimental.tensor import Tensor
+from max.graph import DimLike
+from max.nn.module_v3 import Module
+
+
+class LayerNorm(Module):
+    """Layer normalization module matching HuggingFace GPT-2.
+
+    Layer norm normalizes activations across the feature dimension,
+    stabilizing training and allowing deeper networks.
+    """
+
+    def __init__(self, dim: DimLike, *, eps: float = 1e-5):
+        """Initialize layer normalization.
+
+        Args:
+            dim: Dimension to normalize (embedding dimension)
+            eps: Small epsilon for numerical stability
+        """
+        super().__init__()
+        self.eps = eps
+        # Learnable scale parameter (gamma)
+        self.weight = Tensor.ones([dim])
+        # Learnable shift parameter (beta)
+        self.bias = Tensor.zeros([dim])
+
+    def __call__(self, x: Tensor) -&gt; Tensor:
+        """Apply layer normalization.
+
+        Args:
+            x: Input tensor, shape [..., dim]
+
+        Returns:
+            Normalized tensor, same shape as input
+        """
+        return F.layer_norm(x, gamma=self.weight, beta=self.bias, epsilon=self.eps)
+
+
+class ResidualBlock(Module):
+    """Demonstrates residual connections with layer normalization.
+
+    This shows the pre-norm architecture used in GPT-2:
+    output = input + sublayer(layer_norm(input))
+    """
+
+    def __init__(self, dim: int, eps: float = 1e-5):
+        """Initialize residual block.
+
+        Args:
+            dim: Dimension of the input/output
+            eps: Epsilon for layer normalization
+        """
+        super().__init__()
+        self.ln = LayerNorm(dim, eps=eps)
+
+    def __call__(self, x: Tensor, sublayer_output: Tensor) -&gt; Tensor:
+        """Apply residual connection.
+
+        This demonstrates the pattern:
+        1. Normalize input: ln(x)
+        2. Apply sublayer (passed as argument for simplicity)
+        3. Add residual: x + sublayer_output
+
+        In practice, the sublayer (attention or MLP) is applied to ln(x),
+        but we receive the result as a parameter for clarity.
+
+        Args:
+            x: Input tensor (the residual)
+            sublayer_output: Output from sublayer applied to ln(x)
+
+        Returns:
+            x + sublayer_output
+        """
+        # In a real transformer block, you would do:
+        # residual = x
+        # x = self.ln(x)
+        # x = sublayer(x)  # e.g., attention or MLP
+        # x = x + residual
+
+        # For this demonstration, we just add
+        return x + sublayer_output
+
+
+def apply_residual_connection(input_tensor: Tensor, sublayer_output: Tensor) -&gt; Tensor:
+    """Apply a residual connection by adding input to sublayer output.
+
+    Residual connections allow gradients to flow directly through the network,
+    enabling training of very deep models.
+
+    Args:
+        input_tensor: Original input (the residual)
+        sublayer_output: Output from a sublayer (attention, MLP, etc.)
+
+    Returns:
+        input_tensor + sublayer_output
+    """
+    return input_tensor + sublayer_output
+</code></pre>
+</details>
+<p><strong>Next</strong>: In <a href="./step_09.html">Step 09</a>, you’ll combine multi-head attention, MLP,
+layer norm, and residual connections into a complete transformer block.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="step_07.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="step_09.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="step_07.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="step_09.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="theme/code-highlighting.js"></script>
+        <script src="theme/sidebar.js"></script>
+        <script src="theme/init-amplitude.js"></script>
+        <script src="theme/tabs.js"></script>
+
+
+    </div>
+    </body>
+</html>

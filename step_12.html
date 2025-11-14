@@ -1,0 +1,529 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Text generation - Build an LLM from scratch with MAX</title>
+
+
+        <!-- Custom HTML head -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap"
+            rel="stylesheet">
+        
+        <link rel="stylesheet" href="theme/css/custom.css">
+        <link rel="stylesheet" href="theme/css/highlight.css">
+        <link rel="stylesheet" id="theme">
+        
+        <!-- Additional meta tags -->
+        <meta property="og:title" content="Build LLMs from scratch with MAX">
+        <meta property="og:description" content="Learn by building LLMs from scratch with Modular's MAX Framework">
+        <meta property="og:image" content="https://gpt2.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
+        <meta property="og:url" content="https://gtp2.modular.com/">
+        <meta name="twitter:card" content="summary">
+        <meta name="twitter:image:alt" content="Build LLMs from scratch with MAX Tutorial">
+        <meta name="twitter:title" content="Building GPT-2 with MAX">
+        <meta name="twitter:description" content="Learn by building LLMs from scratch with Modular's MAX Framework">
+        <meta name="twitter:image" content="https://gpt2.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
+        <link rel="icon" type="image/png" href="https://gpt2.modular.com/assets/icons/modular-logo.png">
+
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/css/custom.css">
+        <link rel="stylesheet" href="theme/css/highlight.css">
+        <link rel="stylesheet" href="theme/css/tabs.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "ayu";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc.js"></script>
+    </head>
+    <body>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden" checked>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <button class="collapse-sidebar" aria-label="Collapse sidebar"></button>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Toggle color mode and talk to us buttons -->
+        <script>
+            document.addEventListener('click', function (event) {
+                if (!event.target.matches('.theme-toggle')) return;
+                event.preventDefault();
+                const prevTheme = theme;
+                html.classList.remove(theme);
+                const newTheme = prevTheme === 'ayu' ? 'light' : 'ayu'
+                html.classList.add(newTheme);
+                theme = newTheme
+                localStorage.setItem('mdbook-theme', theme);
+            }, false);
+            document.addEventListener('click', function() {
+                if (!event.target.matches('.log-in')) return;
+                event.preventDefault();
+                window.amplitude.logEvent('LoginClickedFromGPT2Tutorial');
+                window.open('https://developer.modular.com', '_blank');
+            });
+        </script>
+
+        <div class="page-header">
+            <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                <i class="fa fa-bars"></i>
+            </label>
+            <div id="menu-bar" class="menu-bar">
+                <div class="left-buttons">
+                    <div class="logo-section">
+                        <a class="desktop-logo-link" href="https://modular.com"></a>
+                        <a class="mobile-logo-link" href="https://builds.modular.com"></a>
+                        <div class="slash">/</div>
+                        <a class="internal-link" href="">MAX GPT-2</a>
+                    </div>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Dark</button></li>
+                        </ul>
+                    </div>
+                <div class="right-buttons">
+                    <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                        <i class="fa fa-search"></i>
+                    </button>
+                    <button id="theme-toggle" class="icon-button theme-toggle-btn" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="false" aria-expanded="false">
+                        <i class="theme-toggle"></i>
+                    </button>
+                    <a class="menu-btn print" href="print.html" title="Print this book" aria-label="Print this book">
+                        <i id="print-button" class="fa fa-print"></i>
+                    </a>
+                    <a class="menu-btn" href="https://github.com/modular/max-llm-book" title="Git repository" aria-label="Git repository">
+                        <i id="git-repository-button" class="fa fa-github"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-wrapper" class="page-wrapper">
+            <div class="page">
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="step-12-text-generation"><a class="header" href="#step-12-text-generation">Step 12: Text generation</a></h1>
+<div class="note">
+<p>Learn to implement autoregressive text generation with sampling and temperature control.</p>
+</div>
+<h2 id="generating-text"><a class="header" href="#generating-text">Generating text</a></h2>
+<p>In this final step, you’ll implement the generation loop that produces text one token at a time. The model predicts the next token, appends it to the sequence, and repeats until reaching the desired length.</p>
+<p>Start with a prompt like “Hello world” (tokens <code>[15496, 995]</code>). The model predicts the next token, giving you <code>[15496, 995, 318]</code> (“Hello world is”). It predicts again, producing <code>[15496, 995, 318, 257]</code> (“Hello world is a”). This process continues, with each prediction feeding back as input for the next.</p>
+<p>You’ll implement two generation strategies: greedy decoding (always pick the highest-scoring token) and sampling (randomly choose according to probabilities). You’ll also add temperature control to adjust how random or focused the generation is.</p>
+<h2 id="understanding-the-generation-loop"><a class="header" href="#understanding-the-generation-loop">Understanding the generation loop</a></h2>
+<p>The generation loop is simple: run the model, extract the next token prediction, append it to the sequence, repeat. Each iteration requires a full forward pass through all 12 transformer blocks.</p>
+<p>The model outputs logits with shape <code>[batch, seq_length, vocab_size]</code>. Since you only care about predicting the next token, extract the last position: <code>logits[0, -1, :]</code>. This gives you a vector of 50,257 scores, one per vocabulary token.</p>
+<p>These scores are logits (unnormalized), not probabilities. To convert them to probabilities, apply softmax. Then you can either pick the highest-probability token (greedy) or sample from the distribution (random).</p>
+<h2 id="understanding-temperature-control"><a class="header" href="#understanding-temperature-control">Understanding temperature control</a></h2>
+<p>Temperature scaling adjusts how random the generation is using the formula <code>scaled_logits = logits / temperature</code>.</p>
+<p>With temperature 1.0, you use the original distribution. With temperature 0.7, you sharpen the distribution, and high-probability tokens become even more likely, making generation more focused and deterministic. With temperature 1.2, you flatten the distribution, and lower-probability tokens get more chances, making generation more diverse and creative.</p>
+<p>Temperature is applied before softmax. Dividing by a value less than 1 makes large logits even larger (sharpening), while dividing by a value greater than 1 reduces the differences between logits (flattening).</p>
+<h2 id="understanding-sampling-vs-greedy"><a class="header" href="#understanding-sampling-vs-greedy">Understanding sampling vs greedy</a></h2>
+<p>Greedy decoding always picks the highest-probability token using <a href="https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.argmax"><code>F.argmax</code></a>. It’s fast, deterministic, and simple, but often produces repetitive text because the model keeps choosing the safest option.</p>
+<p>Sampling randomly selects tokens according to their probabilities. Convert logits to probabilities with <code>F.softmax</code>, transfer to CPU, convert to NumPy with <code>np.from_dlpack</code>, then sample with <code>np.random.choice</code>. You use NumPy because MAX doesn’t have built-in sampling yet.</p>
+<p>Most practical generation uses sampling with temperature control. This balances creativity with coherence, as the model can explore different possibilities while still favoring high-quality continuations.</p>
+<div class="note">
+<div class="title">MAX operations</div>
+<p>You’ll use the following MAX operations to complete this task:</p>
+<p><strong>Probability operations</strong>:</p>
+<ul>
+<li><a href="https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.softmax"><code>F.softmax(logits)</code></a>: Converts logits to probabilities</li>
+<li><a href="https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.argmax"><code>F.argmax(logits)</code></a>: Selects highest-probability token (greedy)</li>
+</ul>
+<p><strong>Sequence building</strong>:</p>
+<ul>
+<li><a href="https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.concat"><code>F.concat([seq, new_token], axis=1)</code></a>: Appends token to sequence</li>
+<li><a href="https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.constant"><code>Tensor.constant(value, dtype, device)</code></a>: Creates scalar tensors</li>
+</ul>
+<p><strong>NumPy interop</strong>:</p>
+<ul>
+<li><code>probs.to(CPU())</code>: Transfers tensor to CPU</li>
+<li><code>np.from_dlpack(probs)</code>: Converts MAX tensor to NumPy for sampling</li>
+</ul>
+</div>
+<h2 id="implementing-text-generation"><a class="header" href="#implementing-text-generation">Implementing text generation</a></h2>
+<p>You’ll create two functions: <code>generate_next_token</code> that predicts a single token, and <code>generate</code> that loops to produce full sequences.</p>
+<p>First, import the required modules. You’ll need <code>numpy</code> for sampling, <code>CPU</code> from MAX’s driver, <code>DType</code> for type constants, <code>functional as F</code> for operations like softmax and argmax, and <code>Tensor</code> for creating tensors.</p>
+<p>In <code>generate_next_token</code>, implement the prediction logic:</p>
+<ol>
+<li>Run the model to get logits: <code>logits = model(input_ids)</code></li>
+<li>Extract the last position (next token prediction): <code>next_token_logits = logits[0, -1, :]</code></li>
+<li>If using temperature, scale the logits by dividing by the temperature tensor</li>
+<li>For sampling: convert to probabilities with <code>F.softmax</code>, transfer to CPU, convert to NumPy with <code>np.from_dlpack</code>, sample with <code>np.random.choice</code>, then convert back to a MAX tensor</li>
+<li>For greedy: use <code>F.argmax</code> to select the highest-scoring token</li>
+</ol>
+<p>The temperature must be a tensor with the same dtype and device as the logits. Create it with <code>Tensor.constant(temperature, dtype=..., device=...)</code>.</p>
+<p>In <code>generate</code>, implement the generation loop:</p>
+<ol>
+<li>Initialize with the input: <code>generated_tokens = input_ids</code></li>
+<li>Loop <code>max_new_tokens</code> times</li>
+<li>Generate the next token: <code>next_token = generate_next_token(model, generated_tokens, ...)</code></li>
+<li>Reshape to 2D: <code>next_token_2d = next_token.reshape([1, -1])</code></li>
+<li>Concatenate to the sequence: <code>generated_tokens = F.concat([generated_tokens, next_token_2d], axis=1)</code></li>
+<li>Return the complete sequence</li>
+</ol>
+<p>The reshape is necessary because <code>concat</code> requires matching dimensions, and the generated token is 0D (scalar).</p>
+<p><strong>Implementation</strong> (<code>step_12.py</code>):</p>
+<pre><code class="language-python">"""
+Step 12: Text Generation
+
+Implement autoregressive text generation with sampling and temperature control.
+
+Tasks:
+1. Import required modules (numpy, F, Tensor, etc.)
+2. Implement generate_next_token: get logits, apply temperature, sample/argmax
+3. Implement generate_tokens: loop to generate multiple tokens
+
+Run: pixi run s12
+"""
+
+# TODO: Import required modules
+# Hint: You'll need numpy as np
+# Hint: You'll need CPU from max.driver
+# Hint: You'll need DType from max.dtype
+# Hint: You'll need functional as F from max.experimental
+# Hint: You'll need Tensor from max.experimental.tensor
+
+
+def generate_next_token(model, input_ids, temperature=1.0, do_sample=True):
+    """Generate the next token given input context.
+
+    Args:
+        model: GPT-2 model with LM head
+        input_ids: Current sequence, shape [batch, seq_length]
+        temperature: Sampling temperature (higher = more random)
+        do_sample: If True, sample from distribution; if False, use greedy (argmax)
+
+    Returns:
+        Next token ID as a Tensor
+    """
+    # TODO: Get logits from model
+    # Hint: logits = model(input_ids)
+    pass
+
+    # TODO: Get logits for last position
+    # Hint: next_token_logits = logits[0, -1, :]
+    pass
+
+    # TODO: If sampling with temperature
+    if do_sample and temperature &gt; 0:
+        # TODO: Apply temperature scaling
+        # Hint: temp_tensor = Tensor.constant(temperature, dtype=next_token_logits.dtype, device=next_token_logits.device)
+        # Hint: next_token_logits = next_token_logits / temp_tensor
+        pass
+
+        # TODO: Convert to probabilities
+        # Hint: probs = F.softmax(next_token_logits)
+        pass
+
+        # TODO: Sample from distribution
+        # Hint: probs_np = np.from_dlpack(probs.to(CPU()))
+        # Hint: next_token_id = np.random.choice(len(probs_np), p=probs_np)
+        # Hint: next_token_tensor = Tensor.constant(next_token_id, dtype=DType.int64, device=input_ids.device)
+        pass
+    else:
+        # TODO: Greedy decoding (select most likely token)
+        # Hint: next_token_tensor = F.argmax(next_token_logits)
+        pass
+
+    # TODO: Return the next token
+    return None
+
+
+def generate_tokens(
+    model, input_ids, max_new_tokens=10, temperature=1.0, do_sample=True
+):
+    """Generate multiple tokens autoregressively.
+
+    Args:
+        model: GPT-2 model with LM head
+        input_ids: Initial sequence, shape [batch, seq_length]
+        max_new_tokens: Number of tokens to generate
+        temperature: Sampling temperature
+        do_sample: Whether to sample or use greedy decoding
+
+    Returns:
+        Generated sequence including input, shape [batch, seq_length + max_new_tokens]
+    """
+    # TODO: Initialize generated tokens with input
+    # Hint: generated_tokens = input_ids
+    pass
+
+    # TODO: Generation loop
+    # Hint: for _ in range(max_new_tokens):
+    pass
+
+    # TODO: Generate next token
+    # Hint: next_token = generate_next_token(model, generated_tokens, temperature=temperature, do_sample=do_sample)
+    pass
+
+    # TODO: Reshape to [1, 1] for concatenation
+    # Hint: next_token_2d = next_token.reshape([1, -1])
+    pass
+
+    # TODO: Append to sequence
+    # Hint: generated_tokens = F.concat([generated_tokens, next_token_2d], axis=1)
+    pass
+
+    # TODO: Return generated sequence
+    return None
+</code></pre>
+<h3 id="validation"><a class="header" href="#validation">Validation</a></h3>
+<p>Run <code>pixi run s12</code> to verify your implementation.</p>
+<details>
+<summary>Show solution</summary>
+<pre><code class="language-python">"""
+Solution for Step 12: Text Generation
+
+This module implements autoregressive text generation using the GPT-2 model.
+"""
+
+import numpy as np
+
+from max.driver import CPU
+from max.dtype import DType
+from max.experimental import functional as F
+from max.experimental.tensor import Tensor
+
+
+def generate_next_token(model, input_ids, temperature=1.0, do_sample=True):
+    """Generate the next token given input context.
+
+    Args:
+        model: GPT-2 model with LM head
+        input_ids: Current sequence, shape [batch, seq_length]
+        temperature: Sampling temperature (higher = more random)
+        do_sample: If True, sample from distribution; if False, use greedy (argmax)
+
+    Returns:
+        Next token ID as a Tensor
+    """
+    # Get logits from model
+    logits = model(input_ids)
+
+    # Get logits for last position (next token prediction)
+    next_token_logits = logits[0, -1, :]  # Shape: [vocab_size]
+
+    if do_sample and temperature &gt; 0:
+        # Apply temperature scaling
+        temp_tensor = Tensor.constant(
+            temperature, dtype=next_token_logits.dtype, device=next_token_logits.device
+        )
+        next_token_logits = next_token_logits / temp_tensor
+
+        # Convert to probabilities
+        probs = F.softmax(next_token_logits)
+
+        # Sample from distribution
+        probs_np = np.from_dlpack(probs.to(CPU()))
+        next_token_id = np.random.choice(len(probs_np), p=probs_np)
+        next_token_tensor = Tensor.constant(
+            next_token_id, dtype=DType.int64, device=input_ids.device
+        )
+    else:
+        # Greedy decoding: select most likely token
+        next_token_tensor = F.argmax(next_token_logits)
+
+    return next_token_tensor
+
+
+def generate_tokens(
+    model, input_ids, max_new_tokens=10, temperature=1.0, do_sample=True
+):
+    """Generate multiple tokens autoregressively.
+
+    Args:
+        model: GPT-2 model with LM head
+        input_ids: Initial sequence, shape [batch, seq_length]
+        max_new_tokens: Number of tokens to generate
+        temperature: Sampling temperature
+        do_sample: Whether to sample or use greedy decoding
+
+    Returns:
+        Generated sequence including input, shape [batch, seq_length + max_new_tokens]
+    """
+    generated_tokens = input_ids
+
+    for _ in range(max_new_tokens):
+        # Generate next token
+        next_token = generate_next_token(
+            model, generated_tokens, temperature=temperature, do_sample=do_sample
+        )
+
+        # Reshape to [1, 1] for concatenation
+        next_token_2d = next_token.reshape([1, -1])
+
+        # Append to sequence
+        generated_tokens = F.concat([generated_tokens, next_token_2d], axis=1)
+
+    return generated_tokens
+</code></pre>
+</details>
+<h2 id="what-youve-built"><a class="header" href="#what-youve-built">What you’ve built</a></h2>
+<p>You’ve completed all 12 steps and built a complete GPT-2 model from scratch
+using MAX. You now have a working implementation of:</p>
+<p><strong>Core components</strong>:</p>
+<ul>
+<li>Model configuration and architecture definition</li>
+<li>Causal masking for autoregressive generation</li>
+<li>Layer normalization for training stability</li>
+<li>Feed-forward networks with GELU activation</li>
+<li>Token and position embeddings</li>
+<li>Multi-head self-attention</li>
+<li>Residual connections and transformer blocks</li>
+<li>Language model head for next-token prediction</li>
+<li>Text generation with temperature and sampling</li>
+</ul>
+<p>Your model loads OpenAI’s pretrained GPT-2 weights and generates text. You
+understand how every component works, from the low-level tensor operations to
+the high-level architecture decisions.</p>
+<h2 id="whats-next"><a class="header" href="#whats-next">What’s next?</a></h2>
+<p>You now understand the architectural foundation that powers modern language
+models. LLaMA, Mistral, and more build on these same components with incremental
+refinements. You have everything you need to implement those refinements
+yourself.</p>
+<p>Consider extending your implementation with:</p>
+<ul>
+<li><strong>Grouped-query attention (GQA)</strong>: Reduce memory consumption by sharing key-value pairs across multiple query heads, as used in LLaMA 2.</li>
+<li><strong>Rotary position embeddings (RoPE)</strong>: Replace learned position embeddings with rotation-based encoding, improving length extrapolation in models like LLaMA and GPT-NeoX.</li>
+<li><strong>SwiGLU activation</strong>: Swap GELU for the gated linear unit variant used in LLaMA and PaLM.</li>
+<li><strong>Mixture of experts (MoE)</strong>: Add sparse expert routing to scale model capacity efficiently, as in Mixtral and GPT-4.</li>
+</ul>
+<p>Each refinement builds directly on what you’ve implemented. The attention
+mechanism you wrote becomes grouped-query attention with a simple modification
+to how you reshape key-value tensors. Your position embeddings can be replaced
+with RoPE by changing how you encode positional information. The feed-forward
+network you built becomes SwiGLU by adding a gating mechanism.</p>
+<p>Pick an architecture that interests you and start building. You’ll find the
+patterns are familiar because the fundamentals haven’t changed.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="step_11.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="step_11.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="theme/code-highlighting.js"></script>
+        <script src="theme/sidebar.js"></script>
+        <script src="theme/init-amplitude.js"></script>
+        <script src="theme/tabs.js"></script>
+
+
+    </div>
+    </body>
+</html>

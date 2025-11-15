@@ -1,6 +1,7 @@
-# GPT-2 in MAX: A step-by-step guide
+# Build an LLM from scratch with MAX
 
-Build GPT-2 from scratch using Modular's MAX platform. This hands-on tutorial teaches transformer architecture through 12 progressive steps, from basic embeddings to text generation.
+Build an LLM from scratch using Modular's MAX platform.
+This hands-on tutorial teaches transformer architecture through 12 progressive steps, from basic embeddings to text generation.
 
 ## What you'll learn
 
@@ -46,15 +47,16 @@ pixi run book
 
 The tutorial follows a progressive learning path:
 
-| Steps | Focus | What you build |
-|-------|-------|----------------|
-| 01-04 | **Foundations** | Configuration, layer norm, MLP, causal masking |
-| 05-06 | **Embeddings** | Token and position embeddings |
-| 07 | **Attention** | Multi-head attention |
-| 08-09 | **Composition** | Residual connections, transformer blocks |
+| Steps | Focus              | What you build                                        |
+|-------|--------------------|-------------------------------------------------------|
+| 01-04 | **Foundations**    | Configuration, layer norm, MLP, causal masking        |
+| 05-06 | **Embeddings**     | Token and position embeddings                         |
+| 07    | **Attention**      | Multi-head attention                                  |
+| 08-09 | **Composition**    | Residual connections, transformer blocks              |
 | 10-12 | **Complete model** | Stacking blocks, language model head, text generation |
 
 Each step includes:
+
 - **Conceptual explanation**: What and why
 - **Implementation tasks**: Skeleton code with TODO markers
 - **Validation tests**: 5-phase verification (imports, structure, implementation, placeholders, functionality)

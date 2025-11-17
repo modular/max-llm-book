@@ -55,7 +55,6 @@
         <!-- Custom theme stylesheets -->
         <link rel="stylesheet" href="theme/css/custom.css">
         <link rel="stylesheet" href="theme/css/highlight.css">
-        <link rel="stylesheet" href="theme/css/tabs.css">
 
         <!-- MathJax -->
         <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
@@ -100,11 +99,11 @@
         </script>
 
         <input type="checkbox" id="sidebar-toggle-anchor" class="hidden" checked>
-
+        <button id="vertical-sidebar-toggle" class="vertical-sidebar-toggle" aria-label="Toggle sidebar"><span class="toggle-icon"></span></button>
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <!-- populated by js -->
             <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
-            <button class="collapse-sidebar" aria-label="Collapse sidebar"></button>
+            <button class="collapse-sidebar" aria-label="Collapse sidebar"><span class="double-arrow-icon"></span><span class="close-icon"></span></button>
             <noscript>
                 <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
             </noscript>
@@ -143,7 +142,7 @@
                         <a class="desktop-logo-link" href="https://modular.com"></a>
                         <a class="mobile-logo-link" href="https://builds.modular.com"></a>
                         <div class="slash">/</div>
-                        <a class="internal-link" href="">MAX GPT-2</a>
+                        <a class="internal-link" href="">MAX LLM</a>
                     </div>
                         <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
                             <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
@@ -160,7 +159,7 @@
                     <a class="menu-btn print" href="print.html" title="Print this book" aria-label="Print this book">
                         <i id="print-button" class="fa fa-print"></i>
                     </a>
-                    <a class="menu-btn" href="https://github.com/modular/max-llm-book" title="Git repository" aria-label="Git repository">
+                    <a class="menu-btn" href="https://github.com/modular/max-gpt2" title="Git repository" aria-label="Git repository">
                         <i id="git-repository-button" class="fa fa-github"></i>
                     </a>
                 </div>
@@ -185,16 +184,34 @@
                     <main>
                         <h1 id="step-11-language-model-head"><a class="header" href="#step-11-language-model-head">Step 11: Language model head</a></h1>
 <div class="note">
-<p>Learn to add the final linear projection layer that converts hidden states to vocabulary logits for next-token prediction.</p>
+<p>Learn to add the final linear projection layer that converts hidden states to
+vocabulary logits for next-token prediction.</p>
 </div>
 <h2 id="adding-the-language-model-head"><a class="header" href="#adding-the-language-model-head">Adding the language model head</a></h2>
-<p>In this step, you’ll create the <code>MaxGPT2LMHeadModel</code> - the complete language model that can predict next tokens. This class wraps the transformer from Step 10 and adds a final linear layer that projects 768-dimensional hidden states to 50,257-dimensional vocabulary logits.</p>
-<p>The language model head is a single linear layer without bias. For each position in the sequence, it outputs a score for every possible next token. Higher scores indicate the model thinks that token is more likely to come next.</p>
-<p>At 768 × 50,257 = 38.6M parameters, the LM head is the single largest component in GPT-2, representing about 33% of the model’s 117M total parameters. This is larger than all 12 transformer blocks combined.</p>
+<p>In this step, you’ll create the <code>MaxGPT2LMHeadModel</code> - the complete language
+model that can predict next tokens. This class wraps the transformer from Step
+10 and adds a final linear layer that projects 768-dimensional hidden states to
+50,257-dimensional vocabulary logits.</p>
+<p>The language model head is a single linear layer without bias. For each position
+in the sequence, it outputs a score for every possible next token. Higher scores
+indicate the model thinks that token is more likely to come next.</p>
+<p>At 768 × 50,257 = 38.6M parameters, the LM head is the single largest component
+in GPT-2, representing about 33% of the model’s 117M total parameters. This is
+larger than all 12 transformer blocks combined.</p>
 <h2 id="understanding-the-projection"><a class="header" href="#understanding-the-projection">Understanding the projection</a></h2>
-<p>The language model head performs a simple linear projection using MAX’s <a href="https://docs.modular.com/max/api/python/nn/module_v3#max.nn.module_v3.Linear"><code>Linear</code></a> layer. It maps each 768-dimensional hidden state to 50,257 scores, one per vocabulary token.</p>
-<p>The layer uses <code>bias=False</code>, meaning it only has weights and no bias vector. This saves 50,257 parameters (about 0.4% of model size). The bias provides little benefit because the layer normalization before the LM head already centers the activations. Adding a constant bias to all logits wouldn’t change the relative probabilities after softmax.</p>
-<p>The output is called “logits,” which are raw scores before applying softmax. Logits can be any real number. During text generation (Step 12), you’ll convert logits to probabilities with softmax. Working with logits directly enables techniques like temperature scaling and top-k sampling.</p>
+<p>The language model head performs a simple linear projection using MAX’s
+<a href="https://docs.modular.com/max/api/python/nn/module_v3#max.nn.module_v3.Linear"><code>Linear</code></a>
+layer. It maps each 768-dimensional hidden state to 50,257 scores, one per
+vocabulary token.</p>
+<p>The layer uses <code>bias=False</code>, meaning it only has weights and no bias vector.
+This saves 50,257 parameters (about 0.4% of model size). The bias provides
+little benefit because the layer normalization before the LM head already
+centers the activations. Adding a constant bias to all logits wouldn’t change
+the relative probabilities after softmax.</p>
+<p>The output is called “logits,” which are raw scores before applying softmax.
+Logits can be any real number. During text generation (Step 12), you’ll convert
+logits to probabilities with softmax. Working with logits directly enables
+techniques like temperature scaling and top-k sampling.</p>
 <h2 id="understanding-the-complete-model"><a class="header" href="#understanding-the-complete-model">Understanding the complete model</a></h2>
 <p>With the LM head added, you now have the complete GPT-2 architecture:</p>
 <ol>
@@ -205,7 +222,9 @@
 <li><strong>LM head</strong>: Projects to vocabulary <code>[batch, seq_length, 50257]</code></li>
 <li><strong>Output</strong>: Logits <code>[batch, seq_length, 50257]</code></li>
 </ol>
-<p>Each position gets independent logits over the vocabulary. To predict the next token after position i, you look at the logits at position i. The highest scoring token is the model’s top prediction.</p>
+<p>Each position gets independent logits over the vocabulary. To predict the next
+token after position i, you look at the logits at position i. The highest
+scoring token is the model’s top prediction.</p>
 <div class="note">
 <div class="title">MAX operations</div>
 <p>You’ll use the following MAX operations to complete this task:</p>
@@ -215,14 +234,18 @@
 </ul>
 </div>
 <h2 id="implementing-the-language-model"><a class="header" href="#implementing-the-language-model">Implementing the language model</a></h2>
-<p>You’ll create the <code>MaxGPT2LMHeadModel</code> class that wraps the transformer with a language modeling head. The implementation is straightforward, with just two components and a simple forward pass.</p>
-<p>First, import the required modules. You’ll need <code>Linear</code> and <code>Module</code> from MAX, plus the previously implemented <code>GPT2Config</code> and <code>GPT2Model</code>.</p>
+<p>You’ll create the <code>MaxGPT2LMHeadModel</code> class that wraps the transformer with a
+language modeling head. The implementation is straightforward, with just two
+components and a simple forward pass.</p>
+<p>First, import the required modules. You’ll need <code>Linear</code> and <code>Module</code> from MAX,
+plus the previously implemented <code>GPT2Config</code> and <code>GPT2Model</code>.</p>
 <p>In the <code>__init__</code> method, create two components:</p>
 <ul>
 <li>Transformer: <code>GPT2Model(config)</code> stored as <code>self.transformer</code></li>
 <li>LM head: <code>Linear(config.n_embd, config.vocab_size, bias=False)</code> stored as <code>self.lm_head</code></li>
 </ul>
-<p>Note the <code>bias=False</code> parameter, which creates a linear layer without bias terms.</p>
+<p>Note the <code>bias=False</code> parameter, which creates a linear layer without bias
+terms.</p>
 <p>In the <code>forward</code> method, implement a simple two-step process:</p>
 <ol>
 <li>Get hidden states from the transformer: <code>hidden_states = self.transformer(input_ids)</code></li>
@@ -347,7 +370,8 @@ class MaxGPT2LMHeadModel(Module):
         return logits
 </code></pre>
 </details>
-<p><strong>Next</strong>: In <a href="./step_12.html">Step 12</a>, you’ll implement text generation using sampling and temperature control to generate coherent text autoregressively.</p>
+<p><strong>Next</strong>: In <a href="./step_12.html">Step 12</a>, you’ll implement text generation using
+sampling and temperature control to generate coherent text autoregressively.</p>
 
                     </main>
 
@@ -398,7 +422,7 @@ class MaxGPT2LMHeadModel(Module):
         <script src="theme/code-highlighting.js"></script>
         <script src="theme/sidebar.js"></script>
         <script src="theme/init-amplitude.js"></script>
-        <script src="theme/tabs.js"></script>
+        <script src="theme/warning.js"></script>
 
 
     </div>

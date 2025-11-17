@@ -28,6 +28,7 @@
   --modular-sidebar-active: #e1e6fb;
   --modular-text-inactive: #9a9eaa;
   --modular-menu-border: var(--links);
+  --Elements-Twilight-5-80: #f2f3f3;
   --Elements-Twilight-60-50: #676d71;
   --Elements-Twilight-40-60: #b3b8c2;
   --mono-font: "Roboto Mono";
@@ -35,6 +36,7 @@
   --copy-icon: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg"  width="18px" height="18px" viewBox="0 0 24 24"><path fill="%23262c30" d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"/></svg>');
   --check-icon: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="18px" height="18px" viewBox="0 0 24 24"><path fill="%2300d600" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"/></svg>');
   --eye-icon: url("https://docs.modular.com/assets/images/eye-light.svg");
+  --double-arrow-icon: url("/assets/icons/double-arrow-dark.svg");
   --m-logo: url("/assets/icons/m-dark.svg");
   --modular-logo: url("/assets/icons/modular-dark.svg");
   --color-mode-icon: url("/assets/icons/sun.svg");
@@ -59,6 +61,7 @@
   --modular-nav-bg: #141920;
   --modular-sidebar-active: #262c30;
   --modular-menu-border: #9199c7;
+  --Elements-Twilight-5-80: #262c30;
   --Elements-Twilight-60-50: #9a9eaa;
   --Elements-Twilight-40-60: #676d71;
   --arrow-caret: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20px" height="20px" viewBox="0 0 24 24"><path fill="%23ffffff" d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"></path></svg>');
@@ -68,6 +71,7 @@
   --modular-logo: url("/assets/icons/modular-light.svg");
   --color-mode-icon: url("/assets/icons/moon.svg");
   --close-icon: url("/assets/icons/close-icon-light.svg");
+  --double-arrow-icon: url("/assets/icons/double-arrow.svg");
 }
 
 /* Adjust content for header */
@@ -183,6 +187,7 @@ a.internal-link {
   display: flex;
   gap: 12px;
   align-items: center;
+  margin: 0;
 
   .icon-button {
     line-height: unset;
@@ -310,22 +315,42 @@ body.sidebar-hidden #sidebar-toggle {
   padding: 0 16px;
 
   ol.chapter {
-    margin-top: 0;
+    margin-top: 40px;
+    margin-left: 10px;
     li.affix {
       display: none;
     }
   }
 
+  .sidebar-resize-indicator {
+    background-color: var(--modular-border);
+  }
+
   button.collapse-sidebar {
+    display: flex;
+    justify-content: space-between;
     position: absolute;
+    left: 0;
     top: 0;
-    right: 0;
+    width: 100%;
     background-color: transparent;
     border: none;
     cursor: pointer;
-    margin: 20px 12px 0 0;
-    &::after {
+    padding: 14px 20px;
+    &:hover {
+      background-color: var(--Elements-Twilight-5-80);
+    }
+    .close-icon {
       content: var(--close-icon);
+      height: 14px;
+      width: 14px;
+      display: none;
+    }
+    .double-arrow-icon {
+      content: var(--double-arrow-icon);
+      transform: rotate(180deg);
+      height: 18px;
+      width: 18px;
     }
   }
 
@@ -371,6 +396,70 @@ body.sidebar-hidden #sidebar-toggle {
 
   .sidebar-scrollbox {
     border-top: 1px solid var(--modular-border);
+    padding-left: 0;
+  }
+}
+
+.vertical-sidebar-toggle {
+  display: none;
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 60px;
+  height: 100%;
+  background-color: var(--modular-bg);
+  border: 1px solid var(--modular-border);
+  border-left: none;
+  border-bottom: none;
+  cursor: pointer;
+  z-index: 198;
+  transition: left 0.3s ease, background-color 0.2s ease;
+  padding: 0;
+
+  &:hover {
+    background-color: var(--Elements-Twilight-5-80);
+  }
+
+  .toggle-icon {
+    display: block;
+    position: absolute;
+    top: 86px;
+    left: 16px;
+
+    &::before {
+      content: var(--double-arrow-icon);
+      margin-left: 8px;
+      width: 18px;
+      height: 18px;
+    }
+  }
+}
+
+@media screen and (min-width: 577px) {
+  .sidebar-hidden {
+    .page {
+      padding-left: 84px;
+    }
+    .vertical-sidebar-toggle {
+      left: 0;
+      display: block;
+    }
+    #sidebar-toggle {
+      display: none;
+    }
+    .warning {
+      width: calc(100% - 36px);
+      margin: 0 0 0 36px;
+    }
+  }
+  .mobile-logo-link {
+    margin-left: 0;
+  }
+}
+
+@media screen and (max-width: 576px) {
+  .sidebar-visible #sidebar-toggle {
+    opacity: 1;
   }
 }
 
@@ -821,7 +910,7 @@ mark {
 @media screen and (max-width: 996px) {
   :root {
     --sidebar-width: 250px;
-    --page-padding: 10px;
+    --page-padding: 32px;
   }
 
   h1 {
@@ -867,10 +956,6 @@ mark {
     left: 18px;
     border: none;
   }
-
-  .sidebar-visible #sidebar-toggle {
-    opacity: 1;
-  }
 }
 
 @media (max-width: 576px) {
@@ -879,6 +964,21 @@ mark {
   }
   :root {
     --sidebar-width: 100vw;
+  }
+  button.collapse-sidebar {
+    width: 30px !important;
+    left: unset;
+    right: 36px;
+    margin-left: auto;
+    &:hover {
+      background-color: transparent !important;
+    }
+    .close-icon {
+      display: block !important;
+    }
+    .double-arrow-icon {
+      display: none;
+    }
   }
 }
 
@@ -1153,6 +1253,24 @@ details:last-child {
   padding: 15px;
   margin: 20px 0;
   border-radius: 0 4px 4px 0;
+}
+
+.warning {
+  border: none;
+  background-color: #ffeba4;
+  padding: 16px 40px;
+  margin: 0 0 0 -8px;
+  box-sizing: border-box;
+  color: #000;
+  &:before {
+    display: none;
+  }
+  p {
+    margin: 0;
+  }
+  a {
+    color: #637bff;
+  }
 }
 
 /* Dark theme adjustments for note */

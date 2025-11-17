@@ -4,9 +4,11 @@ const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
 const isDesktop = window.innerWidth >= 1220;
 sidebar_toggle.checked = isDesktop;
 body.classList.add("sidebar-" + (isDesktop ? "visible" : "hidden"));
+const verticalToggle = document.getElementById("vertical-sidebar-toggle");
 
 function setAriaExpanded() {
   document.getElementById("sidebar-toggle").setAttribute("aria-expanded", sidebar === "visible");
+  verticalToggle.setAttribute("aria-expanded", sidebar === "visible");
 }
 
 function resetSidebarClasses() {
@@ -38,6 +40,18 @@ collapseSidebar.addEventListener("click", function (event) {
   sidebar = "hidden";
   resetSidebarClasses();
   setAriaExpanded();
+});
+
+verticalToggle.addEventListener("click", function (event) {
+  event.preventDefault();
+  const newState = sidebar === "visible" ? "hidden" : "visible";
+  sidebar_toggle.checked = newState === "visible";
+  sidebar = newState;
+  resetSidebarClasses();
+  setAriaExpanded();
+  try {
+    localStorage.setItem("mdbook-sidebar", sidebar);
+  } catch (e) {}
 });
 
 setAriaExpanded();

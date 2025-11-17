@@ -97,11 +97,11 @@
         </script>
 
         <input type="checkbox" id="sidebar-toggle-anchor" class="hidden" checked>
-
+        <button id="vertical-sidebar-toggle" class="vertical-sidebar-toggle" aria-label="Toggle sidebar"><span class="toggle-icon"></span></button>
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <!-- populated by js -->
             <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
-            <button class="collapse-sidebar" aria-label="Collapse sidebar"></button>
+            <button class="collapse-sidebar" aria-label="Collapse sidebar"><span class="double-arrow-icon"></span><span class="close-icon"></span></button>
             <noscript>
                 <iframe class="sidebar-iframe-outer" src="{{ path_to_root }}toc.html"></iframe>
             </noscript>
@@ -140,7 +140,7 @@
                         <a class="desktop-logo-link" href="https://modular.com"></a>
                         <a class="mobile-logo-link" href="https://builds.modular.com"></a>
                         <div class="slash">/</div>
-                        <a class="internal-link" href="{{ path_to_root }}">MAX GPT-2</a>
+                        <a class="internal-link" href="{{ path_to_root }}">MAX LLM</a>
                     </div>
                         <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
                             <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>

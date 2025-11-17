@@ -10,13 +10,12 @@ version = "1.0.0"
 additional-css = [
     "theme/css/custom.css",
     "theme/css/highlight.css",
-    "theme/css/tabs.css",
 ]
 additional-js = [
     "theme/code-highlighting.js",
     "theme/sidebar.js",
     "theme/init-amplitude.js",
-    "theme/tabs.js",
+    "theme/warning.js",
 ]
 default-theme = "light"
 preferred-dark-theme = "ayu"
@@ -24,7 +23,7 @@ copy-fonts = true
 favicon_svg=true
 smart-punctuation = true
 no-section-label = true
-git-repository-url = "https://github.com/modular/max-llm-book"
+git-repository-url = "https://github.com/modular/max-gpt2"
 mathjax-support = true
 theme-switcher = true
 no-theme-selection = false
@@ -65,3 +64,6 @@ index = false
 # Enables use of {{#include file.md}} to include other files
 renderers = ["html"]
 some-attribute = "value"
+
+[preprocessor.admonish]
+command = "mdbook-admonish"

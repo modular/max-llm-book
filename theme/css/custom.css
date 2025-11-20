@@ -295,6 +295,7 @@ body.sidebar-hidden #sidebar-toggle {
   border-radius: 2px;
   transition: all 0.1s ease-in-out;
   cursor: pointer;
+  pointer-events: none;
   i {
     margin: 6px 5px;
   }
@@ -327,8 +328,7 @@ body.sidebar-hidden #sidebar-toggle {
   }
 
   button.collapse-sidebar {
-    display: flex;
-    justify-content: space-between;
+    display: block;
     position: absolute;
     left: 0;
     top: 0;
@@ -337,20 +337,22 @@ body.sidebar-hidden #sidebar-toggle {
     border: none;
     cursor: pointer;
     padding: 14px 20px;
+
     &:hover {
       background-color: var(--Elements-Twilight-5-80);
     }
-    .close-icon {
-      content: var(--close-icon);
-      height: 14px;
-      width: 14px;
-      display: none;
-    }
-    .double-arrow-icon {
+
+    &::before {
       content: var(--double-arrow-icon);
+      display: block;
       transform: rotate(180deg);
       height: 18px;
       width: 18px;
+    }
+    @media (max-width: 576px) {
+      &::before {
+        display: none;
+      }
     }
   }
 
@@ -420,18 +422,14 @@ body.sidebar-hidden #sidebar-toggle {
     background-color: var(--Elements-Twilight-5-80);
   }
 
-  .toggle-icon {
+  &::before {
+    content: var(--double-arrow-icon);
     display: block;
     position: absolute;
     top: 86px;
-    left: 16px;
-
-    &::before {
-      content: var(--double-arrow-icon);
-      margin-left: 8px;
-      width: 18px;
-      height: 18px;
-    }
+    left: 24px;
+    width: 18px;
+    height: 18px;
   }
 }
 
@@ -955,6 +953,7 @@ mark {
     top: 22px;
     left: 18px;
     border: none;
+    pointer-events: auto;
   }
 }
 
@@ -973,11 +972,12 @@ mark {
     &:hover {
       background-color: transparent !important;
     }
-    .close-icon {
-      display: block !important;
-    }
-    .double-arrow-icon {
-      display: none;
+
+    &::after {
+      content: var(--close-icon);
+      transform: none;
+      height: 14px;
+      width: 14px;
     }
   }
 }

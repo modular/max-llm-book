@@ -1,60 +1,100 @@
-let sidebar = null;
 const body = document.body;
 const sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
-const isDesktop = window.innerWidth >= 1220;
-sidebar_toggle.checked = isDesktop;
-body.classList.add("sidebar-" + (isDesktop ? "visible" : "hidden"));
 const verticalToggle = document.getElementById("vertical-sidebar-toggle");
+const isDesktop = window.innerWidth >= 1220;
 
-function setAriaExpanded() {
-  document.getElementById("sidebar-toggle").setAttribute("aria-expanded", sidebar === "visible");
-  verticalToggle.setAttribute("aria-expanded", sidebar === "visible");
+let sidebar;
+try {
+  sidebar = localStorage.getItem("mdbook-sidebar");
+} catch (e) {}
+
+if (!sidebar || sidebar === "null") {
+  sidebar = isDesktop ? "visible" : "hidden";
 }
 
-function resetSidebarClasses() {
-  body.classList.remove("sidebar-visible");
-  body.classList.remove("sidebar-hidden");
+sidebar_toggle.checked = sidebar === "visible";
+body.classList.remove("sidebar-visible", "sidebar-hidden");
+body.classList.add("sidebar-" + sidebar);
+
+function setAriaExpanded() {
+  const isVisible = sidebar === "visible";
+  document.getElementById("sidebar-toggle").setAttribute("aria-expanded", isVisible);
+  verticalToggle.setAttribute("aria-expanded", isVisible);
+}
+
+function updateSidebarState(newState) {
+  sidebar = newState;
+  sidebar_toggle.checked = newState === "visible";
+  body.classList.remove("sidebar-visible", "sidebar-hidden");
   body.classList.add("sidebar-" + sidebar);
+  setAriaExpanded();
+  updateTabIndices();
+}
+
+function updateTabIndices() {
+  const tabIndex = sidebar === "visible" ? 0 : -1;
+  Array.from(document.querySelectorAll("#sidebar a")).forEach(function (link) {
+    link.setAttribute("tabIndex", tabIndex);
+  });
 }
 
 window.addEventListener("resize", function () {
-  if (window.innerWidth >= 1220) {
-    try {
-      sidebar = localStorage.getItem("mdbook-sidebar");
-    } catch (e) {}
-    sidebar_toggle.checked = true;
-    sidebar = "visible";
-  } else {
-    sidebar_toggle.checked = false;
-    sidebar = "hidden";
+  const isNowDesktop = window.innerWidth >= 1220;
+  const newState = isNowDesktop ? "visible" : "hidden";
+
+  if (sidebar !== newState) {
+    updateSidebarState(newState);
   }
-  sidebar_toggle.checked = sidebar === "visible";
-  resetSidebarClasses();
-  setAriaExpanded();
 });
 
 const collapseSidebar = document.querySelector(".collapse-sidebar");
-collapseSidebar.addEventListener("click", function (event) {
-  event.preventDefault();
-  sidebar_toggle.checked = false;
-  sidebar = "hidden";
-  resetSidebarClasses();
-  setAriaExpanded();
-});
+const newCollapse = collapseSidebar.cloneNode(true);
+collapseSidebar.parentNode.replaceChild(newCollapse, collapseSidebar);
 
-verticalToggle.addEventListener("click", function (event) {
-  event.preventDefault();
-  const newState = sidebar === "visible" ? "hidden" : "visible";
-  sidebar_toggle.checked = newState === "visible";
-  sidebar = newState;
-  resetSidebarClasses();
-  setAriaExpanded();
-  try {
-    localStorage.setItem("mdbook-sidebar", sidebar);
-  } catch (e) {}
-});
+newCollapse.addEventListener(
+  "click",
+  function (event) {
+    event.preventDefault();
+    updateSidebarState("hidden");
+    try {
+      localStorage.setItem("mdbook-sidebar", "hidden");
+    } catch (e) {}
+  },
+  true
+);
+
+const newVerticalToggle = verticalToggle.cloneNode(true);
+verticalToggle.parentNode.replaceChild(newVerticalToggle, verticalToggle);
+
+newVerticalToggle.addEventListener(
+  "click",
+  function (event) {
+    event.preventDefault();
+    const newState = sidebar === "visible" ? "hidden" : "visible";
+    updateSidebarState(newState);
+    try {
+      localStorage.setItem("mdbook-sidebar", newState);
+    } catch (e) {}
+  },
+  true
+);
 
 setAriaExpanded();
-Array.from(document.querySelectorAll("#sidebar a")).forEach(function (link) {
-  link.setAttribute("tabIndex", sidebar === "visible" ? 0 : -1);
+updateTabIndices();
+
+// Prevent mdBook's book.js override on display state
+const sidebarElement = document.getElementById("sidebar");
+const styleObserver = new MutationObserver((mutations) => {
+  mutations.forEach((mutation) => {
+    if (mutation.attributeName === "style") {
+      if (sidebarElement.style.display === "none") {
+        sidebarElement.style.display = "";
+      }
+    }
+  });
+});
+
+styleObserver.observe(sidebarElement, {
+  attributes: true,
+  attributeFilter: ["style"],
 });

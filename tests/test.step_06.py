@@ -1,9 +1,10 @@
 """Tests for Step 06: Position Embeddings"""
 
 import ast
-import inspect
+import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 def test_step_06():
     """Comprehensive validation for Step 06 implementation."""
@@ -151,7 +152,7 @@ def test_step_06():
 
         # Check output shape
         expected_shape = (seq_length, config.n_embd)
-        if output.shape == expected_shape:
+        if tuple(output.shape) == expected_shape:
             results.append(f"✅ Output shape is correct: {expected_shape}")
         else:
             results.append(

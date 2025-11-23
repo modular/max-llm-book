@@ -1,8 +1,10 @@
 """Tests for Step 07: Multi-head Attention"""
 
 import ast
+import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 def test_step_07():
     """Comprehensive validation for Step 07 implementation."""
@@ -82,6 +84,8 @@ def test_step_07():
         if "causal_mask" in str(e):
             results.append("❌ causal_mask function not found")
             results.append("   Hint: Copy causal_mask from solution_02.py")
+        else:
+            results.append("❌ Import error: " + str(e))
         print("\n".join(results))
         return
 

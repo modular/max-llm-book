@@ -12,6 +12,7 @@ additional-css = [
     "theme/css/highlight.css",
 ]
 additional-js = [
+    "theme/copy.js",
     "theme/code-highlighting.js",
     "theme/sidebar.js",
     "theme/init-amplitude.js",

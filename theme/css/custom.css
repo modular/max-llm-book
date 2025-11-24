@@ -323,6 +323,10 @@ body.sidebar-hidden #sidebar-toggle {
     }
   }
 
+  .sidebar-resize-handle {
+    display: none;
+  }
+
   .sidebar-resize-indicator {
     background-color: var(--modular-border);
   }

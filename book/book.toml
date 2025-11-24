@@ -16,7 +16,6 @@ additional-js = [
     "theme/sidebar.js",
     "theme/init-amplitude.js",
     "theme/warning.js",
-    "theme/copy.js",
 ]
 default-theme = "light"
 preferred-dark-theme = "ayu"

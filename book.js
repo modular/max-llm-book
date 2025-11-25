@@ -4,7 +4,7 @@
 
 // Fix back button cache problem
 window.onunload = function() { };
-
+console.log('book.js loaded');
 // Global variable, shared between modules
 function playground_text(playground, hidden = true) {
     const code_block = playground.querySelector('code');
@@ -515,39 +515,17 @@ aria-label="Show hidden lines"></button>';
 })();
 
 (function sidebar() {
+    const body = document.querySelector('body');
     const sidebar = document.getElementById('sidebar');
     const sidebarLinks = document.querySelectorAll('#sidebar a');
     const sidebarToggleButton = document.getElementById('sidebar-toggle');
+    const sidebarToggleAnchor = document.getElementById('sidebar-toggle-anchor');
     const sidebarResizeHandle = document.getElementById('sidebar-resize-handle');
-    const sidebarCheckbox = document.getElementById('sidebar-toggle-anchor');
     let firstContact = null;
 
-
-    /* Because we cannot change the `display` using only CSS after/before the transition, we
-       need JS to do it. We change the display to prevent the browsers search to find text inside
-       the collapsed sidebar. */
-    if (!document.documentElement.classList.contains('sidebar-visible')) {
-        sidebar.style.display = 'none';
-    }
-    sidebar.addEventListener('transitionend', () => {
-        /* We only change the display to "none" if we're collapsing the sidebar. */
-        if (!sidebarCheckbox.checked) {
-            sidebar.style.display = 'none';
-        }
-    });
-    sidebarToggleButton.addEventListener('click', () => {
-        /* To allow the sidebar expansion animation, we first need to put back the display. */
-        if (!sidebarCheckbox.checked) {
-            sidebar.style.display = '';
-            // Workaround for Safari skipping the animation when changing
-            // `display` and a transform in the same event loop. This forces a
-            // reflow after updating the display.
-            sidebar.offsetHeight;
-        }
-    });
-
     function showSidebar() {
-        document.documentElement.classList.add('sidebar-visible');
+        body.classList.remove('sidebar-hidden');
+        body.classList.add('sidebar-visible');
         Array.from(sidebarLinks).forEach(function(link) {
             link.setAttribute('tabIndex', 0);
         });
@@ -561,7 +539,8 @@ aria-label="Show hidden lines"></button>';
     }
 
     function hideSidebar() {
-        document.documentElement.classList.remove('sidebar-visible');
+        body.classList.remove('sidebar-visible');
+        body.classList.add('sidebar-hidden');
         Array.from(sidebarLinks).forEach(function(link) {
             link.setAttribute('tabIndex', -1);
         });
@@ -575,12 +554,12 @@ aria-label="Show hidden lines"></button>';
     }
 
     // Toggle sidebar
-    sidebarCheckbox.addEventListener('change', function sidebarToggle() {
-        if (sidebarCheckbox.checked) {
+    sidebarToggleAnchor.addEventListener('change', function sidebarToggle() {
+        if (sidebarToggleAnchor.checked) {
             const current_width = parseInt(
-                document.documentElement.style.getPropertyValue('--sidebar-target-width'), 10);
+                document.documentElement.style.getPropertyValue('--sidebar-width'), 10);
             if (current_width < 150) {
-                document.documentElement.style.setProperty('--sidebar-target-width', '150px');
+                document.documentElement.style.setProperty('--sidebar-width', '150px');
             }
             showSidebar();
         } else {
@@ -593,23 +572,23 @@ aria-label="Show hidden lines"></button>';
     function initResize() {
         window.addEventListener('mousemove', resize, false);
         window.addEventListener('mouseup', stopResize, false);
-        document.documentElement.classList.add('sidebar-resizing');
+        body.classList.add('sidebar-resizing');
     }
     function resize(e) {
         let pos = e.clientX - sidebar.offsetLeft;
         if (pos < 20) {
             hideSidebar();
         } else {
-            if (!document.documentElement.classList.contains('sidebar-visible')) {
+            if (body.classList.contains('sidebar-hidden')) {
                 showSidebar();
             }
             pos = Math.min(pos, window.innerWidth - 100);
-            document.documentElement.style.setProperty('--sidebar-target-width', pos + 'px');
+            document.documentElement.style.setProperty('--sidebar-width', pos + 'px');
         }
     }
     //on mouseup remove windows functions mousemove & mouseup
     function stopResize() {
-        document.documentElement.classList.remove('sidebar-resizing');
+        body.classList.remove('sidebar-resizing');
         window.removeEventListener('mousemove', resize, false);
         window.removeEventListener('mouseup', stopResize, false);
     }
@@ -644,7 +623,7 @@ aria-label="Show hidden lines"></button>';
 
 (function chapterNavigation() {
     document.addEventListener('keydown', function(e) {
-        if (e.altKey || e.ctrlKey || e.metaKey) {
+        if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) {
             return;
         }
         if (window.search && window.search.hasFocus()) {
@@ -664,55 +643,6 @@ aria-label="Show hidden lines"></button>';
                 window.location.href = previousButton.href;
             }
         }
-        function showHelp() {
-            const container = document.getElementById('mdbook-help-container');
-            const overlay = document.getElementById('mdbook-help-popup');
-            container.style.display = 'flex';
-
-            // Clicking outside the popup will dismiss it.
-            const mouseHandler = event => {
-                if (overlay.contains(event.target)) {
-                    return;
-                }
-                if (event.button !== 0) {
-                    return;
-                }
-                event.preventDefault();
-                event.stopPropagation();
-                document.removeEventListener('mousedown', mouseHandler);
-                hideHelp();
-            };
-
-            // Pressing esc will dismiss the popup.
-            const escapeKeyHandler = event => {
-                if (event.key === 'Escape') {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    document.removeEventListener('keydown', escapeKeyHandler, true);
-                    hideHelp();
-                }
-            };
-            document.addEventListener('keydown', escapeKeyHandler, true);
-            document.getElementById('mdbook-help-container')
-                .addEventListener('mousedown', mouseHandler);
-        }
-        function hideHelp() {
-            document.getElementById('mdbook-help-container').style.display = 'none';
-        }
-
-        // Usually needs the Shift key to be pressed
-        switch (e.key) {
-        case '?':
-            e.preventDefault();
-            showHelp();
-            break;
-        }
-
-        // Rest of the keys are only active when the Shift key is not pressed
-        if (e.shiftKey) {
-            return;
-        }
-
         switch (e.key) {
         case 'ArrowRight':
             e.preventDefault();
@@ -763,6 +693,7 @@ aria-label="Show hidden lines"></button>';
 
     clipboardSnippets.on('success', function(e) {
         e.clearSelection();
+        window.amplitude.logEvent('CodeSnippetCopied', { value: e.text });
         showTooltip(e.trigger, 'Copied!');
     });
 
@@ -786,7 +717,7 @@ aria-label="Show hidden lines"></button>';
         let scrollTop = document.scrollingElement.scrollTop;
         let prevScrollTop = scrollTop;
         const minMenuY = -menu.clientHeight - 50;
-        // When the script loads, the page can be at any scroll (e.g. if you refresh it).
+        // When the script loads, the page can be at any scroll (e.g. if you reforesh it).
         menu.style.top = scrollTop + 'px';
         // Same as parseInt(menu.style.top.slice(0, -2), but faster
         let topCache = menu.style.top.slice(0, -2);

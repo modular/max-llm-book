@@ -1,8 +1,10 @@
 """Tests for Step 08: Residual Connections and Layer Normalization"""
 
 import ast
+import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 def test_step_08():
     """Comprehensive validation for Step 08 implementation."""
@@ -86,6 +88,8 @@ def test_step_08():
         if "apply_residual_connection" in str(e):
             results.append("❌ apply_residual_connection function not found")
             results.append("   Hint: Define apply_residual_connection function")
+        else:
+            results.append("❌ Import error: " + str(e))
         print("\n".join(results))
         return
 
@@ -305,4 +309,4 @@ def test_step_08():
 
 
 if __name__ == "__main__":
-    test_step_10()
+    test_step_08()

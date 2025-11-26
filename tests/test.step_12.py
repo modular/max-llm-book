@@ -1,8 +1,10 @@
 """Tests for Step 12: Text Generation"""
 
 import ast
+import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 def test_step_12():
     """Comprehensive validation for Step 12 implementation."""
@@ -67,6 +69,8 @@ def test_step_12():
         if "generate_tokens" in str(e):
             results.append("❌ generate_tokens function not found")
             results.append("   Hint: Define generate_tokens function")
+        else:
+            results.append("❌ Import error: " + str(e))
         print("\n".join(results))
         return
 

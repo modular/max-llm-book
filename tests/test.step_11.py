@@ -1,8 +1,10 @@
 """Tests for Step 11: Language Model Head"""
 
 import ast
+import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 def test_step_11():
     """Comprehensive validation for Step 11 implementation."""

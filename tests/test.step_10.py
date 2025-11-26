@@ -1,8 +1,10 @@
 """Tests for Step 10: Stacking Transformer Blocks"""
 
 import ast
+import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 def test_step_10():
     """Comprehensive validation for Step 10 implementation."""

@@ -10,6 +10,11 @@ Learn to create attention masks to prevent the model from _seeing_ future tokens
 
 In this step you'll implement the `causal_mask()` function. This creates a [mask matrix](https://docs.modular.com/glossary/ai/attention-mask/) that prevents the model from _seeing_ future tokens when predicting the next token. The mask sets attention scores to negative infinity (`-inf`) for future positions. After softmax, these `-inf` values become zero probability, blocking information flow from later tokens.
 
+<figure>
+<img src="./images/causal-masking-light.png" alt="Causal mask matrix showing the lower triangular pattern where each token can only attend to previous tokens" class="light-mode-img" width="530" height="475">
+<img src="./images/causal-masking-dark.png" alt="Causal mask matrix showing the lower triangular pattern where each token can only attend to previous tokens" class="dark-mode-img" width="530" height="475">
+</figure>
+
 GPT-2 generates text one token at a time, left-to-right. During training, causal masking prevents the model from "cheating" by looking ahead at tokens it should be predicting. Without this mask, the model would have access to information it won't have during actual text generation.
 
 ## Understanding the mask pattern

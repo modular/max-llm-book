@@ -450,6 +450,10 @@ class GPT2Config:
 </div>
 <h2 id="implementing-causal-masking"><a class="header" href="#implementing-causal-masking">Implementing causal masking</a></h2>
 <p>In this step you’ll implement the <code>causal_mask()</code> function. This creates a <a href="https://docs.modular.com/glossary/ai/attention-mask/">mask matrix</a> that prevents the model from <em>seeing</em> future tokens when predicting the next token. The mask sets attention scores to negative infinity (<code>-inf</code>) for future positions. After softmax, these <code>-inf</code> values become zero probability, blocking information flow from later tokens.</p>
+<figure>
+<img src="./images/causal-masking-light.png" alt="Causal mask matrix showing the lower triangular pattern where each token can only attend to previous tokens" class="light-mode-img" width="530" height="475">
+<img src="./images/causal-masking-dark.png" alt="Causal mask matrix showing the lower triangular pattern where each token can only attend to previous tokens" class="dark-mode-img" width="530" height="475">
+</figure>
 <p>GPT-2 generates text one token at a time, left-to-right. During training, causal masking prevents the model from “cheating” by looking ahead at tokens it should be predicting. Without this mask, the model would have access to information it won’t have during actual text generation.</p>
 <h2 id="understanding-the-mask-pattern"><a class="header" href="#understanding-the-mask-pattern">Understanding the mask pattern</a></h2>
 <p>The mask creates a lower triangular pattern where each token can only attend to itself and previous tokens:</p>

@@ -6,6 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+
 def test_step_08():
     """Comprehensive validation for Step 08 implementation."""
 
@@ -204,16 +205,21 @@ def test_step_08():
         # Test forward pass
         batch_size = 2
         seq_length = 8
-        test_input = Tensor.randn(
-            batch_size, seq_length, dim, dtype=DType.float32, device=CPU()
+        test_input = Tensor.arange(
+            0,
+            1.0,
+            1 / (batch_size * seq_length * dim),
+            dtype=DType.float32,
+            device=CPU(),
         )
 
+        test_input = test_input.reshape((batch_size, seq_length, dim))
         output = ln(test_input)
         results.append("✅ LayerNorm forward pass executes without errors")
 
         # Check output shape
         expected_shape = (batch_size, seq_length, dim)
-        if output.shape == expected_shape:
+        if tuple(output.shape) == expected_shape:
             results.append(f"✅ LayerNorm output shape is correct: {expected_shape}")
         else:
             results.append(
@@ -247,12 +253,21 @@ def test_step_08():
             results.append("❌ ResidualBlock.ln attribute not found")
 
         # Test residual connection
-        test_residual = Tensor.randn(
-            batch_size, seq_length, dim, dtype=DType.float32, device=CPU()
-        )
-        test_sublayer = Tensor.randn(
-            batch_size, seq_length, dim, dtype=DType.float32, device=CPU()
-        )
+
+        test_residual = Tensor.arange(
+            0,
+            1.0,
+            1 / (batch_size * seq_length * dim),
+            dtype=DType.float32,
+            device=CPU(),
+        ).reshape((batch_size, seq_length, dim))
+        test_sublayer = Tensor.arange(
+            0,
+            0.7,
+            0.7 / (batch_size * seq_length * dim),
+            dtype=DType.float32,
+            device=CPU(),
+        ).reshape((batch_size, seq_length, dim))
 
         residual_output = rb(test_residual, test_sublayer)
         results.append("✅ ResidualBlock forward pass executes without errors")

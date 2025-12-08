@@ -6,6 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+
 def test_step_09():
     """Comprehensive validation for Step 09 implementation."""
 
@@ -41,11 +42,11 @@ def test_step_09():
                 for alias in node.names:
                     if alias.name == "GPT2MLP":
                         has_mlp = True
-            if node.module == "solutions.solution_09":
+            if node.module == "solutions.solution_07":
                 for alias in node.names:
                     if alias.name == "GPT2MultiHeadAttention":
                         has_attention = True
-            if node.module == "solutions.solution_10":
+            if node.module == "solutions.solution_08":
                 for alias in node.names:
                     if alias.name == "LayerNorm":
                         has_layernorm = True
@@ -232,8 +233,8 @@ def test_step_09():
         # Test forward pass
         batch_size = 2
         seq_length = 8
-        test_input = Tensor.randn(
-            batch_size, seq_length, config.n_embd, dtype=DType.float32, device=CPU()
+        test_input = Tensor.ones(
+            (batch_size, seq_length, config.n_embd), dtype=DType.float32, device=CPU()
         )
 
         output = block(test_input)
@@ -241,7 +242,7 @@ def test_step_09():
 
         # Check output shape
         expected_shape = (batch_size, seq_length, config.n_embd)
-        if output.shape == expected_shape:
+        if tuple(output.shape) == expected_shape:
             results.append(f"✅ Output shape is correct: {expected_shape}")
         else:
             results.append(

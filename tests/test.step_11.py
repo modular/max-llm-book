@@ -6,6 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+
 def test_step_11():
     """Comprehensive validation for Step 11 implementation."""
 
@@ -23,7 +24,7 @@ def test_step_11():
     has_linear = "from max.nn.module_v3 import" in source and "Linear" in source
     has_module = "from max.nn.module_v3 import" in source and "Module" in source
     has_config = "from solutions.solution_01 import GPT2Config" in source
-    has_model = "from solutions.solution_12 import GPT2Model" in source
+    has_model = "from solutions.solution_10 import GPT2Model" in source
 
     if has_linear:
         results.append("✅ Linear is correctly imported")
@@ -137,11 +138,8 @@ def test_step_11():
         # Test forward pass
         batch_size = 2
         seq_length = 8
-        test_input = Tensor.randint(
-            0,
-            config.vocab_size,
-            batch_size,
-            seq_length,
+        test_input = Tensor.ones(
+            (batch_size, seq_length),
             dtype=DType.int64,
             device=CPU(),
         )
@@ -151,7 +149,7 @@ def test_step_11():
 
         # Check output shape
         expected_shape = (batch_size, seq_length, config.vocab_size)
-        if output.shape == expected_shape:
+        if tuple(output.shape) == expected_shape:
             results.append(f"✅ Output shape is correct: {expected_shape}")
         else:
             results.append(

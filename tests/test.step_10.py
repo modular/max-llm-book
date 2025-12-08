@@ -6,6 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+
 def test_step_10():
     """Comprehensive validation for Step 10 implementation."""
 
@@ -47,11 +48,11 @@ def test_step_10():
                 for alias in node.names:
                     if alias.name == "GPT2Config":
                         has_config = True
-            if node.module == "solutions.solution_10":
+            if node.module == "solutions.solution_08":
                 for alias in node.names:
                     if alias.name == "LayerNorm":
                         has_layernorm = True
-            if node.module == "solutions.solution_11":
+            if node.module == "solutions.solution_09":
                 for alias in node.names:
                     if alias.name == "GPT2Block":
                         has_block = True
@@ -96,13 +97,13 @@ def test_step_10():
         results.append("✅ LayerNorm is correctly imported")
     else:
         results.append("❌ LayerNorm is not imported")
-        results.append("   Hint: Add 'from solutions.solution_10 import LayerNorm'")
+        results.append("   Hint: Add 'from solutions.solution_08 import LayerNorm'")
 
     if has_block:
         results.append("✅ GPT2Block is correctly imported")
     else:
         results.append("❌ GPT2Block is not imported")
-        results.append("   Hint: Add 'from solutions.solution_11 import GPT2Block'")
+        results.append("   Hint: Add 'from solutions.solution_09 import GPT2Block'")
 
     # Phase 2: Structure checks
     try:
@@ -265,13 +266,18 @@ def test_step_10():
         batch_size = 2
         seq_length = 8
         # Create random token IDs
-        test_input = Tensor.randint(
+        test_len = batch_size * seq_length
+        test_input = Tensor.arange(
             0,
             config.vocab_size,
-            batch_size,
-            seq_length,
+            1,
             dtype=DType.int64,
             device=CPU(),
+        )[:test_len].reshape(
+            (
+                batch_size,
+                seq_length,
+            )
         )
 
         output = model(test_input)
@@ -279,7 +285,7 @@ def test_step_10():
 
         # Check output shape
         expected_shape = (batch_size, seq_length, config.n_embd)
-        if output.shape == expected_shape:
+        if tuple(output.shape) == expected_shape:
             results.append(f"✅ Output shape is correct: {expected_shape}")
         else:
             results.append(

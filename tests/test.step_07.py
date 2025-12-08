@@ -6,6 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+
 def test_step_07():
     """Comprehensive validation for Step 07 implementation."""
 
@@ -245,8 +246,8 @@ def test_step_07():
         # Test forward pass
         batch_size = 2
         seq_length = 8
-        test_input = Tensor.randn(
-            batch_size, seq_length, config.n_embd, dtype=DType.float32, device=CPU()
+        test_input = Tensor.ones(
+            (batch_size, seq_length, config.n_embd), dtype=DType.float32, device=CPU()
         )
 
         output = mha(test_input)
@@ -254,7 +255,7 @@ def test_step_07():
 
         # Check output shape
         expected_shape = (batch_size, seq_length, config.n_embd)
-        if output.shape == expected_shape:
+        if tuple(output.shape) == expected_shape:
             results.append(f"✅ Output shape is correct: {expected_shape}")
         else:
             results.append(
@@ -269,12 +270,12 @@ def test_step_07():
             results.append("❌ Output is all zeros")
 
         # Test _split_heads
-        test_tensor = Tensor.randn(
-            batch_size, seq_length, config.n_embd, dtype=DType.float32, device=CPU()
+        test_tensor = Tensor.ones(
+            (batch_size, seq_length, config.n_embd), dtype=DType.float32, device=CPU()
         )
         split_output = mha._split_heads(test_tensor, config.n_head, mha.head_dim)
         expected_split_shape = (batch_size, config.n_head, seq_length, mha.head_dim)
-        if split_output.shape == expected_split_shape:
+        if tuple(split_output.shape) == expected_split_shape:
             results.append(
                 f"✅ _split_heads output shape is correct: {expected_split_shape}"
             )
@@ -286,7 +287,7 @@ def test_step_07():
         # Test _merge_heads
         merge_output = mha._merge_heads(split_output, config.n_head, mha.head_dim)
         expected_merge_shape = (batch_size, seq_length, config.n_embd)
-        if merge_output.shape == expected_merge_shape:
+        if tuple(merge_output.shape) == expected_merge_shape:
             results.append(
                 f"✅ _merge_heads output shape is correct: {expected_merge_shape}"
             )

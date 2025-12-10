@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 """
 Step 01: Model Configuration
 
@@ -15,7 +17,7 @@ Run: pixi run s01
 
 # 2. Add the Python @dataclass decorator to the GPT2Config class
 
-
+@dataclass
 class GPT2Config:
     """GPT-2 configuration matching HuggingFace.
 
@@ -32,10 +34,10 @@ class GPT2Config:
     # 3a. Run `pixi run huggingface` to access the model parameters from the Hugging Face `transformers` library
     # 3b. Alternately, read the values from GPT-2 model card: https://huggingface.co/openai-community/gpt2/blob/main/config.json
     # 4. Replace the None of the GPT2Config properties with the correct values
-    vocab_size: int = None
-    n_positions: int = None
-    n_embd: int = None
-    n_layer: int = None
-    n_head: int = None
-    n_inner: int = None  # Equal to 4 * n_embd
-    layer_norm_epsilon: float = None
+    vocab_size: int = 50257
+    n_positions: int = 1024
+    n_embd: int = 768
+    n_layer: int = 12
+    n_head: int = 12
+    n_inner: int = 3072  # Equal to 4 * n_embd
+    layer_norm_epsilon: float = 1e-05

@@ -57,6 +57,11 @@ The test output tells you exactly what needs to be fixed, making it easy to
 iterate until your implementation is correct. Once all checks pass, you're ready
 to move on to the next step.
 
+## A note on compile times
+
+Compile times are actively being improved. As MAX continues to evolve, you
+should expect performance improvements alongside upcoming Modular releases.
+
 ## Prerequisites
 
 This tutorial assumes:

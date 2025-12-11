@@ -62,6 +62,22 @@ to move on to the next step.
 Compile times are actively being improved. As MAX continues to evolve, you
 should expect performance improvements alongside upcoming Modular releases.
 
+## Using code assistants
+
+Code assistants like [Claude](https://claude.ai), [Cursor](https://cursor.sh),
+or similar tools can help you navigate this tutorial. They're particularly
+useful for:
+
+- **Explaining concepts**: Ask about transformer architecture, attention
+  mechanisms, or any step in the tutorial
+- **Understanding the MAX API**: Get clarification on MAX Framework methods,
+  parameters, and patterns
+- **Debugging test failures**: Paste test output to understand what's missing
+- **Exploring alternatives**: Ask "why this approach?" to deepen your understanding
+
+If you're using Claude, see [claude.md](./claude.md) for custom instructions
+tailored to this tutorial.
+
 ## Prerequisites
 
 This tutorial assumes:

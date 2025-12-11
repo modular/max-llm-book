@@ -236,7 +236,7 @@ CUDA, convert to ONNX for deployment, then use separate serving tools. Each
 handoff introduces complexity.</p>
 <p>MAX Framework takes a different approach: everything happens in one unified
 system. You write code to define your model, load weights, and run inference,
-all in MAX’s Python API. The MAX Platform handles optimization automatically and
+all in MAX’s Python API. The MAX Framework handles optimization automatically and
 you can even use MAX Serve to manage your deployment.</p>
 <p>When you build GPT-2 in this guide, you’ll load pretrained weights from
 Hugging Face, implement the architecture, and run text generation, all in the same
@@ -276,6 +276,14 @@ useful independently while building toward a complete implementation.</p>
 </div>
 <p>By the end, you’ll have a complete GPT-2 implementation and practical experience
 with MAX’s Python API. These are skills you can immediately apply to your own projects.</p>
+<blockquote>
+<p><strong>Note on training vs. inference</strong>: While some steps reference concepts from
+training (like layer normalization for “stabilizing activations”), this
+tutorial focuses on inference using pretrained weights from Hugging Face.
+Training is not in scope, but we include these architectural details for
+learning purposes and completeness—understanding why each layer exists helps
+you reason about model behavior and adapt architectures for your own needs.</p>
+</blockquote>
 <p>To install the puzzles, follow the steps in
 <a href="./setup.html">Setup</a>.</p>
 

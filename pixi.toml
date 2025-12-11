@@ -31,7 +31,7 @@ test-all = "python tests/test.step_01.py && python tests/test.step_02.py && pyth
 fmt = "ruff format ."
 
 [dependencies]
-modular = "25.7.*"
+modular = ">=26.1.0.dev2025121105,<27"
 transformers = ">=4.57.0,<5"
 pytorch = ">=2.8.0,<3"
 numpy = ">=2.3.3,<3"

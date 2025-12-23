@@ -56,7 +56,7 @@ In the `__init__` method, create two learnable parameters:
 
 Store the epsilon value as `self.eps` for numerical stability.
 
-In the `forward` method, apply layer normalization with `F.layer_norm(x, gamma=self.weight, beta=self.bias, epsilon=self.eps)`. This computes the normalization and applies the learned parameters in one operation.
+In the `__call__` method, apply layer normalization with `F.layer_norm(x, gamma=self.weight, beta=self.bias, epsilon=self.eps)`. This computes the normalization and applies the learned parameters in one operation.
 
 **Implementation** (`step_03.py`):
 

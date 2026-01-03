@@ -247,7 +247,7 @@ def test_step_07():
         batch_size = 2
         seq_length = 8
         test_input = Tensor.ones(
-            (batch_size, seq_length, config.n_embd), dtype=DType.float32, device=CPU()
+            (batch_size, seq_length, config.n_embd), dtype=DType.float32
         )
 
         output = mha(test_input)
@@ -271,7 +271,7 @@ def test_step_07():
 
         # Test _split_heads
         test_tensor = Tensor.ones(
-            (batch_size, seq_length, config.n_embd), dtype=DType.float32, device=CPU()
+            (batch_size, seq_length, config.n_embd), dtype=DType.float32
         )
         split_output = mha._split_heads(test_tensor, config.n_head, mha.head_dim)
         expected_split_shape = (batch_size, config.n_head, seq_length, mha.head_dim)

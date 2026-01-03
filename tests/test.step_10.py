@@ -272,7 +272,6 @@ def test_step_10():
             config.vocab_size,
             1,
             dtype=DType.int64,
-            device=CPU(),
         )[:test_len].reshape(
             (
                 batch_size,
@@ -293,7 +292,7 @@ def test_step_10():
             )
 
         # Check output contains non-zero values
-        output_np = np.from_dlpack(output.to(CPU()))
+        output_np = np.from_dlpack(output.to(CPU()).cast(DType.float32))
         if not np.allclose(output_np, 0):
             results.append("✅ Output contains non-zero values")
         else:

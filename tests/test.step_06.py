@@ -146,7 +146,7 @@ def test_step_06():
         # Test forward pass with position indices
         # Create position indices for a sequence
         seq_length = 8
-        test_positions = Tensor.arange(seq_length, dtype=DType.int64, device=CPU())
+        test_positions = Tensor.arange(seq_length, dtype=DType.int64)
 
         output = pos_embeddings(test_positions)
         results.append("✅ GPT2PositionEmbeddings forward pass executes without errors")
@@ -163,7 +163,7 @@ def test_step_06():
         # Verify output is not all zeros (embeddings should have values)
         import numpy as np
 
-        output_np = np.from_dlpack(output.to(CPU()))
+        output_np = np.from_dlpack(output.to(CPU()).cast(DType.float32))
         if not np.allclose(output_np, 0):
             results.append("✅ Output contains non-zero embedding values")
         else:

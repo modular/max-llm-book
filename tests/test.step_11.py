@@ -141,7 +141,6 @@ def test_step_11():
         test_input = Tensor.ones(
             (batch_size, seq_length),
             dtype=DType.int64,
-            device=CPU(),
         )
 
         output = model(test_input)
@@ -156,7 +155,7 @@ def test_step_11():
                 f"❌ Output shape incorrect: expected {expected_shape}, got {output.shape}"
             )
 
-        output_np = np.from_dlpack(output.to(CPU()))
+        output_np = np.from_dlpack(output.to(CPU()).cast(DType.float32))
         if not np.allclose(output_np, 0):
             results.append("✅ Output contains non-zero values")
         else:

@@ -134,9 +134,7 @@ def test_step_05():
         # Test forward pass with sample token IDs
         # Create a small batch of token IDs
         batch_size, seq_length = 2, 4
-        test_input = Tensor.constant(
-            [[1, 2, 3, 4], [5, 6, 7, 8]], dtype=DType.int64, device=CPU()
-        )
+        test_input = Tensor.constant([[1, 2, 3, 4], [5, 6, 7, 8]], dtype=DType.int64)
 
         output = embeddings(test_input)
         results.append("✅ GPT2Embeddings forward pass executes without errors")
@@ -153,7 +151,7 @@ def test_step_05():
         # Verify output is not all zeros (embeddings should have values)
         import numpy as np
 
-        output_np = np.from_dlpack(output.to(CPU()))
+        output_np = np.from_dlpack(output.to(CPU()).cast(DType.float32))
         if not np.allclose(output_np, 0):
             results.append("✅ Output contains non-zero embedding values")
         else:

@@ -233,9 +233,7 @@ def test_step_09():
         # Test forward pass
         batch_size = 2
         seq_length = 8
-        test_input = Tensor.ones(
-            (batch_size, seq_length, config.n_embd), dtype=DType.float32, device=CPU()
-        )
+        test_input = Tensor.ones((batch_size, seq_length, config.n_embd))
 
         output = block(test_input)
         results.append("✅ GPT2Block forward pass executes without errors")
@@ -250,7 +248,7 @@ def test_step_09():
             )
 
         # Check output contains non-zero values
-        output_np = np.from_dlpack(output.to(CPU()))
+        output_np = np.from_dlpack(output.to(CPU()).cast(DType.float32))
         if not np.allclose(output_np, 0):
             results.append("✅ Output contains non-zero values")
         else:

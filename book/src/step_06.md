@@ -1,88 +1,113 @@
-# Step 06: Position embeddings
+# Transformer block
 
 <div class="note">
 
-Learn to create position embeddings that encode the order of tokens in a sequence.
+Learn to combine attention, MLP, layer normalization, and residual connections
+into a complete transformer block.
 
 </div>
 
-## Implementing position embeddings
+In this step, you'll build the `GPT2Block` class. This is a fundamental
+repeating unit of GPT-2. Each block combines multi-head attention and a
+feed-forward network, with layer normalization and residual connections around
+each.
 
-In this step you'll create position embeddings to encode where each token
-appears in the sequence. While token embeddings tell the model "what" each token
-is, position embeddings tell it "where" the token is located. These position
-vectors are added to token embeddings before entering the transformer blocks.
+The block processes input through two sequential operations. First, it applies
+layer norm, runs multi-head attention, then adds the result back to the input
+(residual connection). Second, it applies another layer norm, runs the MLP, and
+adds that result back. This pattern is `x = x + sublayer(layer_norm(x))`, called
+pre-normalization.
 
-Transformers process all positions in parallel through attention, unlike
-Recurrent Neural Networks (RNNs) that process sequentially. This parallelism
-enables faster training but loses positional information. Position embeddings
-restore this information so the model can distinguish "dog bites man" from "man
-bites dog".
+GPT-2 uses pre-norm because it stabilizes training in deep networks. By
+normalizing before each sublayer instead of after, gradients flow more smoothly
+through the network's 12 stacked blocks.
 
-## Understanding position embeddings
+## Understanding the components
 
-Position embeddings work like token embeddings: a lookup table with shape
-[1024, 768] where 1024 is the maximum sequence length. Position 0 gets the first
-row, position 1 gets the second row, and so on.
+The transformer block consists of four components, applied in this order:
 
-GPT-2 uses learned position embeddings, meaning these vectors are initialized
-randomly and trained alongside the model. This differs from the original
-Transformer which used fixed sinusoidal position encodings. Learned embeddings
-let the model discover optimal position representations for its specific task,
-though they cannot generalize beyond the maximum length seen during training
-(1024 tokens).
+**First layer norm (`ln_1`)**: Normalizes the input before attention. Uses epsilon=1e-5 for numerical stability.
 
-**Key parameters**:
-- Maximum sequence length: 1,024 positions
-- Embedding dimension: 768 for GPT-2 base
-- Shape: [n_positions, n_embd]
-- Layer name: `wpe` (word position embeddings)
+**Multi-head attention (`attn`)**: The self-attention mechanism from Step 07. Lets each position attend to all previous positions.
 
-<div class="note">
+**Second layer norm (`ln_2`)**: Normalizes before the MLP. Same configuration as the first.
 
-<div class="title">MAX operations</div>
+**Feed-forward network (`mlp`)**: The position-wise MLP from Step 04. Expands to 3,072 dimensions internally (4× the embedding size), then projects back to 768.
 
-You'll use the following MAX operations to complete this task:
+The block maintains a constant 768-dimensional representation throughout. Input
+shape `[batch, seq_length, 768]` stays the same after each sublayer, which is
+essential for stacking 12 blocks together.
 
-**Position indices**:
-- [`Tensor.arange(seq_length, dtype, device)`](https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.arange): Creates sequence positions [0, 1, 2, ..., seq_length-1]
+## Understanding the flow
 
-**Embedding layer**:
-- [`Embedding(num_embeddings, dim)`](https://docs.modular.com/max/api/python/nn/module_v3#max.nn.module_v3.Embedding): Same class as token embeddings, but for positions
+Each sublayer follows the pre-norm pattern:
 
-</div>
+1. Save the input as `residual`
+2. Apply layer normalization to the input
+3. Process through the sublayer (attention or MLP)
+4. Add the original `residual` back to the output
 
-## Implementing the class
+This happens twice per block, once for attention and once for the MLP. The
+residual connections let gradients flow directly through the network, preventing
+vanishing gradients in deep models.
 
-You'll implement the position embeddings in several steps:
+Component names (`ln_1`, `attn`, `ln_2`, `mlp`) match Hugging Face's GPT-2
+implementation. This matters for loading pretrained weights in later steps.
 
-1. **Import required modules**: Import `Tensor`, `Embedding`, and `Module` from
-   MAX libraries.
+## Implementing the block
 
-2. **Create position embedding layer**: Use
-   `Embedding(config.n_positions, dim=config.n_embd)` and store in `self.wpe`.
+You'll create the `GPT2Block` class by composing the components from earlier
+steps. The block takes `GPT2Config` and creates four sublayers, then applies
+them in sequence with residual connections.
 
-3. **Implement forward pass**: Call `self.wpe(position_ids)` to lookup position
-   embeddings. Input shape: [seq_length] or [batch, seq_length]. Output shape:
-   [seq_length, n_embd] or [batch, seq_length, n_embd].
+First, import the required modules. You'll need `Module` from MAX, plus the
+previously implemented components: `GPT2Config`, `GPT2MLP`,
+`GPT2MultiHeadAttention`, and `LayerNorm`.
 
-**Implementation** (`step_06.py`):
+In the `__init__` method, create the four sublayers:
+
+- `ln_1`: `LayerNorm(config.n_embd, eps=config.layer_norm_epsilon)`
+- `attn`: `GPT2MultiHeadAttention(config)`
+- `ln_2`: `LayerNorm(config.n_embd, eps=config.layer_norm_epsilon)`
+- `mlp`: `GPT2MLP(4 * config.n_embd, config)`
+
+The MLP uses `4 * config.n_embd` (3,072 dimensions) as its inner dimension, following the standard transformer ratio.
+
+In the `forward` method, implement the two sublayer blocks:
+
+**Attention block**:
+
+1. Save `residual = hidden_states`
+2. Normalize: `hidden_states = self.ln_1(hidden_states)`
+3. Apply attention: `attn_output = self.attn(hidden_states)`
+4. Add back: `hidden_states = attn_output + residual`
+
+**MLP block**:
+
+1. Save `residual = hidden_states`
+2. Normalize: `hidden_states = self.ln_2(hidden_states)`
+3. Apply MLP: `feed_forward_hidden_states = self.mlp(hidden_states)`
+4. Add back: `hidden_states = residual + feed_forward_hidden_states`
+
+Finally, return `hidden_states`.
+
+**Implementation** (`step_09.py`):
 
 ```python
-{{#include ../../steps/step_06.py}}
+{{#include ../../steps/step_09.py}}
 ```
 
 ### Validation
 
-Run `pixi run s06` to verify your implementation.
+Run `pixi run s09` to verify your implementation.
 
 <details>
 <summary>Show solution</summary>
 
 ```python
-{{#include ../../solutions/solution_06.py}}
+{{#include ../../solutions/solution_09.py}}
 ```
 
 </details>
 
-**Next**: In [Step 07](./step_07.md), you'll implement multi-head attention.
+**Next**: In [Step 10](./step_10.md), you'll stack 12 transformer blocks together to create the complete GPT-2 model architecture.

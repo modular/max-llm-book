@@ -1,12 +1,10 @@
-# Step 01: Model configuration
+# Model configuration
 
 <div class="note">
 
 Learn to define the GPT-2 model architecture parameters using configuration classes.
 
 </div>
-
-## Defining the model architecture
 
 Before you can implement GPT-2, you need to define its architecture: the dimensions, layer counts, and structural parameters that determine how the model processes information.
 
@@ -16,7 +14,7 @@ OpenAI trained the original GPT-2 model with specific parameters that you can se
 
 ## Understanding the parameters
 
-Looking at the [config.json file](https://huggingface.co/openai-community/gpt2/blob/main/config.json) file, we can see some key information about the model. Each parameter controls a different aspect of the model's architecture: 
+Looking at the [config.json file](https://huggingface.co/openai-community/gpt2/blob/main/config.json) file, we can see some key information about the model. Each parameter controls a different aspect of the model's architecture:
 
 - `vocab_size`: Size of the token vocabulary (default: 50,257). This seemingly odd number is actually 50,000 Byte Pair Encoding (BPE) tokens + 256 byte-level tokens (fallback for rare characters) + 1 special token.
 - `n_positions`: Maximum sequence length, also called the context window (default: 1,024). Longer sequences require quadratic memory in attention.

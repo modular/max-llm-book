@@ -1,31 +1,27 @@
 # Summary
 
 - [Introduction](./introduction.md)
-- [Setup](./setup.md)
 
-## Foundations
+# 1: Get started
 
+- [Project setup](./setup.md)
 - [Model configuration](./step_01.md)
-- [Causal masking](./step_02.md)
-- [Layer normalization](./step_03.md)
-- [Feed-forward network](./step_04.md)
 
-## Embeddings
+# 2: Build the transformer block
 
-- [Token embeddings](./step_05.md)
-- [Position embeddings](./step_06.md)
+- [Feed-forward network](./step_02.md)
+- [Causal masking](./step_03.md)
+- [Multi-head attention](./step_04.md)
+- [Layer normalization](./step_05.md)
+- [Transformer block](./step_06.md)
 
-## Attention
+# 3: Assemble the model
 
-- [Multi-head attention](./step_07.md)
+- [Input embeddings](./step_07.md)
+- [Stacking transformer blocks](./step_08.md)
+- [Language model head](./step_09.md)
 
-## Composition
+# 4: Generate text
 
-- [Residual connections and layer normalization](./step_08.md)
-- [Transformer block](./step_09.md)
-
-## Complete model
-
-- [Stacking transformer blocks](./step_10.md)
-- [Language model head](./step_11.md)
-- [Text generation](./step_12.md)
+- [Load the weights]()
+- [Text generation](./step_11.md)

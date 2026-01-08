@@ -1,112 +1,113 @@
-# Step 09: Transformer block
+# Language model head
 
 <div class="note">
 
-Learn to combine attention, MLP, layer normalization, and residual connections
-into a complete transformer block.
+Learn to add the final linear projection layer that converts hidden states to
+vocabulary logits for next-token prediction.
 
 </div>
 
-## Building the transformer block
+In this step, you'll create the `MaxGPT2LMHeadModel` - the complete language
+model that can predict next tokens. This class wraps the transformer from Step
+10 and adds a final linear layer that projects 768-dimensional hidden states to
+50,257-dimensional vocabulary logits.
 
-In this step, you'll build the `GPT2Block` class. This is a fundamental
-repeating unit of GPT-2. Each block combines multi-head attention and a
-feed-forward network, with layer normalization and residual connections around
-each.
+The language model head is a single linear layer without bias. For each position
+in the sequence, it outputs a score for every possible next token. Higher scores
+indicate the model thinks that token is more likely to come next.
 
-The block processes input through two sequential operations. First, it applies
-layer norm, runs multi-head attention, then adds the result back to the input
-(residual connection). Second, it applies another layer norm, runs the MLP, and
-adds that result back. This pattern is `x = x + sublayer(layer_norm(x))`, called
-pre-normalization.
+At 768 × 50,257 = 38.6M parameters, the LM head is the single largest component
+in GPT-2, representing about 33% of the model's 117M total parameters. This is
+larger than all 12 transformer blocks combined.
 
-GPT-2 uses pre-norm because it stabilizes training in deep networks. By
-normalizing before each sublayer instead of after, gradients flow more smoothly
-through the network's 12 stacked blocks.
+## Understanding the projection
 
-## Understanding the components
+The language model head performs a simple linear projection using MAX's
+[`Linear`](https://docs.modular.com/max/api/python/nn/module_v3#max.nn.module_v3.Linear)
+layer. It maps each 768-dimensional hidden state to 50,257 scores, one per
+vocabulary token.
 
-The transformer block consists of four components, applied in this order:
+The layer uses `bias=False`, meaning it only has weights and no bias vector.
+This saves 50,257 parameters (about 0.4% of model size). The bias provides
+little benefit because the layer normalization before the LM head already
+centers the activations. Adding a constant bias to all logits wouldn't change
+the relative probabilities after softmax.
 
-**First layer norm (`ln_1`)**: Normalizes the input before attention. Uses epsilon=1e-5 for numerical stability.
+The output is called "logits," which are raw scores before applying softmax.
+Logits can be any real number. During text generation (Step 12), you'll convert
+logits to probabilities with softmax. Working with logits directly enables
+techniques like temperature scaling and top-k sampling.
 
-**Multi-head attention (`attn`)**: The self-attention mechanism from Step 07. Lets each position attend to all previous positions.
+## Understanding the complete model
 
-**Second layer norm (`ln_2`)**: Normalizes before the MLP. Same configuration as the first.
+With the LM head added, you now have the complete GPT-2 architecture:
 
-**Feed-forward network (`mlp`)**: The position-wise MLP from Step 04. Expands to 3,072 dimensions internally (4× the embedding size), then projects back to 768.
+1. **Input**: Token IDs `[batch, seq_length]`
+2. **Embeddings**: Token + position `[batch, seq_length, 768]`
+3. **Transformer blocks**: 12 blocks process the embeddings `[batch, seq_length, 768]`
+4. **Final layer norm**: Normalizes the output `[batch, seq_length, 768]`
+5. **LM head**: Projects to vocabulary `[batch, seq_length, 50257]`
+6. **Output**: Logits `[batch, seq_length, 50257]`
 
-The block maintains a constant 768-dimensional representation throughout. Input
-shape `[batch, seq_length, 768]` stays the same after each sublayer, which is
-essential for stacking 12 blocks together.
+Each position gets independent logits over the vocabulary. To predict the next
+token after position i, you look at the logits at position i. The highest
+scoring token is the model's top prediction.
 
-## Understanding the flow
+<div class="note">
 
-Each sublayer follows the pre-norm pattern:
+<div class="title">MAX operations</div>
 
-1. Save the input as `residual`
-2. Apply layer normalization to the input
-3. Process through the sublayer (attention or MLP)
-4. Add the original `residual` back to the output
+You'll use the following MAX operations to complete this task:
 
-This happens twice per block, once for attention and once for the MLP. The
-residual connections let gradients flow directly through the network, preventing
-vanishing gradients in deep models.
+**Linear layer**:
 
-Component names (`ln_1`, `attn`, `ln_2`, `mlp`) match Hugging Face's GPT-2
-implementation. This matters for loading pretrained weights in later steps.
+- [`Linear(in_features, out_features, bias=False)`](https://docs.modular.com/max/api/python/nn/module_v3#max.nn.module_v3.Linear): Projects hidden states to vocabulary logits
 
-## Implementing the block
+</div>
 
-You'll create the `GPT2Block` class by composing the components from earlier
-steps. The block takes `GPT2Config` and creates four sublayers, then applies
-them in sequence with residual connections.
+## Implementing the language model
 
-First, import the required modules. You'll need `Module` from MAX, plus the
-previously implemented components: `GPT2Config`, `GPT2MLP`,
-`GPT2MultiHeadAttention`, and `LayerNorm`.
+You'll create the `MaxGPT2LMHeadModel` class that wraps the transformer with a
+language modeling head. The implementation is straightforward, with just two
+components and a simple forward pass.
 
-In the `__init__` method, create the four sublayers:
-- `ln_1`: `LayerNorm(config.n_embd, eps=config.layer_norm_epsilon)`
-- `attn`: `GPT2MultiHeadAttention(config)`
-- `ln_2`: `LayerNorm(config.n_embd, eps=config.layer_norm_epsilon)`
-- `mlp`: `GPT2MLP(4 * config.n_embd, config)`
+First, import the required modules. You'll need `Linear` and `Module` from MAX,
+plus the previously implemented `GPT2Config` and `GPT2Model`.
 
-The MLP uses `4 * config.n_embd` (3,072 dimensions) as its inner dimension, following the standard transformer ratio.
+In the `__init__` method, create two components:
 
-In the `forward` method, implement the two sublayer blocks:
+- Transformer: `GPT2Model(config)` stored as `self.transformer`
+- LM head: `Linear(config.n_embd, config.vocab_size, bias=False)` stored as `self.lm_head`
 
-**Attention block**:
-1. Save `residual = hidden_states`
-2. Normalize: `hidden_states = self.ln_1(hidden_states)`
-3. Apply attention: `attn_output = self.attn(hidden_states)`
-4. Add back: `hidden_states = attn_output + residual`
+Note the `bias=False` parameter, which creates a linear layer without bias
+terms.
 
-**MLP block**:
-1. Save `residual = hidden_states`
-2. Normalize: `hidden_states = self.ln_2(hidden_states)`
-3. Apply MLP: `feed_forward_hidden_states = self.mlp(hidden_states)`
-4. Add back: `hidden_states = residual + feed_forward_hidden_states`
+In the `forward` method, implement a simple two-step process:
 
-Finally, return `hidden_states`.
+1. Get hidden states from the transformer: `hidden_states = self.transformer(input_ids)`
+2. Project to vocabulary logits: `logits = self.lm_head(hidden_states)`
+3. Return `logits`
 
-**Implementation** (`step_09.py`):
+That's it. The model takes token IDs and returns logits. In the next step, you'll use these logits to generate text.
+
+**Implementation** (`step_11.py`):
 
 ```python
-{{#include ../../steps/step_09.py}}
+{{#include ../../steps/step_11.py}}
 ```
 
 ### Validation
 
-Run `pixi run s09` to verify your implementation.
+Run `pixi run s11` to verify your implementation.
 
 <details>
 <summary>Show solution</summary>
 
 ```python
-{{#include ../../solutions/solution_09.py}}
+{{#include ../../solutions/solution_11.py}}
 ```
 
 </details>
 
-**Next**: In [Step 10](./step_10.md), you'll stack 12 transformer blocks together to create the complete GPT-2 model architecture.
+**Next**: In [Step 12](./step_12.md), you'll implement text generation using
+sampling and temperature control to generate coherent text autoregressively.

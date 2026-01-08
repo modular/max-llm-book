@@ -1,59 +1,40 @@
-# Step 11: Language model head
+# Text generation
 
 <div class="note">
 
-Learn to add the final linear projection layer that converts hidden states to
-vocabulary logits for next-token prediction.
+Learn to implement autoregressive text generation with sampling and temperature control.
 
 </div>
 
-## Adding the language model head
+In this final step, you'll implement the generation loop that produces text one token at a time. The model predicts the next token, appends it to the sequence, and repeats until reaching the desired length.
 
-In this step, you'll create the `MaxGPT2LMHeadModel` - the complete language
-model that can predict next tokens. This class wraps the transformer from Step
-10 and adds a final linear layer that projects 768-dimensional hidden states to
-50,257-dimensional vocabulary logits.
+Start with a prompt like "Hello world" (tokens `[15496, 995]`). The model predicts the next token, giving you `[15496, 995, 318]` ("Hello world is"). It predicts again, producing `[15496, 995, 318, 257]` ("Hello world is a"). This process continues, with each prediction feeding back as input for the next.
 
-The language model head is a single linear layer without bias. For each position
-in the sequence, it outputs a score for every possible next token. Higher scores
-indicate the model thinks that token is more likely to come next.
+You'll implement two generation strategies: greedy decoding (always pick the highest-scoring token) and sampling (randomly choose according to probabilities). You'll also add temperature control to adjust how random or focused the generation is.
 
-At 768 × 50,257 = 38.6M parameters, the LM head is the single largest component
-in GPT-2, representing about 33% of the model's 117M total parameters. This is
-larger than all 12 transformer blocks combined.
+## Understanding the generation loop
 
-## Understanding the projection
+The generation loop is simple: run the model, extract the next token prediction, append it to the sequence, repeat. Each iteration requires a full forward pass through all 12 transformer blocks.
 
-The language model head performs a simple linear projection using MAX's
-[`Linear`](https://docs.modular.com/max/api/python/nn/module_v3#max.nn.module_v3.Linear)
-layer. It maps each 768-dimensional hidden state to 50,257 scores, one per
-vocabulary token.
+The model outputs logits with shape `[batch, seq_length, vocab_size]`. Since you only care about predicting the next token, extract the last position: `logits[0, -1, :]`. This gives you a vector of 50,257 scores, one per vocabulary token.
 
-The layer uses `bias=False`, meaning it only has weights and no bias vector.
-This saves 50,257 parameters (about 0.4% of model size). The bias provides
-little benefit because the layer normalization before the LM head already
-centers the activations. Adding a constant bias to all logits wouldn't change
-the relative probabilities after softmax.
+These scores are logits (unnormalized), not probabilities. To convert them to probabilities, apply softmax. Then you can either pick the highest-probability token (greedy) or sample from the distribution (random).
 
-The output is called "logits," which are raw scores before applying softmax.
-Logits can be any real number. During text generation (Step 12), you'll convert
-logits to probabilities with softmax. Working with logits directly enables
-techniques like temperature scaling and top-k sampling.
+## Understanding temperature control
 
-## Understanding the complete model
+Temperature scaling adjusts how random the generation is using the formula `scaled_logits = logits / temperature`.
 
-With the LM head added, you now have the complete GPT-2 architecture:
+With temperature 1.0, you use the original distribution. With temperature 0.7, you sharpen the distribution, and high-probability tokens become even more likely, making generation more focused and deterministic. With temperature 1.2, you flatten the distribution, and lower-probability tokens get more chances, making generation more diverse and creative.
 
-1. **Input**: Token IDs `[batch, seq_length]`
-2. **Embeddings**: Token + position `[batch, seq_length, 768]`
-3. **Transformer blocks**: 12 blocks process the embeddings `[batch, seq_length, 768]`
-4. **Final layer norm**: Normalizes the output `[batch, seq_length, 768]`
-5. **LM head**: Projects to vocabulary `[batch, seq_length, 50257]`
-6. **Output**: Logits `[batch, seq_length, 50257]`
+Temperature is applied before softmax. Dividing by a value less than 1 makes large logits even larger (sharpening), while dividing by a value greater than 1 reduces the differences between logits (flattening).
 
-Each position gets independent logits over the vocabulary. To predict the next
-token after position i, you look at the logits at position i. The highest
-scoring token is the model's top prediction.
+## Understanding sampling vs greedy
+
+Greedy decoding always picks the highest-probability token using [`F.argmax`](https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.argmax). It's fast, deterministic, and simple, but often produces repetitive text because the model keeps choosing the safest option.
+
+Sampling randomly selects tokens according to their probabilities. Convert logits to probabilities with `F.softmax`, transfer to CPU, convert to NumPy with `np.from_dlpack`, then sample with `np.random.choice`. You use NumPy because MAX doesn't have built-in sampling yet.
+
+Most practical generation uses sampling with temperature control. This balances creativity with coherence, as the model can explore different possibilities while still favoring high-quality continuations.
 
 <div class="note">
 
@@ -61,52 +42,109 @@ scoring token is the model's top prediction.
 
 You'll use the following MAX operations to complete this task:
 
-**Linear layer**:
-- [`Linear(in_features, out_features, bias=False)`](https://docs.modular.com/max/api/python/nn/module_v3#max.nn.module_v3.Linear): Projects hidden states to vocabulary logits
+**Probability operations**:
+
+- [`F.softmax(logits)`](https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.softmax): Converts logits to probabilities
+- [`F.argmax(logits)`](https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.argmax): Selects highest-probability token (greedy)
+
+**Sequence building**:
+
+- [`F.concat([seq, new_token], axis=1)`](https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.concat): Appends token to sequence
+- [`Tensor.constant(value, dtype, device)`](https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.constant): Creates scalar tensors
+
+**NumPy interop**:
+
+- `probs.to(CPU())`: Transfers tensor to CPU
+- `np.from_dlpack(probs)`: Converts MAX tensor to NumPy for sampling
 
 </div>
 
-## Implementing the language model
+## Implementing text generation
 
-You'll create the `MaxGPT2LMHeadModel` class that wraps the transformer with a
-language modeling head. The implementation is straightforward, with just two
-components and a simple forward pass.
+You'll create two functions: `generate_next_token` that predicts a single token, and `generate` that loops to produce full sequences.
 
-First, import the required modules. You'll need `Linear` and `Module` from MAX,
-plus the previously implemented `GPT2Config` and `GPT2Model`.
+First, import the required modules. You'll need `numpy` for sampling, `CPU` from MAX's driver, `DType` for type constants, `functional as F` for operations like softmax and argmax, and `Tensor` for creating tensors.
 
-In the `__init__` method, create two components:
-- Transformer: `GPT2Model(config)` stored as `self.transformer`
-- LM head: `Linear(config.n_embd, config.vocab_size, bias=False)` stored as `self.lm_head`
+In `generate_next_token`, implement the prediction logic:
 
-Note the `bias=False` parameter, which creates a linear layer without bias
-terms.
+1. Run the model to get logits: `logits = model(input_ids)`
+2. Extract the last position (next token prediction): `next_token_logits = logits[0, -1, :]`
+3. If using temperature, scale the logits by dividing by the temperature tensor
+4. For sampling: convert to probabilities with `F.softmax`, transfer to CPU, convert to NumPy with `np.from_dlpack`, sample with `np.random.choice`, then convert back to a MAX tensor
+5. For greedy: use `F.argmax` to select the highest-scoring token
 
-In the `forward` method, implement a simple two-step process:
-1. Get hidden states from the transformer: `hidden_states = self.transformer(input_ids)`
-2. Project to vocabulary logits: `logits = self.lm_head(hidden_states)`
-3. Return `logits`
+The temperature must be a tensor with the same dtype and device as the logits. Create it with `Tensor.constant(temperature, dtype=..., device=...)`.
 
-That's it. The model takes token IDs and returns logits. In the next step, you'll use these logits to generate text.
+In `generate`, implement the generation loop:
 
-**Implementation** (`step_11.py`):
+1. Initialize with the input: `generated_tokens = input_ids`
+2. Loop `max_new_tokens` times
+3. Generate the next token: `next_token = generate_next_token(model, generated_tokens, ...)`
+4. Reshape to 2D: `next_token_2d = next_token.reshape([1, -1])`
+5. Concatenate to the sequence: `generated_tokens = F.concat([generated_tokens, next_token_2d], axis=1)`
+6. Return the complete sequence
+
+The reshape is necessary because `concat` requires matching dimensions, and the generated token is 0D (scalar).
+
+**Implementation** (`step_12.py`):
 
 ```python
-{{#include ../../steps/step_11.py}}
+{{#include ../../steps/step_12.py}}
 ```
 
 ### Validation
 
-Run `pixi run s11` to verify your implementation.
+Run `pixi run s12` to verify your implementation.
 
 <details>
 <summary>Show solution</summary>
 
 ```python
-{{#include ../../solutions/solution_11.py}}
+{{#include ../../solutions/solution_12.py}}
 ```
 
 </details>
 
-**Next**: In [Step 12](./step_12.md), you'll implement text generation using
-sampling and temperature control to generate coherent text autoregressively.
+## What you've built
+
+You've completed all 12 steps and built a complete GPT-2 model from scratch
+using MAX. You now have a working implementation of:
+
+**Core components**:
+
+- Model configuration and architecture definition
+- Causal masking for autoregressive generation
+- Layer normalization for training stability
+- Feed-forward networks with GELU activation
+- Token and position embeddings
+- Multi-head self-attention
+- Residual connections and transformer blocks
+- Language model head for next-token prediction
+- Text generation with temperature and sampling
+
+Your model loads OpenAI's pretrained GPT-2 weights and generates text. You
+understand how every component works, from the low-level tensor operations to
+the high-level architecture decisions.
+
+## What's next?
+
+You now understand the architectural foundation that powers modern language
+models. LLaMA, Mistral, and more build on these same components with incremental
+refinements. You have everything you need to implement those refinements
+yourself.
+
+Consider extending your implementation with:
+
+- **Grouped-query attention (GQA)**: Reduce memory consumption by sharing key-value pairs across multiple query heads, as used in LLaMA 2.
+- **Rotary position embeddings (RoPE)**: Replace learned position embeddings with rotation-based encoding, improving length extrapolation in models like LLaMA and GPT-NeoX.
+- **SwiGLU activation**: Swap GELU for the gated linear unit variant used in LLaMA and PaLM.
+- **Mixture of experts (MoE)**: Add sparse expert routing to scale model capacity efficiently, as in Mixtral and GPT-4.
+
+Each refinement builds directly on what you've implemented. The attention
+mechanism you wrote becomes grouped-query attention with a simple modification
+to how you reshape key-value tensors. Your position embeddings can be replaced
+with RoPE by changing how you encode positional information. The feed-forward
+network you built becomes SwiGLU by adding a gating mechanism.
+
+Pick an architecture that interests you and start building. You'll find the
+patterns are familiar because the fundamentals haven't changed.

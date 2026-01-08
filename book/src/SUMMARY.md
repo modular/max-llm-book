@@ -17,11 +17,11 @@
 
 # 3: Assemble the model
 
-- [Input embeddings](./step_07.md)
-- [Stacking transformer blocks](./step_08.md)
-- [Language model head](./step_09.md)
+- [Stacking transformer blocks](./step_07.md)
+- [Language model head](./step_08.md)
 
 # 4: Generate text
 
-- [Load the weights]()
-- [Text generation](./step_11.md)
+- [Encode and decode tokens](./step_09.md)
+- [Text generation](./step_10.md)
+- [Load weights and run model](./step_11.md)

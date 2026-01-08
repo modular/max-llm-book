@@ -22,7 +22,7 @@ Run: pixi run s10
 # Hint: Import GPT2Block from solutions.solution_09
 
 
-class GPT2Model(Module):
+class MaxGPT2Model(Module):
     """Complete GPT-2 transformer model."""
 
     def __init__(self, config: GPT2Config):

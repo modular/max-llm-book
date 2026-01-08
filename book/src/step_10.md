@@ -1,4 +1,4 @@
-# Encode and decode tokens
+# Text generation
 
 <div class="note">
 
@@ -100,7 +100,7 @@ Run `pixi run s12` to verify your implementation.
 <summary>Show solution</summary>
 
 ```python
-{{#include ../../main.py:encode_and_decode}}
+{{#include ../../main.py:text_generation}}
 ```
 
 </details>

@@ -74,7 +74,7 @@ Run `pixi run s03` to verify your implementation.
 <summary>Show solution</summary>
 
 ```python
-{{#include ../../solutions/solution_03.py}}
+{{#include ../../main.py:layer_normalization}}
 ```
 
 </details>

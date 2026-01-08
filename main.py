@@ -16,7 +16,7 @@ from max.nn.module_v3 import (
     Sequential,
 )
 
-
+# ANCHOR: model_configuration
 @dataclass
 class GPT2Config:
     """GPT-2 configuration matching HuggingFace"""
@@ -29,7 +29,27 @@ class GPT2Config:
     n_inner = None
     layer_norm_epsilon = 1e-5
 
+# ANCHOR_END: model_configuration
 
+# ANCHOR: feed_forward_network
+class GPT2MLP(Module):
+    """Exact HuggingFace GPT-2 MLP structure"""
+
+    def __init__(self, intermediate_size, config):
+        super().__init__()
+        embed_dim = config.n_embd
+        self.c_fc = Linear(embed_dim, intermediate_size, bias=True)
+        self.c_proj = Linear(intermediate_size, embed_dim, bias=True)
+
+    def __call__(self, hidden_states):
+        hidden_states = self.c_fc(hidden_states)
+        hidden_states = F.gelu(hidden_states, approximate="tanh")
+        hidden_states = self.c_proj(hidden_states)
+        return hidden_states
+
+# ANCHOR_END: feed_forward_network
+
+# ANCHOR: causal_mask
 @F.functional
 def causal_mask(
     sequence_length: DimLike,
@@ -43,18 +63,10 @@ def causal_mask(
     mask = F.broadcast_to(mask, shape=(sequence_length, n))
     return F.band_part(mask, num_lower=None, num_upper=0, exclude=True)
 
+# ANCHOR_END: causal_mask
 
-class LayerNorm(Module):
-    def __init__(self, dim: DimLike, *, eps: float = 1e-5):
-        self.eps = eps
-        self.weight = Tensor.ones([dim])
-        self.bias = Tensor.zeros([dim])
-
-    def __call__(self, x: Tensor) -> Tensor:
-        return F.layer_norm(x, gamma=self.weight, beta=self.bias, epsilon=self.eps)
-
-
-class GPT2Attention(Module):
+# ANCHOR: multi_head_attention
+class GPT2MultiHeadAttention(Module):
     """Exact HuggingFace GPT-2 attention structure"""
 
     def __init__(self, config):
@@ -112,23 +124,21 @@ class GPT2Attention(Module):
 
         return attn_output
 
+# ANCHOR_END: multi_head_attention
 
-class GPT2MLP(Module):
-    """Exact HuggingFace GPT-2 MLP structure"""
+# ANCHOR: layer_normalization
+class LayerNorm(Module):
+    def __init__(self, dim: DimLike, *, eps: float = 1e-5):
+        self.eps = eps
+        self.weight = Tensor.ones([dim])
+        self.bias = Tensor.zeros([dim])
 
-    def __init__(self, intermediate_size, config):
-        super().__init__()
-        embed_dim = config.n_embd
-        self.c_fc = Linear(embed_dim, intermediate_size, bias=True)
-        self.c_proj = Linear(intermediate_size, embed_dim, bias=True)
+    def __call__(self, x: Tensor) -> Tensor:
+        return F.layer_norm(x, gamma=self.weight, beta=self.bias, epsilon=self.eps)
 
-    def __call__(self, hidden_states):
-        hidden_states = self.c_fc(hidden_states)
-        hidden_states = F.gelu(hidden_states, approximate="tanh")
-        hidden_states = self.c_proj(hidden_states)
-        return hidden_states
+# ANCHOR_END: layer_normalization
 
-
+# ANCHOR: transformer_block
 class GPT2Block(Module):
     """Exact HuggingFace GPT-2 transformer block structure"""
 
@@ -142,7 +152,7 @@ class GPT2Block(Module):
         )
 
         self.ln_1 = LayerNorm(hidden_size, eps=config.layer_norm_epsilon)
-        self.attn = GPT2Attention(config)
+        self.attn = GPT2MultiHeadAttention(config)
         self.ln_2 = LayerNorm(hidden_size, eps=config.layer_norm_epsilon)
         self.mlp = GPT2MLP(inner_dim, config)
 
@@ -159,8 +169,10 @@ class GPT2Block(Module):
 
         return hidden_states
 
+# ANCHOR_END: transformer_block
 
-class GPTModel(Module):
+# ANCHOR: stacking_transformer_blocks
+class MaxGPT2Model(Module):
     def __init__(
         self,
         config: GPT2Config,
@@ -181,26 +193,29 @@ class GPTModel(Module):
         x = self.ln_f(x)
         return x
 
+# ANCHOR_END: stacking_transformer_blocks
 
-class MaxGPT2Model(Module):
+# ANCHOR: language_model_head
+class MaxGPT2LMHeadModel(Module):
     """Exact HuggingFace GPT-2 model structure"""
 
     def __init__(self, config):
         super().__init__()
         self.config = config
-        self.transformer = GPTModel(config)
+        self.transformer = MaxGPT2Model(config)
         self.lm_head = Linear(config.n_embd, config.vocab_size, bias=False)
 
     def __call__(self, input_ids):
         input_ids = self.transformer(input_ids)
         return self.lm_head(input_ids)
 
+# ANCHOR_END: language_model_head
 
+# ANCHOR: encode_and_decode
 def tokenize_text(text: str, tokenizer, device, max_length: int = 128):
     """Tokenize text and convert to tensor."""
     tokens = tokenizer.encode(text, max_length=max_length, truncation=True)
     return Tensor.constant([tokens], dtype=DType.int64, device=device)
-
 
 def decode_tokens(token_ids: Tensor, tokenizer):
     """Decode token IDs back to text."""
@@ -210,7 +225,9 @@ def decode_tokens(token_ids: Tensor, tokenizer):
     token_ids = token_ids.tolist()
     return tokenizer.decode(token_ids, skip_special_tokens=True)
 
+# ANCHOR_END: encode_and_decode
 
+# ANCHOR: text_generation
 def generate_text(
     model,
     tokenizer,
@@ -264,56 +281,9 @@ def generate_text(
     print(f"Final generated text: '{final_text}'")
     return final_text
 
+# ANCHOR_END: text_generation
 
-def generate_text_huggingface(
-    torch_model,
-    tokenizer,
-    prompt: str,
-    max_new_tokens: int = 50,
-    temperature: float = 0.8,
-    top_k: int = 0,
-    do_sample: bool = True,
-):
-    """Generate text using HuggingFace model for comparison."""
-    print(f"Starting HuggingFace generation from: '{prompt}'")
-    print(
-        f"Settings: max_new_tokens={max_new_tokens}, temperature={temperature}, top_k={top_k}, do_sample={do_sample}"
-    )
-    print("-" * 50)
-
-    input_ids = tokenizer.encode(prompt, return_tensors="pt")
-    device = next(torch_model.parameters()).device
-    input_ids = input_ids.to(device)
-
-    generation_config = GenerationConfig(
-        max_new_tokens=max_new_tokens,
-        temperature=temperature if do_sample else 1.0,
-        top_k=top_k if do_sample else None,
-        do_sample=do_sample,
-        pad_token_id=tokenizer.eos_token_id,
-        eos_token_id=tokenizer.eos_token_id,
-        use_cache=True,  # For faster generation
-    )
-
-    with torch.no_grad():
-        output_ids = torch_model.generate(
-            input_ids,
-            generation_config=generation_config,
-            return_dict_in_generate=True,
-            output_scores=False,
-        )
-
-    generated_ids = output_ids.sequences[0]
-    generated_text = tokenizer.decode(generated_ids, skip_special_tokens=True)
-    input_length = len(tokenizer.decode(input_ids[0], skip_special_tokens=True))
-    new_text = generated_text[input_length:].strip()
-
-    print(f"Full text: '{generated_text}'")
-    print("-" * 50)
-
-    return generated_text
-
-
+# ANCHOR: load_weights_and_run_model
 def main():
     # Load HuggingFace model
     torch_model = GPT2LMHeadModel.from_pretrained("gpt2")
@@ -323,12 +293,11 @@ def main():
     _, device = defaults()
     print(f"Using device: {device}")
     config = GPT2Config()
-    max_model = MaxGPT2Model(config)
+    max_model = MaxGPT2LMHeadModel(config)
 
     print(
         f"Model has {config.n_layer} layers, {config.n_head} heads, {config.n_embd} embedding dim"
     )
-    print(max_model)
 
     # Load state dict and transpose weights
     max_model.load_state_dict(torch_model.state_dict())
@@ -345,20 +314,6 @@ def main():
     tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
     tokenizer.pad_token = tokenizer.eos_token  # Set padding token
 
-    # Test tokenization
-    text = "Hello world, this is a test"
-    print(f"\nInput text: '{text}'")
-
-    input_tokens = tokenize_text(text, tokenizer, device, max_length=20)
-    print(f"Input tokens shape: {input_tokens.shape}")
-    print(f"Token IDs: {input_tokens}")
-
-    logits = max_model(input_tokens)
-    print(f"Output logits shape: {logits.shape}")
-
-    decoded_input = decode_tokens(input_tokens, tokenizer)
-    print(f"Decoded input tokens: '{decoded_input}'")
-
     # Compile model
     print("\nCompiling model...")
     token_type = TensorType(
@@ -366,54 +321,41 @@ def main():
     )
     compiled_max_model = max_model.compile(token_type)
 
-    # Test generation
-    input1 = "The future of AI"
-    input2 = "Once upon a time"
+    # Interactive prompt loop
+    print("\n" + "=" * 50)
+    print("Model ready! Enter prompts to generate text.")
+    print("Press Ctrl+C or type 'quit' to exit.")
+    print("=" * 50 + "\n")
 
-    print("\n=== Test 1: Greedy (Fast) ===")
-    result1 = generate_text(
-        compiled_max_model,
-        tokenizer,
-        device,
-        input1,
-        max_new_tokens=20,
-        do_sample=False,
-    )
-    print(result1)
+    try:
+        while True:
+            user_input = input("Enter your prompt: ").strip()
 
-    print("\n=== Test 2: Sampling ===")
-    result2 = generate_text(
-        compiled_max_model,
-        tokenizer,
-        device,
-        input2,
-        max_new_tokens=25,
-        temperature=0.8,
-        do_sample=True,
-    )
-    print(result2)
+            if user_input.lower() in ['quit', 'exit', 'q']:
+                print("Exiting...")
+                break
 
-    # Compare with HuggingFace
-    print("\n=== HuggingFace Generation Tests ===")
+            if not user_input:
+                print("Please enter a non-empty prompt.\n")
+                continue
 
-    print("\n=== Test 1: Greedy Generation ===")
-    hf_result1 = generate_text_huggingface(
-        torch_model, tokenizer, input1, max_new_tokens=20, do_sample=False
-    )
+            print()
+            generated_text = generate_text(
+                compiled_max_model,
+                tokenizer,
+                device,
+                user_input,
+                max_new_tokens=50,
+                temperature=0.8,
+                do_sample=True
+            )
+            print(f"\nGenerated text:\n{generated_text}\n")
+            print("-" * 50 + "\n")
 
-    print("\n=== Test 2: Sampling Generation ===")
-    hf_result2 = generate_text_huggingface(
-        torch_model,
-        tokenizer,
-        input2,
-        max_new_tokens=25,
-        temperature=0.8,
-        top_k=50,
-        do_sample=True,
-    )
+    except KeyboardInterrupt:
+        print("\n\nExiting...")
 
-    print("\n" + "=" * 60 + "\n")
-
+# ANCHOR_END: load_weights_and_run_model
 
 if __name__ == "__main__":
     main()

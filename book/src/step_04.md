@@ -134,7 +134,7 @@ Run `pixi run s07` to verify your implementation.
 <summary>Show solution</summary>
 
 ```python
-{{#include ../../solutions/solution_07.py}}
+{{#include ../../main.py:multi_head_attention}}
 ```
 
 </details>

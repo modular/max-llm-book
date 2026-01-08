@@ -1,48 +1,41 @@
-# Input embeddings
+# Stacking transformer blocks
 
 <div class="note">
 
-Learn to create token embeddings that convert discrete token IDs into continuous vector representations.
+Learn to stack 12 transformer blocks with embeddings and final normalization to create the complete GPT-2 model.
 
 </div>
 
-In this step you'll create the `GPT2Model` class that will ultimately define
-the whole body of the GPT-2 model, and start by converting the input token IDs
-into embeddings that encode both the token and its position in the sequence.
+In this step, you'll add the transformer block you created in section 2 and
+add 12 instances to the `GPT2Model` class, following the input embeddings.
 
-## Understanding input embeddings
+The model processes input in four stages: convert token IDs to embeddings, add position information, pass through 12 transformer blocks sequentially, and normalize the final output. Each transformer block refines the representation, building up from surface patterns in early layers to semantic understanding in later layers.
 
-The GPT-2 model accepts input as token IDs (integers) that represent each
-subword from the input text. So the first step in the `GPT2Model` must convert
-these tokens to embeddings: continuous vector representations that the model
-can process. This includes two types of embeddings to represent the input:
+GPT-2 uses 12 layers because this depth allows the model to learn complex patterns while remaining trainable. Fewer layers would limit the model's capacity. More layers would increase training difficulty without proportional gains in quality for a 117M parameter model.
 
-- **Token embedding**: This is the basic vector representation of a
-  token (a word or subword), which is learned during training to encode a
-  wide variety of meaning about that token.
+## Understanding the components
 
-  Key parameters:
+The complete model has four main components:
 
-  - Vocabulary size: 50,257 tokens (byte-pair encoding)
-  - Embedding dimension: 768 for GPT-2 base
-  - Shape: [vocab_size, embedding_dim]
+**Token embeddings (`wte`)**: Maps each token ID to a 768-dimensional vector using a lookup table with 50,257 entries (one per vocabulary token).
 
-- **Position embedding**: This is an additional vector sequence that's added
-  onto each token embedding to tell the model the position of each token
-  in the sequence.
+**Position embeddings (`wpe`)**: Maps each position (0 to 1,023) to a 768-dimensional vector. These are added to token embeddings so the model knows token order.
 
-  Key parameters:
+**Transformer blocks (`h`)**: 12 identical blocks stacked using MAX's [`Sequential`](https://docs.modular.com/max/api/python/nn/module_v3#max.nn.module_v3.Sequential) module. Sequential applies blocks in order, passing each block's output to the next.
 
-  - Maximum sequence length: 1,024 positions
-  - Embedding dimension: 768 for GPT-2 base
-  - Shape: [n_positions, n_embd]
-  - Layer name: `wpe` (word position embeddings)
+**Final layer norm (`ln_f`)**: Normalizes the output after all blocks. This stabilizes the representation before the language model head (added in Step 11) projects to vocabulary logits.
 
-While token embeddings tell the model "what" each token
-is, position embeddings tell it "where" the token is located. These position
-vectors are added to token embeddings before entering the transformer blocks.
+## Understanding the forward pass
 
-SCOTT STOPPED HERE JAN 7
+The forward method processes token IDs through the model:
+
+First, create position indices using [`Tensor.arange`](https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.arange). Generate positions [0, 1, 2, ..., seq_length-1] matching the input's dtype and device. This ensures compatibility when adding to embeddings.
+
+Next, look up embeddings. Get token embeddings with `self.wte(input_ids)` and position embeddings with `self.wpe(position_indices)`. Add them together element-wise, as both are shape `[batch, seq_length, 768]`.
+
+Then, pass through the transformer blocks with `self.h(x)`. Sequential applies all 12 blocks in order, each refining the representation.
+
+Finally, normalize the output with `self.ln_f(x)` and return the result. The output shape matches the input: `[batch, seq_length, 768]`.
 
 <div class="note">
 
@@ -50,39 +43,63 @@ SCOTT STOPPED HERE JAN 7
 
 You'll use the following MAX operations to complete this task:
 
-**Embedding layer**:
+**Module composition**:
 
-- [`Embedding(num_embeddings, dim)`](https://docs.modular.com/max/api/python/nn/module_v3#max.nn.module_v3.Embedding): Creates embedding lookup table with automatic weight initialization
+- [`Sequential(*modules)`](https://docs.modular.com/max/api/python/nn/module_v3#max.nn.module_v3.Sequential): Chains transformer blocks in sequence
+
+**Embeddings**:
+
+- [`Embedding(num_embeddings, dim)`](https://docs.modular.com/max/api/python/nn/module_v3#max.nn.module_v3.Embedding): Token and position embeddings
+
+**Position generation**:
+
+- [`Tensor.arange(seq_length, dtype, device)`](https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.arange): Creates position indices
 
 </div>
 
-## Implementing the class
+## Implementing the model
 
-You'll implement the `Embedding` class in several steps:
+You'll create the `GPT2Model` class by composing embedding layers, transformer blocks, and layer normalization. The class builds on all the components from previous steps.
 
-1. **Import required modules**: Import `Embedding` and `Module` from MAX libraries.
+First, import the required modules. You'll need `Tensor` for position indices, `Embedding`, `Module`, and `Sequential` from MAX's neural network module, plus the previously implemented `GPT2Config`, `LayerNorm`, and `GPT2Block`.
 
-2. **Create embedding layer**: Use `Embedding(config.vocab_size, dim=config.n_embd)` and store in `self.wte`.
+In the `__init__` method, create the four components:
 
-3. **Implement forward pass**: Call `self.wte(input_ids)` to lookup embeddings. Input shape: [batch_size, seq_length]. Output shape: [batch_size, seq_length, n_embd].
+- Token embeddings: `Embedding(config.vocab_size, dim=config.n_embd)` stored as `self.wte`
+- Position embeddings: `Embedding(config.n_positions, dim=config.n_embd)` stored as `self.wpe`
+- Transformer blocks: `Sequential(*(GPT2Block(config) for _ in range(config.n_layer)))` stored as `self.h`
+- Final layer norm: `LayerNorm(config.n_embd, eps=config.layer_norm_epsilon)` stored as `self.ln_f`
 
-**Implementation** (`step_05.py`):
+The `Sequential` module takes a generator expression that creates 12 identical `GPT2Block` instances. The `*` unpacks them as arguments to `Sequential`.
+
+In the `forward` method, implement the four-stage processing:
+
+1. Get the sequence length from `input_ids.shape`
+2. Create position indices: `Tensor.arange(seq_length, dtype=input_ids.dtype, device=input_ids.device)`
+3. Look up embeddings and add them: `x = self.wte(input_ids) + self.wpe(position_indices)`
+4. Apply transformer blocks: `x = self.h(x)`
+5. Apply final normalization: `x = self.ln_f(x)`
+6. Return `x`
+
+The position indices must match the input's dtype and device to ensure the tensors are compatible for addition.
+
+**Implementation** (`step_10.py`):
 
 ```python
-{{#include ../../steps/step_05.py}}
+{{#include ../../steps/step_10.py}}
 ```
 
 ### Validation
 
-Run `pixi run s05` to verify your implementation.
+Run `pixi run s10` to verify your implementation.
 
 <details>
 <summary>Show solution</summary>
 
 ```python
-{{#include ../../solutions/solution_05.py}}
+{{#include ../../main.py:stacking_transformer_blocks}}
 ```
 
 </details>
 
-**Next**: In [Step 06](./step_06.md), you'll implement position embeddings to encode sequence order information, which will be combined with these token embeddings.
+**Next**: In [Step 11](./step_11.md), you'll add the language modeling head that projects hidden states to vocabulary logits for text generation.

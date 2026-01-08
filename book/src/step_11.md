@@ -1,150 +1,153 @@
-# Text generation
+# Load weights and run model
 
 <div class="note">
 
-Learn to implement autoregressive text generation with sampling and temperature control.
+Learn to load pretrained weights from HuggingFace and prepare the model for text generation.
 
 </div>
 
-In this final step, you'll implement the generation loop that produces text one token at a time. The model predicts the next token, appends it to the sequence, and repeats until reaching the desired length.
+With all components implemented, you're ready to load OpenAI's pretrained GPT-2 weights and run the model. This step brings everything together: loading weights from HuggingFace, handling weight format differences, initializing the tokenizer, and compiling the model for efficient inference.
 
-Start with a prompt like "Hello world" (tokens `[15496, 995]`). The model predicts the next token, giving you `[15496, 995, 318]` ("Hello world is"). It predicts again, producing `[15496, 995, 318, 257]` ("Hello world is a"). This process continues, with each prediction feeding back as input for the next.
+The HuggingFace `transformers` library provides OpenAI's pretrained GPT-2 weights. You'll load these weights into your MAX implementation, making your model immediately capable of generating coherent text without training.
 
-You'll implement two generation strategies: greedy decoding (always pick the highest-scoring token) and sampling (randomly choose according to probabilities). You'll also add temperature control to adjust how random or focused the generation is.
+However, there's a complication: HuggingFace's GPT-2 uses Conv1D layers for its linear transformations, while your MAX implementation uses standard Linear layers. These store weights in transposed formats, so you'll need to transpose specific weight matrices after loading.
 
-## Understanding the generation loop
+## Understanding weight loading
 
-The generation loop is simple: run the model, extract the next token prediction, append it to the sequence, repeat. Each iteration requires a full forward pass through all 12 transformer blocks.
+Weight loading involves three steps: loading the HuggingFace model, transferring weights to your MAX model, and transposing Conv1D weights.
 
-The model outputs logits with shape `[batch, seq_length, vocab_size]`. Since you only care about predicting the next token, extract the last position: `logits[0, -1, :]`. This gives you a vector of 50,257 scores, one per vocabulary token.
+First, load the pretrained model with `GPT2LMHeadModel.from_pretrained("gpt2")`. This downloads the weights (about 500MB) and returns a PyTorch model with the exact architecture you've implemented.
 
-These scores are logits (unnormalized), not probabilities. To convert them to probabilities, apply softmax. Then you can either pick the highest-probability token (greedy) or sample from the distribution (random).
+Next, transfer these weights to your MAX model using `max_model.load_state_dict(torch_model.state_dict())`. The `state_dict` is a dictionary mapping layer names to weight tensors. Since your MAX model has the exact same architecture and layer names, this transfer works seamlessly.
 
-## Understanding temperature control
+Finally, transpose the weights for layers that use Conv1D in HuggingFace: `c_attn`, `c_proj`, and `c_fc`. Conv1D stores weights in shape `[in_features, out_features]`, while Linear expects `[out_features, in_features]`. Use the `.T` property to transpose: `child.weight = child.weight.T`.
 
-Temperature scaling adjusts how random the generation is using the formula `scaled_logits = logits / temperature`.
+## Understanding model compilation
 
-With temperature 1.0, you use the original distribution. With temperature 0.7, you sharpen the distribution, and high-probability tokens become even more likely, making generation more focused and deterministic. With temperature 1.2, you flatten the distribution, and lower-probability tokens get more chances, making generation more diverse and creative.
+Before you can run text generation, compile the model with `.compile(token_type)`. Compilation analyzes the model's computation graph and generates optimized code for your hardware.
 
-Temperature is applied before softmax. Dividing by a value less than 1 makes large logits even larger (sharpening), while dividing by a value greater than 1 reduces the differences between logits (flattening).
-
-## Understanding sampling vs greedy
-
-Greedy decoding always picks the highest-probability token using [`F.argmax`](https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.argmax). It's fast, deterministic, and simple, but often produces repetitive text because the model keeps choosing the safest option.
-
-Sampling randomly selects tokens according to their probabilities. Convert logits to probabilities with `F.softmax`, transfer to CPU, convert to NumPy with `np.from_dlpack`, then sample with `np.random.choice`. You use NumPy because MAX doesn't have built-in sampling yet.
-
-Most practical generation uses sampling with temperature control. This balances creativity with coherence, as the model can explore different possibilities while still favoring high-quality continuations.
-
-<div class="note">
-
-<div class="title">MAX operations</div>
-
-You'll use the following MAX operations to complete this task:
-
-**Probability operations**:
-
-- [`F.softmax(logits)`](https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.softmax): Converts logits to probabilities
-- [`F.argmax(logits)`](https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.argmax): Selects highest-probability token (greedy)
-
-**Sequence building**:
-
-- [`F.concat([seq, new_token], axis=1)`](https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.concat): Appends token to sequence
-- [`Tensor.constant(value, dtype, device)`](https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.constant): Creates scalar tensors
-
-**NumPy interop**:
-
-- `probs.to(CPU())`: Transfers tensor to CPU
-- `np.from_dlpack(probs)`: Converts MAX tensor to NumPy for sampling
-
-</div>
-
-## Implementing text generation
-
-You'll create two functions: `generate_next_token` that predicts a single token, and `generate` that loops to produce full sequences.
-
-First, import the required modules. You'll need `numpy` for sampling, `CPU` from MAX's driver, `DType` for type constants, `functional as F` for operations like softmax and argmax, and `Tensor` for creating tensors.
-
-In `generate_next_token`, implement the prediction logic:
-
-1. Run the model to get logits: `logits = model(input_ids)`
-2. Extract the last position (next token prediction): `next_token_logits = logits[0, -1, :]`
-3. If using temperature, scale the logits by dividing by the temperature tensor
-4. For sampling: convert to probabilities with `F.softmax`, transfer to CPU, convert to NumPy with `np.from_dlpack`, sample with `np.random.choice`, then convert back to a MAX tensor
-5. For greedy: use `F.argmax` to select the highest-scoring token
-
-The temperature must be a tensor with the same dtype and device as the logits. Create it with `Tensor.constant(temperature, dtype=..., device=...)`.
-
-In `generate`, implement the generation loop:
-
-1. Initialize with the input: `generated_tokens = input_ids`
-2. Loop `max_new_tokens` times
-3. Generate the next token: `next_token = generate_next_token(model, generated_tokens, ...)`
-4. Reshape to 2D: `next_token_2d = next_token.reshape([1, -1])`
-5. Concatenate to the sequence: `generated_tokens = F.concat([generated_tokens, next_token_2d], axis=1)`
-6. Return the complete sequence
-
-The reshape is necessary because `concat` requires matching dimensions, and the generated token is 0D (scalar).
-
-**Implementation** (`step_12.py`):
+You need to specify the input type using `TensorType`. This tells MAX what shape and dtype to expect:
 
 ```python
-{{#include ../../steps/step_12.py}}
+token_type = TensorType(
+    DType.int64,
+    ("batch", "seqlen"),
+    device=DeviceRef.from_device(device)
+)
+```
+
+The shape uses symbolic dimensions `("batch", "seqlen")` rather than concrete numbers like `[1, 20]`. This allows the compiled model to handle any batch size and sequence length, not just fixed dimensions.
+
+Compilation takes a few seconds but only happens once. After compilation, inference is much faster because MAX has optimized the entire computation graph.
+
+## Understanding the tokenizer
+
+The tokenizer converts text to token IDs and back. Load it with `GPT2Tokenizer.from_pretrained("gpt2")`, which downloads the same tokenization rules OpenAI used during training.
+
+Set the padding token to match the end-of-sequence token: `tokenizer.pad_token = tokenizer.eos_token`. GPT-2 doesn't have a dedicated padding token, so we reuse the EOS token for this purpose.
+
+The tokenizer provides two key methods:
+- `tokenizer.encode(text)`: Converts text to a list of token IDs
+- `tokenizer.decode(token_ids)`: Converts token IDs back to text
+
+Your helper functions `tokenize_text` and `decode_tokens` wrap these methods to convert between Python lists and MAX tensors.
+
+## Implementing the main function
+
+You'll implement the `main()` function that orchestrates the entire pipeline: loading models, transferring weights, initializing the tokenizer, compiling the model, and running an interactive prompt loop.
+
+Start by loading the pretrained HuggingFace model:
+
+```python
+torch_model = GPT2LMHeadModel.from_pretrained("gpt2")
+```
+
+Initialize your MAX model with the default device and configuration:
+
+```python
+_, device = defaults()
+config = GPT2Config()
+max_model = MaxGPT2LMHeadModel(config)
+```
+
+The `defaults()` function returns `(dtype, device)` tuples. You only need the device, so use `_` to ignore the dtype.
+
+Load and transpose the weights:
+
+```python
+max_model.load_state_dict(torch_model.state_dict())
+max_model.to(device)
+for name, child in max_model.descendents:
+    if isinstance(child, Linear):
+        if any(layer_name in name for layer_name in ["c_attn", "c_proj", "c_fc"]):
+            child.weight = child.weight.T
+```
+
+The `descendents` property gives you all nested modules with their full paths. Check each child's name for the Conv1D layers and transpose their weights.
+
+Initialize the tokenizer:
+
+```python
+tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
+tokenizer.pad_token = tokenizer.eos_token
+```
+
+Compile the model:
+
+```python
+token_type = TensorType(
+    DType.int64, ("batch", "seqlen"), device=DeviceRef.from_device(device)
+)
+compiled_max_model = max_model.compile(token_type)
+```
+
+Finally, create an interactive prompt loop where users can input text and see generated results:
+
+```python
+try:
+    while True:
+        user_input = input("Enter your prompt: ").strip()
+
+        if user_input.lower() in ['quit', 'exit', 'q']:
+            break
+
+        if not user_input:
+            continue
+
+        generated_text = generate_text(
+            compiled_max_model,
+            tokenizer,
+            device,
+            user_input,
+            max_new_tokens=50,
+            temperature=0.8,
+            do_sample=True
+        )
+        print(f"\nGenerated text:\n{generated_text}\n")
+
+except KeyboardInterrupt:
+    print("\n\nExiting...")
+```
+
+The loop continues until the user types 'quit', 'exit', 'q', or presses Ctrl+C.
+
+**Implementation** (`step_11.py`):
+
+```python
+{{#include ../../steps/step_11.py}}
 ```
 
 ### Validation
 
-Run `pixi run s12` to verify your implementation.
+Run `pixi run s11` to verify your implementation. The model should load weights, compile successfully, and be ready for text generation.
 
 <details>
 <summary>Show solution</summary>
 
 ```python
-{{#include ../../solutions/solution_12.py}}
+{{#include ../../main.py:load_weights_and_run_model}}
 ```
 
 </details>
 
-## What you've built
-
-You've completed all 12 steps and built a complete GPT-2 model from scratch
-using MAX. You now have a working implementation of:
-
-**Core components**:
-
-- Model configuration and architecture definition
-- Causal masking for autoregressive generation
-- Layer normalization for training stability
-- Feed-forward networks with GELU activation
-- Token and position embeddings
-- Multi-head self-attention
-- Residual connections and transformer blocks
-- Language model head for next-token prediction
-- Text generation with temperature and sampling
-
-Your model loads OpenAI's pretrained GPT-2 weights and generates text. You
-understand how every component works, from the low-level tensor operations to
-the high-level architecture decisions.
-
-## What's next?
-
-You now understand the architectural foundation that powers modern language
-models. LLaMA, Mistral, and more build on these same components with incremental
-refinements. You have everything you need to implement those refinements
-yourself.
-
-Consider extending your implementation with:
-
-- **Grouped-query attention (GQA)**: Reduce memory consumption by sharing key-value pairs across multiple query heads, as used in LLaMA 2.
-- **Rotary position embeddings (RoPE)**: Replace learned position embeddings with rotation-based encoding, improving length extrapolation in models like LLaMA and GPT-NeoX.
-- **SwiGLU activation**: Swap GELU for the gated linear unit variant used in LLaMA and PaLM.
-- **Mixture of experts (MoE)**: Add sparse expert routing to scale model capacity efficiently, as in Mixtral and GPT-4.
-
-Each refinement builds directly on what you've implemented. The attention
-mechanism you wrote becomes grouped-query attention with a simple modification
-to how you reshape key-value tensors. Your position embeddings can be replaced
-with RoPE by changing how you encode positional information. The feed-forward
-network you built becomes SwiGLU by adding a gating mechanism.
-
-Pick an architecture that interests you and start building. You'll find the
-patterns are familiar because the fundamentals haven't changed.
+**Next**: In [Step 12](./step_12.md), you'll interact with the model through an interactive prompt to generate text and see your implementation in action.

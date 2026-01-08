@@ -100,7 +100,7 @@ Run `pixi run s04` to verify your implementation.
 <summary>Show solution</summary>
 
 ```python
-{{#include ../../solutions/solution_04.py}}
+{{#include ../../main.py:feed_forward_network}}
 ```
 
 </details>

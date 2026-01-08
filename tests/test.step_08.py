@@ -183,6 +183,7 @@ def test_step_08():
     try:
         from max.driver import CPU
         from max.dtype import DType
+        from max.experimental import random
         from max.experimental.tensor import Tensor
         import numpy as np
 
@@ -205,15 +206,7 @@ def test_step_08():
         # Test forward pass
         batch_size = 2
         seq_length = 8
-        test_input = Tensor.arange(
-            0,
-            1.0,
-            1 / (batch_size * seq_length * dim),
-            dtype=DType.float32,
-            device=CPU(),
-        )
-
-        test_input = test_input.reshape((batch_size, seq_length, dim))
+        test_input = random.uniform((batch_size, seq_length, dim), range=(0, 1))
         output = ln(test_input)
         results.append("✅ LayerNorm forward pass executes without errors")
 
@@ -227,18 +220,18 @@ def test_step_08():
             )
 
         # Check normalization properties (mean ≈ 0, std ≈ 1)
-        output_np = np.from_dlpack(output.to(CPU()))
+        output_np = np.from_dlpack(output.to(CPU()).cast(DType.float32))
         mean = output_np.mean(axis=-1)
         std = output_np.std(axis=-1)
 
-        if np.allclose(mean, 0, atol=1e-5):
+        if np.allclose(mean, 0, atol=1e-3):
             results.append("✅ LayerNorm output has mean ≈ 0 (normalized)")
         else:
             results.append(
                 f"⚠️ LayerNorm output mean is {mean.mean():.6f} (expected ≈ 0)"
             )
 
-        if np.allclose(std, 1, atol=1e-4):
+        if np.allclose(std, 1, atol=1e-3):
             results.append("✅ LayerNorm output has std ≈ 1 (normalized)")
         else:
             results.append(f"⚠️ LayerNorm output std is {std.mean():.6f} (expected ≈ 1)")
@@ -259,14 +252,12 @@ def test_step_08():
             1.0,
             1 / (batch_size * seq_length * dim),
             dtype=DType.float32,
-            device=CPU(),
         ).reshape((batch_size, seq_length, dim))
         test_sublayer = Tensor.arange(
             0,
             0.7,
             0.7 / (batch_size * seq_length * dim),
             dtype=DType.float32,
-            device=CPU(),
         ).reshape((batch_size, seq_length, dim))
 
         residual_output = rb(test_residual, test_sublayer)

@@ -71,10 +71,11 @@ def check_step_08():
         output = model(dummy_input)
 
         expected_shape = (1, 10, 50257)  # [batch, seq_len, vocab_size]
-        if output.shape != expected_shape:
-            errors.append(f"Output shape mismatch: expected {expected_shape}, got {output.shape}")
+        actual_shape = tuple(int(dim) for dim in output.shape)
+        if actual_shape != expected_shape:
+            errors.append(f"Output shape mismatch: expected {expected_shape}, got {actual_shape}")
         else:
-            print(f"✅ Forward pass successful with shape: {output.shape}")
+            print(f"✅ Forward pass successful with shape: {actual_shape}")
     except Exception as e:
         errors.append(f"Forward pass failed: {e}")
 

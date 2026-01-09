@@ -53,19 +53,25 @@ def check_step_05():
         from max.experimental.tensor import Tensor
         if not isinstance(ln.weight, Tensor):
             errors.append(f"weight should be a Tensor, got {type(ln.weight)}")
-        elif ln.weight.shape != (768,):
-            errors.append(f"weight shape should be (768,), got {ln.weight.shape}")
         else:
-            print(f"✅ weight has correct shape: {ln.weight.shape}")
+            expected_shape = (768,)
+            actual_shape = tuple(int(dim) for dim in ln.weight.shape)
+            if actual_shape != expected_shape:
+                errors.append(f"weight shape should be {expected_shape}, got {actual_shape}")
+            else:
+                print(f"✅ weight has correct shape: {actual_shape}")
 
     if hasattr(ln, 'bias'):
         from max.experimental.tensor import Tensor
         if not isinstance(ln.bias, Tensor):
             errors.append(f"bias should be a Tensor, got {type(ln.bias)}")
-        elif ln.bias.shape != (768,):
-            errors.append(f"bias shape should be (768,), got {ln.bias.shape}")
         else:
-            print(f"✅ bias has correct shape: {ln.bias.shape}")
+            expected_shape = (768,)
+            actual_shape = tuple(int(dim) for dim in ln.bias.shape)
+            if actual_shape != expected_shape:
+                errors.append(f"bias shape should be {expected_shape}, got {actual_shape}")
+            else:
+                print(f"✅ bias has correct shape: {actual_shape}")
 
     # Check 4: Verify __call__ method
     if not hasattr(ln, '__call__'):
@@ -81,10 +87,12 @@ def check_step_05():
         dummy_input = Tensor.ones([1, 10, 768], dtype=DType.float32)
         output = ln(dummy_input)
 
-        if output.shape != dummy_input.shape:
-            errors.append(f"Output shape mismatch: expected {dummy_input.shape}, got {output.shape}")
+        expected_shape = tuple(int(dim) for dim in dummy_input.shape)
+        actual_shape = tuple(int(dim) for dim in output.shape)
+        if actual_shape != expected_shape:
+            errors.append(f"Output shape mismatch: expected {expected_shape}, got {actual_shape}")
         else:
-            print(f"✅ Forward pass successful with shape: {output.shape}")
+            print(f"✅ Forward pass successful with shape: {actual_shape}")
     except Exception as e:
         errors.append(f"Forward pass failed: {e}")
 

@@ -60,10 +60,12 @@ def check_step_03():
             print(f"✅ causal_mask returns a Tensor")
 
         # Check shape
-        if mask.shape != (5, 5):
-            errors.append(f"Expected mask shape (5, 5), got {mask.shape}")
+        expected_shape = (5, 5)
+        actual_shape = tuple(int(dim) for dim in mask.shape)
+        if actual_shape != expected_shape:
+            errors.append(f"Expected mask shape {expected_shape}, got {actual_shape}")
         else:
-            print(f"✅ Mask has correct shape: {mask.shape}")
+            print(f"✅ Mask has correct shape: {actual_shape}")
 
     except Exception as e:
         errors.append(f"Failed to call causal_mask: {e}")

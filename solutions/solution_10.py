@@ -13,6 +13,7 @@ from max.experimental.tensor import Tensor
 
 from solution_09 import tokenize_text, decode_tokens
 
+
 def generate_text(
     model,
     tokenizer,

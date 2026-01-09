@@ -9,7 +9,7 @@ from max.experimental import functional as F
 from max.experimental.tensor import Tensor
 from max.nn.module_v3 import Linear, Module
 
-from solutions.solution_01 import GPT2Config
+from solution_01 import GPT2Config
 
 
 class GPT2MLP(Module):

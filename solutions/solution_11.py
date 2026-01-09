@@ -9,9 +9,10 @@ from max.graph import DeviceRef
 from max.nn.module_v3 import Linear
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
 
-from solutions.solution_01 import GPT2Config
-from solutions.solution_08 import MaxGPT2LMHeadModel
-from solutions.solution_10 import generate_text
+from solution_01 import GPT2Config
+from solution_08 import MaxGPT2LMHeadModel
+from solution_10 import generate_text
+
 
 def run_model():
     # Load HuggingFace model
@@ -85,4 +86,5 @@ def run_model():
         print("\n\nExiting...")
         
 
-run_model()
+if __name__ == "__main__":
+    run_model()

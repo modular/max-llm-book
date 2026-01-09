@@ -8,9 +8,9 @@ to create the complete GPT-2 transformer architecture.
 from max.experimental.tensor import Tensor
 from max.nn.module_v3 import Embedding, Module, Sequential
 
-from solutions.solution_01 import GPT2Config
-from solutions.solution_05 import LayerNorm
-from solutions.solution_06 import GPT2Block
+from solution_01 import GPT2Config
+from solution_05 import LayerNorm
+from solution_06 import GPT2Block
 
 
 class MaxGPT2Model(Module):

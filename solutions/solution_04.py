@@ -14,8 +14,8 @@ from max.experimental.tensor import Tensor
 from max.graph import Dim, DimLike
 from max.nn.module_v3 import Linear, Module
 
-from solutions.solution_01 import GPT2Config
-from solutions.solution_03 import causal_mask
+from solution_01 import GPT2Config
+from solution_03 import causal_mask
 
 
 class GPT2MultiHeadAttention(Module):

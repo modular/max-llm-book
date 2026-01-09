@@ -7,8 +7,8 @@ to vocabulary logits for predicting the next token.
 
 from max.nn.module_v3 import Linear, Module
 
-from solutions.solution_01 import GPT2Config
-from solutions.solution_07 import MaxGPT2Model
+from solution_01 import GPT2Config
+from solution_07 import MaxGPT2Model
 
 
 class MaxGPT2LMHeadModel(Module):

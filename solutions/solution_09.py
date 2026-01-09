@@ -5,7 +5,10 @@ This module provides utility functions to tokenize input text
 and decode token IDs back to text using a tokenizer.
 """
 import numpy as np
+from max.dtype import DType
+from max.driver import CPU
 from max.experimental.tensor import Tensor
+
 
 def tokenize_text(text: str, tokenizer, device, max_length: int = 128):
     """Tokenize text and convert to tensor."""

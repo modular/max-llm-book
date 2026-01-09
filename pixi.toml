@@ -21,7 +21,7 @@ s07 = "python tests/test.step_07.py"
 s08 = "python tests/test.step_08.py"
 s09 = "python tests/test.step_09.py"
 s10 = "python tests/test.step_10.py"
-s11 = "python tests/test.step_11.py"
+s11 = "python solutions/solution_11.py"
 s12 = "python tests/test.step_12.py"
 
 # Run all tests

@@ -59,7 +59,7 @@ You'll use the following MAX operations to complete this task:
 
 ## Implementing the model
 
-You'll create the `GPT2Model` class by composing embedding layers, transformer blocks, and layer normalization. The class builds on all the components from previous steps.
+You'll create the `MaxGPT2Model` class by composing embedding layers, transformer blocks, and layer normalization. The class builds on all the components from previous steps.
 
 First, import the required modules. You'll need `Tensor` for position indices, `Embedding`, `Module`, and `Sequential` from MAX's neural network module, plus the previously implemented `GPT2Config`, `LayerNorm`, and `GPT2Block`.
 

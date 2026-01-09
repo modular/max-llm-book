@@ -1,0 +1,13 @@
+# Pytest cache
+.pytest_cache/
+__pycache__/
+*.pyc
+
+# Coverage reports
+.coverage
+htmlcov/
+coverage.xml
+
+# Test artifacts
+*.log
+test_output/

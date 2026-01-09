@@ -33,6 +33,9 @@ gpt2 = "python steps/step_11.py"
 # Format python
 fmt = "ruff format ."
 
+# Run tests
+test = "pytest tests/ -v"
+
 [dependencies]
 modular = "25.7.*"
 transformers = ">=4.57.0,<5"
@@ -40,3 +43,4 @@ pytorch = ">=2.8.0,<3"
 numpy = ">=2.3.3,<3"
 mdbook = ">=0.4.0"
 ruff = ">=0.14.1,<0.15"
+pytest = ">=8.0.0,<9"

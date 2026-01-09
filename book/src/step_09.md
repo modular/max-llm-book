@@ -96,7 +96,7 @@ Run `pixi run s09` to verify your implementation correctly converts text to tens
 <summary>Show solution</summary>
 
 ```python
-{{#include ../../main.py:encode_and_decode}}
+{{#include ../../solutions/solution_09.py}}
 ```
 
 </details>

@@ -97,7 +97,7 @@ Run `pixi run s07` to verify your implementation.
 <summary>Show solution</summary>
 
 ```python
-{{#include ../../main.py:stacking_transformer_blocks}}
+{{#include ../../solutions/solution_07.py}}
 ```
 
 </details>

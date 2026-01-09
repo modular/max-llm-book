@@ -79,7 +79,7 @@ Run `pixi run s03` to verify your implementation.
 <summary>Show solution</summary>
 
 ```python
-{{#include ../../main.py:causal_mask}}
+{{#include ../../solutions/solution_03.py}}
 ```
 
 </details>

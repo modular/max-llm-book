@@ -100,7 +100,7 @@ Run `pixi run s10` to verify your implementation.
 <summary>Show solution</summary>
 
 ```python
-{{#include ../../main.py:text_generation}}
+{{#include ../../solutions/solution_10.py}}
 ```
 
 </details>

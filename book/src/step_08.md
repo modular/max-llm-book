@@ -104,7 +104,7 @@ Run `pixi run s08` to verify your implementation.
 <summary>Show solution</summary>
 
 ```python
-{{#include ../../main.py:language_model_head}}
+{{#include ../../solutions/solution_08.py}}
 ```
 
 </details>

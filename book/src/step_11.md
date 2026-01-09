@@ -145,7 +145,7 @@ Run `pixi run s11` to verify your implementation. The model should load weights,
 <summary>Show solution</summary>
 
 ```python
-{{#include ../../main.py:load_weights_and_run_model}}
+{{#include ../../solutions/solution_11.py}}
 ```
 
 </details>

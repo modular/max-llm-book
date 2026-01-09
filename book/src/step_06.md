@@ -105,7 +105,7 @@ Run `pixi run s06` to verify your implementation.
 <summary>Show solution</summary>
 
 ```python
-{{#include ../../main.py:transformer_block}}
+{{#include ../../solutions/solution_06.py}}
 ```
 
 </details>

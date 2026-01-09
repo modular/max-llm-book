@@ -55,7 +55,7 @@ Run `pixi run s01` to verify your implementation matches the expected configurat
 <summary>Show solution</summary>
 
 ```python
-{{#include ../../main.py:model_configuration}}
+{{#include ../../solutions/solution_01.py}}
 ```
 
 </details>

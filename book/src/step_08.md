@@ -9,7 +9,7 @@ vocabulary logits for next-token prediction.
 
 In this step, you'll create the `MaxGPT2LMHeadModel` - the complete language
 model that can predict next tokens. This class wraps the transformer from Step
-10 and adds a final linear layer that projects 768-dimensional hidden states to
+07 and adds a final linear layer that projects 768-dimensional hidden states to
 50,257-dimensional vocabulary logits.
 
 The language model head is a single linear layer without bias. For each position
@@ -72,11 +72,11 @@ language modeling head. The implementation is straightforward, with just two
 components and a simple forward pass.
 
 First, import the required modules. You'll need `Linear` and `Module` from MAX,
-plus the previously implemented `GPT2Config` and `GPT2Model`.
+plus the previously implemented `GPT2Config` and `MaxGPT2Model`.
 
 In the `__init__` method, create two components:
 
-- Transformer: `GPT2Model(config)` stored as `self.transformer`
+- Transformer: `MaxGPT2Model(config)` stored as `self.transformer`
 - LM head: `Linear(config.n_embd, config.vocab_size, bias=False)` stored as `self.lm_head`
 
 Note the `bias=False` parameter, which creates a linear layer without bias

@@ -6,8 +6,8 @@ Learn to stack 12 transformer blocks with embeddings and final normalization to 
 
 </div>
 
-In this step, you'll add the transformer block you created in section 2 and
-add 12 instances to the `GPT2Model` class, following the input embeddings.
+In this step, you'll add the transformer block you created in step 06 and
+add 12 instances to the `MaxGPT2Model` class, following the input embeddings.
 
 The model processes input in four stages: convert token IDs to embeddings, add position information, pass through 12 transformer blocks sequentially, and normalize the final output. Each transformer block refines the representation, building up from surface patterns in early layers to semantic understanding in later layers.
 

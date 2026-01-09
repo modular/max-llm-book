@@ -28,11 +28,11 @@ The transformer block consists of four components, applied in this order:
 
 **First layer norm (`ln_1`)**: Normalizes the input before attention. Uses epsilon=1e-5 for numerical stability.
 
-**Multi-head attention (`attn`)**: The self-attention mechanism from Step 07. Lets each position attend to all previous positions.
+**Multi-head attention (`attn`)**: The self-attention mechanism from Step 04. Lets each position attend to all previous positions.
 
 **Second layer norm (`ln_2`)**: Normalizes before the MLP. Same configuration as the first.
 
-**Feed-forward network (`mlp`)**: The position-wise MLP from Step 04. Expands to 3,072 dimensions internally (4× the embedding size), then projects back to 768.
+**Feed-forward network (`mlp`)**: The position-wise MLP from Step 02. Expands to 3,072 dimensions internally (4× the embedding size), then projects back to 768.
 
 The block maintains a constant 768-dimensional representation throughout. Input
 shape `[batch, seq_length, 768]` stays the same after each sublayer, which is

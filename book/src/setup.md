@@ -28,7 +28,7 @@ Initially, checks will fail because the implementation isn't complete:
 
 ```sh
 ✨ Pixi task (s01): python checks/check_step_01.py
-Running tests for Step 01: Create Model Configuration...
+Running checks for Step 01: Create Model Configuration...
 
 Results:
 ❌ dataclass is not imported from dataclasses

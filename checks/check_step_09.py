@@ -6,6 +6,11 @@ Validates that tokenize_text and decode_tokens functions are correctly implement
 
 import sys
 import inspect
+from pathlib import Path
+
+# Add steps directory to path for imports
+steps_dir = Path(__file__).parent.parent / "steps"
+sys.path.insert(0, str(steps_dir))
 
 
 def check_step_09():

@@ -6,6 +6,11 @@ Validates that run_model function is correctly implemented.
 
 import sys
 import inspect
+from pathlib import Path
+
+# Add steps directory to path for imports
+steps_dir = Path(__file__).parent.parent / "steps"
+sys.path.insert(0, str(steps_dir))
 
 
 def check_step_11():

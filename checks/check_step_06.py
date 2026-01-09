@@ -5,6 +5,11 @@ Validates that GPT2Block is correctly implemented.
 """
 
 import sys
+from pathlib import Path
+
+# Add steps directory to path for imports
+steps_dir = Path(__file__).parent.parent / "steps"
+sys.path.insert(0, str(steps_dir))
 
 
 def check_step_06():

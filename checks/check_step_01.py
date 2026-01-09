@@ -5,7 +5,12 @@ Validates that GPT2Config dataclass is correctly implemented with proper values.
 """
 
 import sys
+from pathlib import Path
 from dataclasses import is_dataclass
+
+# Add steps directory to path for imports
+steps_dir = Path(__file__).parent.parent / "steps"
+sys.path.insert(0, str(steps_dir))
 
 
 def check_step_01():

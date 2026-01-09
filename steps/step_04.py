@@ -1,77 +1,143 @@
 """
-Step 04: Feed-forward Network (MLP)
+Step 04: Multi-head Attention
 
-Implement the MLP used in each transformer block with GELU activation.
+Implement multi-head attention that splits Q/K/V into multiple heads,
+computes attention in parallel for each head, and merges the results.
 
 Tasks:
-1. Import functional (as F), Tensor, Linear, and Module from MAX
-2. Create c_fc linear layer (embedding to intermediate dimension)
-3. Create c_proj linear layer (intermediate back to embedding dimension)
-4. Apply c_fc transformation in forward pass
-5. Apply GELU activation function
-6. Apply c_proj transformation and return result
+1. Import required modules (math, F, Tensor, Linear, Module, etc.)
+2. Create c_attn and c_proj linear layers
+3. Implement _split_heads: reshape and transpose to add head dimension
+4. Implement _merge_heads: transpose and reshape to remove head dimension
+5. Implement _attn: compute attention for all heads in parallel
+6. Implement forward pass: project -> split -> attend -> merge -> project
 
 Run: pixi run s04
 """
 
-# 1: Import the required modules from MAX
-# TODO: Import functional module from max.experimental with the alias F
-# https://docs.modular.com/max/api/python/experimental/functional
-
-# TODO: Import Tensor from max.experimental.tensor
-# https://docs.modular.com/max/api/python/experimental/tensor.Tensor
-
-# TODO: Import Linear and Module from max.nn.module_v3
-# https://docs.modular.com/max/api/python/nn/module_v3
+# TODO: Import required modules
+# Hint: You'll need math for scaling
+# Hint: You'll need functional as F from max.experimental
+# Hint: You'll need Tensor, Device, DType from max.experimental.tensor and max.driver
+# Hint: You'll need Dim, DimLike from max.graph
+# Hint: You'll also need Linear and Module from max.nn.module_v3
 
 from solutions.solution_01 import GPT2Config
+from solutions.solution_03 import causal_mask
 
 
-class GPT2MLP(Module):
-    """Feed-forward network matching HuggingFace GPT-2 structure.
+# TODO: Copy causal_mask function from solution_02.py
+# This is the same function you implemented in Step 02
 
-    Args:
-        intermediate_size: Size of the intermediate layer.
-        config: GPT-2 configuration.
-    """
 
-    def __init__(self, intermediate_size: int, config: GPT2Config):
+class GPT2MultiHeadAttention(Module):
+    """Multi-head attention for GPT-2."""
+
+    def __init__(self, config: GPT2Config):
         super().__init__()
-        embed_dim = config.n_embd
 
-        # 2: Create the first linear layer (embedding to intermediate)
-        # TODO: Create self.c_fc as a Linear layer from embed_dim to intermediate_size with bias=True
-        # https://docs.modular.com/max/api/python/nn/module_v3#max.nn.module_v3.Linear
-        # Hint: This is the expansion layer in the MLP
-        self.c_fc = None
+        self.embed_dim = config.n_embd
+        self.num_heads = config.n_head
+        self.head_dim = self.embed_dim // self.num_heads
+        self.split_size = self.embed_dim
 
-        # 3: Create the second linear layer (intermediate back to embedding)
-        # TODO: Create self.c_proj as a Linear layer from intermediate_size to embed_dim with bias=True
-        # https://docs.modular.com/max/api/python/nn/module_v3#max.nn.module_v3.Linear
-        # Hint: This is the projection layer that brings us back to the embedding dimension
+        # TODO: Create combined Q/K/V projection
+        # Hint: Use Linear(self.embed_dim, 3 * self.embed_dim, bias=True)
+        self.c_attn = None
+
+        # TODO: Create output projection
+        # Hint: Use Linear(self.embed_dim, self.embed_dim, bias=True)
         self.c_proj = None
 
-    def __call__(self, hidden_states: Tensor) -> Tensor:
-        """Apply feed-forward network.
+    def _split_heads(self, tensor, num_heads, attn_head_size):
+        """Split the last dimension into (num_heads, head_size).
 
         Args:
-            hidden_states: Input hidden states.
+            tensor: Input tensor, shape [batch, seq_length, n_embd]
+            num_heads: Number of attention heads
+            attn_head_size: Dimension of each head
 
         Returns:
-            MLP output.
+            Tensor with shape [batch, num_heads, seq_length, head_size]
         """
-        # 4: Apply the first linear transformation
-        # TODO: Apply self.c_fc to hidden_states
-        # Hint: This expands the hidden dimension to the intermediate size
-        hidden_states = None
+        # TODO: Add head dimension
+        # Hint: new_shape = tensor.shape[:-1] + [num_heads, attn_head_size]
+        # Hint: tensor = tensor.reshape(new_shape)
+        pass
 
-        # 5: Apply GELU activation function
-        # TODO: Use F.gelu() with hidden_states and approximate="tanh"
-        # https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.gelu
-        # Hint: GELU is the non-linear activation used in GPT-2's MLP
-        hidden_states = None
+        # TODO: Move heads dimension to position 1
+        # Hint: return tensor.transpose(-3, -2)
+        return None
 
-        # 6: Apply the second linear transformation and return
-        # TODO: Apply self.c_proj to hidden_states and return the result
-        # Hint: This projects back to the embedding dimension
+    def _merge_heads(self, tensor, num_heads, attn_head_size):
+        """Merge attention heads back to original shape.
+
+        Args:
+            tensor: Input tensor, shape [batch, num_heads, seq_length, head_size]
+            num_heads: Number of attention heads
+            attn_head_size: Dimension of each head
+
+        Returns:
+            Tensor with shape [batch, seq_length, n_embd]
+        """
+        # TODO: Move heads dimension back
+        # Hint: tensor = tensor.transpose(-3, -2)
+        pass
+
+        # TODO: Flatten head dimensions
+        # Hint: new_shape = tensor.shape[:-2] + [num_heads * attn_head_size]
+        # Hint: return tensor.reshape(new_shape)
+        return None
+
+    def _attn(self, query, key, value):
+        """Compute attention for all heads in parallel.
+
+        Args:
+            query: Query tensor, shape [batch, num_heads, seq_length, head_size]
+            key: Key tensor, shape [batch, num_heads, seq_length, head_size]
+            value: Value tensor, shape [batch, num_heads, seq_length, head_size]
+
+        Returns:
+            Attention output, shape [batch, num_heads, seq_length, head_size]
+        """
+        # TODO: Implement attention computation
+        # The same 5-step process: scores, scale, mask, softmax, weighted sum
+        # Hint: Compute attention scores: query @ key.transpose(-1, -2)
+        # Hint: Scale by sqrt(head_dim): attn_weights / math.sqrt(head_dim)
+        # Hint: Apply causal mask using causal_mask function
+        # Hint: Apply softmax: F.softmax(attn_weights)
+        # Hint: Weighted sum: attn_weights @ value
+        return None
+
+    def __call__(self, hidden_states):
+        """Apply multi-head attention.
+
+        Args:
+            hidden_states: Input tensor, shape [batch, seq_length, n_embd]
+
+        Returns:
+            Attention output, shape [batch, seq_length, n_embd]
+        """
+        # TODO: Project to Q, K, V
+        # Hint: qkv = self.c_attn(hidden_states)
+        # Hint: query, key, value = F.split(qkv, [self.split_size, self.split_size, self.split_size], axis=-1)
+        pass
+
+        # TODO: Split into multiple heads
+        # Hint: query = self._split_heads(query, self.num_heads, self.head_dim)
+        # Hint: key = self._split_heads(key, self.num_heads, self.head_dim)
+        # Hint: value = self._split_heads(value, self.num_heads, self.head_dim)
+        pass
+
+        # TODO: Apply attention
+        # Hint: attn_output = self._attn(query, key, value)
+        pass
+
+        # TODO: Merge heads back
+        # Hint: attn_output = self._merge_heads(attn_output, self.num_heads, self.head_dim)
+        pass
+
+        # TODO: Output projection
+        # Hint: attn_output = self.c_proj(attn_output)
+        # Hint: return attn_output
         return None

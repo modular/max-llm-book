@@ -86,15 +86,15 @@ In the `forward` method, apply the three transformations:
 Return the final `hidden_states`. The input and output shapes are the same:
 `[batch, seq_length, embed_dim]`.
 
-**Implementation** (`step_04.py`):
+**Implementation** (`step_02.py`):
 
 ```python
-{{#include ../../steps/step_04.py}}
+{{#include ../../steps/step_02.py}}
 ```
 
 ### Validation
 
-Run `pixi run s04` to verify your implementation.
+Run `pixi run s02` to verify your implementation.
 
 <details>
 <summary>Show solution</summary>
@@ -105,5 +105,4 @@ Run `pixi run s04` to verify your implementation.
 
 </details>
 
-**Next**: In [Step 05](./step_05.md), you'll implement token embeddings to
-convert discrete token IDs into continuous vector representations.
+**Next**: In [Step 03](./step_03.md), you’ll implement causal masking to prevent tokens from attending to future positions in autoregressive generation.

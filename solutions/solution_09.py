@@ -1,70 +1,21 @@
 """
-Solution for Step 09: Transformer Block
+Solution for Step 09: Encode and decode tokens
 
-This module implements a complete GPT-2 transformer block, combining
-multi-head attention, MLP, layer normalization, and residual connections.
+This module provides utility functions to tokenize input text
+and decode token IDs back to text using a tokenizer.
 """
+import numpy as np
+from max.experimental.tensor import Tensor
 
-from max.nn.module_v3 import Module
+def tokenize_text(text: str, tokenizer, device, max_length: int = 128):
+    """Tokenize text and convert to tensor."""
+    tokens = tokenizer.encode(text, max_length=max_length, truncation=True)
+    return Tensor.constant([tokens], dtype=DType.int64, device=device)
 
-from solutions.solution_01 import GPT2Config
-from solutions.solution_04 import GPT2MLP
-from solutions.solution_07 import GPT2MultiHeadAttention
-from solutions.solution_08 import LayerNorm
-
-
-class GPT2Block(Module):
-    """Complete GPT-2 transformer block matching HuggingFace structure.
-
-    Architecture (pre-norm):
-    1. x = x + attention(layer_norm(x))
-    2. x = x + mlp(layer_norm(x))
-    """
-
-    def __init__(self, config: GPT2Config):
-        """Initialize transformer block.
-
-        Args:
-            config: GPT2Config containing model hyperparameters
-        """
-        super().__init__()
-
-        hidden_size = config.n_embd
-        # Inner dimension for MLP (4x hidden size by default)
-        inner_dim = (
-            config.n_inner
-            if hasattr(config, "n_inner") and config.n_inner is not None
-            else 4 * hidden_size
-        )
-
-        # First layer norm (before attention)
-        self.ln_1 = LayerNorm(hidden_size, eps=config.layer_norm_epsilon)
-        # Multi-head attention
-        self.attn = GPT2MultiHeadAttention(config)
-        # Second layer norm (before MLP)
-        self.ln_2 = LayerNorm(hidden_size, eps=config.layer_norm_epsilon)
-        # Feed-forward MLP
-        self.mlp = GPT2MLP(inner_dim, config)
-
-    def __call__(self, hidden_states):
-        """Apply transformer block.
-
-        Args:
-            hidden_states: Input tensor, shape [batch, seq_length, n_embd]
-
-        Returns:
-            Output tensor, shape [batch, seq_length, n_embd]
-        """
-        # Attention block with residual connection
-        residual = hidden_states
-        hidden_states = self.ln_1(hidden_states)
-        attn_output = self.attn(hidden_states)
-        hidden_states = attn_output + residual
-
-        # MLP block with residual connection
-        residual = hidden_states
-        hidden_states = self.ln_2(hidden_states)
-        feed_forward_hidden_states = self.mlp(hidden_states)
-        hidden_states = residual + feed_forward_hidden_states
-
-        return hidden_states
+def decode_tokens(token_ids: Tensor, tokenizer):
+    """Decode token IDs back to text."""
+    token_ids = np.from_dlpack(token_ids.to(CPU()))
+    if token_ids.ndim > 1:
+        token_ids = token_ids.flatten()
+    token_ids = token_ids.tolist()
+    return tokenizer.decode(token_ids, skip_special_tokens=True)

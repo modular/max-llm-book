@@ -60,4 +60,4 @@ Run `pixi run s01` to verify your implementation matches the expected configurat
 
 </details>
 
-**Next**: In [Step 02](./step_02.md), you'll implement causal masking to prevent tokens from attending to future positions in autoregressive generation.
+**Next**: In [Step 02](./step_02.md), you'll implement the MLP used in each transformer block.

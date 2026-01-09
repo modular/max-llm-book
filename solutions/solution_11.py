@@ -1,49 +1,88 @@
 """
-Solution for Step 11: Language Model Head
+Solution for Step 11: Load weights and run model
 
-This module adds the final projection layer that converts hidden states
-to vocabulary logits for predicting the next token.
+
 """
-
-from max.nn.module_v3 import Linear, Module
+from max.dtype import DType
+from max.experimental.tensor import Tensor, TensorType, defaults
+from max.graph import DeviceRef
+from max.nn.module_v3 import Linear
+from transformers import GPT2LMHeadModel, GPT2Tokenizer
 
 from solutions.solution_01 import GPT2Config
-from solutions.solution_10 import GPT2Model
+from solutions.solution_08 import MaxGPT2LMHeadModel
+from solutions.solution_10 import generate_text
 
+def run_model():
+    # Load HuggingFace model
+    torch_model = GPT2LMHeadModel.from_pretrained("gpt2")
+    print(f"Loaded HuggingFace model:\n{torch_model}")
 
-class MaxGPT2LMHeadModel(Module):
-    """Complete GPT-2 model with language modeling head.
+    # Initialize Max model
+    _, device = defaults()
+    print(f"Using device: {device}")
+    config = GPT2Config()
+    max_model = MaxGPT2LMHeadModel(config)
 
-    This is the full model that can be used for text generation.
-    """
+    print(
+        f"Model has {config.n_layer} layers, {config.n_head} heads, {config.n_embd} embedding dim"
+    )
 
-    def __init__(self, config: GPT2Config):
-        """Initialize GPT-2 with LM head.
+    # Load state dict and transpose weights
+    max_model.load_state_dict(torch_model.state_dict())
+    max_model.to(device)
+    for name, child in max_model.descendents:
+        if isinstance(child, Linear):
+            if any(layer_name in name for layer_name in ["c_attn", "c_proj", "c_fc"]):
+                print(f"Transposing {name}: {child.weight.shape}")
+                # The upstream model has conv1d layers instead of linear, which have their weights
+                # stored transposed compared to linear
+                child.weight = child.weight.T
 
-        Args:
-            config: GPT2Config containing model hyperparameters
-        """
-        super().__init__()
+    # Initialize tokenizer
+    tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
+    tokenizer.pad_token = tokenizer.eos_token  # Set padding token
 
-        self.config = config
-        # The transformer (embeddings + blocks + final norm)
-        self.transformer = GPT2Model(config)
-        # Language modeling head (hidden states -> vocabulary logits)
-        self.lm_head = Linear(config.n_embd, config.vocab_size, bias=False)
+    # Compile model
+    print("\nCompiling model...")
+    token_type = TensorType(
+        DType.int64, ("batch", "seqlen"), device=DeviceRef.from_device(device)
+    )
+    compiled_max_model = max_model.compile(token_type)
 
-    def __call__(self, input_ids):
-        """Forward pass through transformer and LM head.
+    # Interactive prompt loop
+    print("\n" + "=" * 50)
+    print("Model ready! Enter prompts to generate text.")
+    print("Press Ctrl+C or type 'quit' to exit.")
+    print("=" * 50 + "\n")
 
-        Args:
-            input_ids: Token IDs, shape [batch, seq_length]
+    try:
+        while True:
+            user_input = input("Enter your prompt: ").strip()
 
-        Returns:
-            Logits over vocabulary, shape [batch, seq_length, vocab_size]
-        """
-        # Get hidden states from transformer
-        hidden_states = self.transformer(input_ids)
+            if user_input.lower() in ['quit', 'exit', 'q']:
+                print("Exiting...")
+                break
 
-        # Project to vocabulary logits
-        logits = self.lm_head(hidden_states)
+            if not user_input:
+                print("Please enter a non-empty prompt.\n")
+                continue
 
-        return logits
+            print()
+            generated_text = generate_text(
+                compiled_max_model,
+                tokenizer,
+                device,
+                user_input,
+                max_new_tokens=50,
+                temperature=0.8,
+                do_sample=True
+            )
+            print(f"\nGenerated text:\n{generated_text}\n")
+            print("-" * 50 + "\n")
+
+    except KeyboardInterrupt:
+        print("\n\nExiting...")
+        
+
+run_model()

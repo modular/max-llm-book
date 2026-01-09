@@ -1,153 +1,72 @@
 """
-Solution for Step 07: Multi-head Attention
+Solution for Step 07: Stacking Transformer Blocks
 
-This module implements multi-head attention, which allows the model to jointly
-attend to information from different representation subspaces at different positions.
+This module stacks multiple transformer blocks and adds embeddings
+to create the complete GPT-2 transformer architecture.
 """
 
-import math
-
-from max.driver import Device
-from max.dtype import DType
-from max.experimental import functional as F
 from max.experimental.tensor import Tensor
-from max.graph import Dim, DimLike
-from max.nn.module_v3 import Linear, Module
+from max.nn.module_v3 import Embedding, Module, Sequential
 
 from solutions.solution_01 import GPT2Config
+from solutions.solution_05 import LayerNorm
+from solutions.solution_06 import GPT2Block
 
 
-@F.functional
-def causal_mask(
-    sequence_length: DimLike,
-    num_tokens: DimLike,
-    *,
-    dtype: DType,
-    device: Device,
-):
-    """Create a causal attention mask."""
-    n = Dim(sequence_length) + num_tokens
-    mask = Tensor.constant(float("-inf"), dtype=dtype, device=device)
-    mask = F.broadcast_to(mask, shape=(sequence_length, n))
-    return F.band_part(mask, num_lower=None, num_upper=0, exclude=True)
+class MaxGPT2Model(Module):
+    """Complete GPT-2 transformer model matching HuggingFace structure.
 
-
-class GPT2MultiHeadAttention(Module):
-    """Multi-head attention for GPT-2, matching HuggingFace structure."""
+    Architecture:
+    1. Token embeddings + position embeddings
+    2. Stack of n_layer transformer blocks
+    3. Final layer normalization
+    """
 
     def __init__(self, config: GPT2Config):
-        """Initialize multi-head attention.
+        """Initialize GPT-2 model.
 
         Args:
-            config: GPT2Config containing n_embd and n_head
+            config: GPT2Config containing model hyperparameters
         """
         super().__init__()
 
-        self.embed_dim = config.n_embd
-        self.num_heads = config.n_head
-        self.head_dim = self.embed_dim // self.num_heads
-        self.split_size = self.embed_dim
+        # Token embeddings (vocabulary -> embeddings)
+        self.wte = Embedding(config.vocab_size, dim=config.n_embd)
+        # Position embeddings (positions -> embeddings)
+        self.wpe = Embedding(config.n_positions, dim=config.n_embd)
 
-        # Combined Q/K/V projection
-        self.c_attn = Linear(self.embed_dim, 3 * self.embed_dim, bias=True)
-        # Output projection
-        self.c_proj = Linear(self.embed_dim, self.embed_dim, bias=True)
+        # Stack of transformer blocks
+        self.h = Sequential(*(GPT2Block(config) for _ in range(config.n_layer)))
 
-    def _split_heads(self, tensor, num_heads, attn_head_size):
-        """Split the last dimension into (num_heads, head_size).
+        # Final layer normalization
+        self.ln_f = LayerNorm(config.n_embd, eps=config.layer_norm_epsilon)
 
-        Transforms shape from [batch, seq_length, n_embd]
-        to [batch, num_heads, seq_length, head_size]
+    def __call__(self, input_ids):
+        """Forward pass through the transformer.
 
         Args:
-            tensor: Input tensor, shape [batch, seq_length, n_embd]
-            num_heads: Number of attention heads
-            attn_head_size: Dimension of each head
+            input_ids: Token IDs, shape [batch, seq_length]
 
         Returns:
-            Tensor with shape [batch, num_heads, seq_length, head_size]
+            Hidden states, shape [batch, seq_length, n_embd]
         """
-        # Add head dimension: [batch, seq_length, n_embd] -> [batch, seq_length, num_heads, head_size]
-        new_shape = tensor.shape[:-1] + [num_heads, attn_head_size]
-        tensor = tensor.reshape(new_shape)
-        # Move heads dimension: [batch, seq_length, num_heads, head_size] -> [batch, num_heads, seq_length, head_size]
-        return tensor.transpose(-3, -2)
+        batch_size, seq_length = input_ids.shape
 
-    def _merge_heads(self, tensor, num_heads, attn_head_size):
-        """Merge attention heads back to original shape.
+        # Get token embeddings
+        tok_embeds = self.wte(input_ids)
 
-        Transforms shape from [batch, num_heads, seq_length, head_size]
-        to [batch, seq_length, n_embd]
-
-        Args:
-            tensor: Input tensor, shape [batch, num_heads, seq_length, head_size]
-            num_heads: Number of attention heads
-            attn_head_size: Dimension of each head
-
-        Returns:
-            Tensor with shape [batch, seq_length, n_embd]
-        """
-        # Move heads dimension back: [batch, num_heads, seq_length, head_size] -> [batch, seq_length, num_heads, head_size]
-        tensor = tensor.transpose(-3, -2)
-        # Flatten head dimensions: [batch, seq_length, num_heads, head_size] -> [batch, seq_length, n_embd]
-        new_shape = tensor.shape[:-2] + [num_heads * attn_head_size]
-        return tensor.reshape(new_shape)
-
-    def _attn(self, query, key, value):
-        """Compute attention for all heads in parallel.
-
-        Args:
-            query: Query tensor, shape [batch, num_heads, seq_length, head_size]
-            key: Key tensor, shape [batch, num_heads, seq_length, head_size]
-            value: Value tensor, shape [batch, num_heads, seq_length, head_size]
-
-        Returns:
-            Attention output, shape [batch, num_heads, seq_length, head_size]
-        """
-        # Compute attention scores
-        attn_weights = query @ key.transpose(-1, -2)
-
-        # Scale attention weights
-        attn_weights = attn_weights / math.sqrt(int(value.shape[-1]))
-
-        # Apply causal mask
-        seq_len = query.shape[-2]
-        mask = causal_mask(seq_len, 0, dtype=query.dtype, device=query.device)
-        attn_weights = attn_weights + mask
-
-        # Softmax and weighted sum
-        attn_weights = F.softmax(attn_weights)
-        attn_output = attn_weights @ value
-
-        return attn_output
-
-    def __call__(self, hidden_states):
-        """Apply multi-head attention.
-
-        Args:
-            hidden_states: Input tensor, shape [batch, seq_length, n_embd]
-
-        Returns:
-            Attention output, shape [batch, seq_length, n_embd]
-        """
-        # Project to Q, K, V
-        qkv = self.c_attn(hidden_states)
-        query, key, value = F.split(
-            qkv, [self.split_size, self.split_size, self.split_size], axis=-1
+        # Get position embeddings
+        pos_embeds = self.wpe(
+            Tensor.arange(seq_length, dtype=input_ids.dtype, device=input_ids.device)
         )
 
-        # Split into multiple heads
-        query = self._split_heads(query, self.num_heads, self.head_dim)
-        key = self._split_heads(key, self.num_heads, self.head_dim)
-        value = self._split_heads(value, self.num_heads, self.head_dim)
+        # Combine embeddings
+        x = tok_embeds + pos_embeds
 
-        # Apply attention
-        attn_output = self._attn(query, key, value)
+        # Apply transformer blocks
+        x = self.h(x)
 
-        # Merge heads back
-        attn_output = self._merge_heads(attn_output, self.num_heads, self.head_dim)
+        # Final layer norm
+        x = self.ln_f(x)
 
-        # Output projection
-        attn_output = self.c_proj(attn_output)
-
-        return attn_output
+        return x

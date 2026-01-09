@@ -1,7 +1,6 @@
 import math
 from dataclasses import dataclass
 import numpy as np
-import torch
 from transformers import GPT2LMHeadModel, GPT2Tokenizer, GenerationConfig
 
 from max.driver import Device, CPU

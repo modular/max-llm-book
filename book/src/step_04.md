@@ -120,15 +120,15 @@ In the `forward` method, orchestrate the complete multi-head attention:
 - Merge heads: `attn_output = self._merge_heads(attn_output, self.num_heads, self.head_dim)`
 - Final projection: `return self.c_proj(attn_output)`
 
-**Implementation** (`step_07.py`):
+**Implementation** (`step_04.py`):
 
 ```python
-{{#include ../../steps/step_07.py}}
+{{#include ../../steps/step_04.py}}
 ```
 
 ### Validation
 
-Run `pixi run s07` to verify your implementation.
+Run `pixi run s04` to verify your implementation.
 
 <details>
 <summary>Show solution</summary>
@@ -139,5 +139,4 @@ Run `pixi run s07` to verify your implementation.
 
 </details>
 
-**Next**: In [Step 08](./step_08.md), you'll implement residual connections and
-layer normalization to enable training deep transformer networks.
+**Next**: In [Step 05](./step_05.md), you'll implement layer normalization to stabilize activations for effective training.

@@ -1,88 +1,103 @@
 """
-Step 10: Stacking Transformer Blocks
+Step 10: Text Generation
 
-Stack multiple transformer blocks with embeddings to create
-the complete GPT-2 model architecture.
+Implement autoregressive text generation with sampling and temperature control.
 
 Tasks:
-1. Import Tensor, Embedding, Module, Sequential, and previous components
-2. Create token and position embeddings
-3. Stack n_layer transformer blocks using Sequential
-4. Create final layer normalization
-5. Implement forward pass: embeddings -> blocks -> layer norm
+1. Import required modules (numpy, F, Tensor, etc.)
+2. Implement generate_next_token: get logits, apply temperature, sample/argmax
+3. Implement generate_tokens: loop to generate multiple tokens
 
 Run: pixi run s10
 """
 
 # TODO: Import required modules
+# Hint: You'll need numpy as np
+# Hint: You'll need CPU from max.driver
+# Hint: You'll need DType from max.dtype
+# Hint: You'll need functional as F from max.experimental
 # Hint: You'll need Tensor from max.experimental.tensor
-# Hint: You'll need Embedding, Module, Sequential from max.nn.module_v3
-# Hint: Import GPT2Config from solutions.solution_01
-# Hint: Import LayerNorm from solutions.solution_08
-# Hint: Import GPT2Block from solutions.solution_09
 
 
-class MaxGPT2Model(Module):
-    """Complete GPT-2 transformer model."""
+def generate_next_token(model, input_ids, temperature=1.0, do_sample=True):
+    """Generate the next token given input context.
 
-    def __init__(self, config: GPT2Config):
-        """Initialize GPT-2 model.
+    Args:
+        model: GPT-2 model with LM head
+        input_ids: Current sequence, shape [batch, seq_length]
+        temperature: Sampling temperature (higher = more random)
+        do_sample: If True, sample from distribution; if False, use greedy (argmax)
 
-        Args:
-            config: GPT2Config containing model hyperparameters
-        """
-        super().__init__()
+    Returns:
+        Next token ID as a Tensor
+    """
+    # TODO: Get logits from model
+    # Hint: logits = model(input_ids)
+    pass
 
-        # TODO: Create token embeddings
-        # Hint: Use Embedding(config.vocab_size, dim=config.n_embd)
-        self.wte = None
+    # TODO: Get logits for last position
+    # Hint: next_token_logits = logits[0, -1, :]
+    pass
 
-        # TODO: Create position embeddings
-        # Hint: Use Embedding(config.n_positions, dim=config.n_embd)
-        self.wpe = None
-
-        # TODO: Stack transformer blocks
-        # Hint: Use Sequential(*(GPT2Block(config) for _ in range(config.n_layer)))
-        # This creates config.n_layer blocks (12 for GPT-2 base)
-        self.h = None
-
-        # TODO: Create final layer normalization
-        # Hint: Use LayerNorm(config.n_embd, eps=config.layer_norm_epsilon)
-        self.ln_f = None
-
-    def __call__(self, input_ids):
-        """Forward pass through the transformer.
-
-        Args:
-            input_ids: Token IDs, shape [batch, seq_length]
-
-        Returns:
-            Hidden states, shape [batch, seq_length, n_embd]
-        """
-        # TODO: Get batch size and sequence length
-        # Hint: batch_size, seq_length = input_ids.shape
+    # TODO: If sampling with temperature
+    if do_sample and temperature > 0:
+        # TODO: Apply temperature scaling
+        # Hint: temp_tensor = Tensor.constant(temperature, dtype=next_token_logits.dtype, device=next_token_logits.device)
+        # Hint: next_token_logits = next_token_logits / temp_tensor
         pass
 
-        # TODO: Get token embeddings
-        # Hint: tok_embeds = self.wte(input_ids)
+        # TODO: Convert to probabilities
+        # Hint: probs = F.softmax(next_token_logits)
         pass
 
-        # TODO: Get position embeddings
-        # Hint: Create position indices with Tensor.arange(seq_length, dtype=input_ids.dtype, device=input_ids.device)
-        # Hint: pos_embeds = self.wpe(position_indices)
+        # TODO: Sample from distribution
+        # Hint: probs_np = np.from_dlpack(probs.to(CPU()))
+        # Hint: next_token_id = np.random.choice(len(probs_np), p=probs_np)
+        # Hint: next_token_tensor = Tensor.constant(next_token_id, dtype=DType.int64, device=input_ids.device)
+        pass
+    else:
+        # TODO: Greedy decoding (select most likely token)
+        # Hint: next_token_tensor = F.argmax(next_token_logits)
         pass
 
-        # TODO: Combine embeddings
-        # Hint: x = tok_embeds + pos_embeds
-        pass
+    # TODO: Return the next token
+    return None
 
-        # TODO: Apply transformer blocks
-        # Hint: x = self.h(x)
-        pass
 
-        # TODO: Apply final layer norm
-        # Hint: x = self.ln_f(x)
-        pass
+def generate_tokens(
+    model, input_ids, max_new_tokens=10, temperature=1.0, do_sample=True
+):
+    """Generate multiple tokens autoregressively.
 
-        # TODO: Return the output
-        return None
+    Args:
+        model: GPT-2 model with LM head
+        input_ids: Initial sequence, shape [batch, seq_length]
+        max_new_tokens: Number of tokens to generate
+        temperature: Sampling temperature
+        do_sample: Whether to sample or use greedy decoding
+
+    Returns:
+        Generated sequence including input, shape [batch, seq_length + max_new_tokens]
+    """
+    # TODO: Initialize generated tokens with input
+    # Hint: generated_tokens = input_ids
+    pass
+
+    # TODO: Generation loop
+    # Hint: for _ in range(max_new_tokens):
+    pass
+
+    # TODO: Generate next token
+    # Hint: next_token = generate_next_token(model, generated_tokens, temperature=temperature, do_sample=do_sample)
+    pass
+
+    # TODO: Reshape to [1, 1] for concatenation
+    # Hint: next_token_2d = next_token.reshape([1, -1])
+    pass
+
+    # TODO: Append to sequence
+    # Hint: generated_tokens = F.concat([generated_tokens, next_token_2d], axis=1)
+    pass
+
+    # TODO: Return generated sequence
+    return None

@@ -1,38 +1,37 @@
 """
-Solution for Step 05: Token Embeddings
+Solution for Step 05: Layer Normalization
 
-This module implements token embeddings that convert discrete token IDs
-into continuous vector representations.
+This module implements layer normalization that normalizes activations
+across the embedding dimension for training stability.
 """
 
-from max.nn.module_v3 import Embedding, Module
+from max.experimental import functional as F
+from max.experimental.tensor import Tensor
+from max.graph import DimLike
+from max.nn.module_v3 import Module
 
-from solutions.solution_01 import GPT2Config
 
+class LayerNorm(Module):
+    """Layer normalization module.
 
-class GPT2Embeddings(Module):
-    """Token embeddings for GPT-2, matching HuggingFace structure."""
+    Args:
+        dim: Dimension to normalize over.
+        eps: Epsilon for numerical stability.
+    """
 
-    def __init__(self, config: GPT2Config):
-        """Initialize token embedding layer.
-
-        Args:
-            config: GPT2Config containing vocab_size and n_embd
-        """
+    def __init__(self, dim: DimLike, *, eps: float = 1e-5):
         super().__init__()
+        self.eps = eps
+        self.weight = Tensor.ones([dim])
+        self.bias = Tensor.zeros([dim])
 
-        # Token embedding: lookup table from vocab_size to embedding dimension
-        # This converts discrete token IDs (0 to vocab_size-1) into dense vectors
-        self.wte = Embedding(config.vocab_size, dim=config.n_embd)
-
-    def __call__(self, input_ids):
-        """Convert token IDs to embeddings.
+    def __call__(self, x: Tensor) -> Tensor:
+        """Apply layer normalization.
 
         Args:
-            input_ids: Tensor of token IDs, shape [batch_size, seq_length]
+            x: Input tensor.
 
         Returns:
-            Token embeddings, shape [batch_size, seq_length, n_embd]
+            Normalized tensor.
         """
-        # Simple lookup: each token ID becomes its corresponding embedding vector
-        return self.wte(input_ids)
+        return F.layer_norm(x, gamma=self.weight, beta=self.bias, epsilon=self.eps)

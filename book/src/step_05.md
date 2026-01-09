@@ -60,15 +60,15 @@ Store the epsilon value as `self.eps` for numerical stability.
 
 In the `forward` method, apply layer normalization with `F.layer_norm(x, gamma=self.weight, beta=self.bias, epsilon=self.eps)`. This computes the normalization and applies the learned parameters in one operation.
 
-**Implementation** (`step_03.py`):
+**Implementation** (`step_05.py`):
 
 ```python
-{{#include ../../steps/step_03.py}}
+{{#include ../../steps/step_05.py}}
 ```
 
 ### Validation
 
-Run `pixi run s03` to verify your implementation.
+Run `pixi run s05` to verify your implementation.
 
 <details>
 <summary>Show solution</summary>
@@ -79,4 +79,4 @@ Run `pixi run s03` to verify your implementation.
 
 </details>
 
-**Next**: In [Step 04](./step_04.md), you'll implement the feed-forward network (MLP) with GELU activation used in each transformer block.
+**Next**: In [Step 06](./step_06.md), you’ll combine multi-head attention, MLP, layer norm, and residual connections into a complete transformer block.

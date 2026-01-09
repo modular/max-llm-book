@@ -1,37 +1,37 @@
 """
-Solution for Step 03: Layer Normalization
+Solution for Step 03: Causal Masking
 
-This module implements layer normalization that normalizes activations
-across the embedding dimension for training stability.
+This module implements causal attention masking that prevents tokens from
+attending to future positions in autoregressive generation.
 """
 
+from max.driver import Device
+from max.dtype import DType
 from max.experimental import functional as F
 from max.experimental.tensor import Tensor
-from max.graph import DimLike
-from max.nn.module_v3 import Module
+from max.graph import Dim, DimLike
 
 
-class LayerNorm(Module):
-    """Layer normalization module.
+@F.functional
+def causal_mask(
+    sequence_length: DimLike,
+    num_tokens: DimLike,
+    *,
+    dtype: DType,
+    device: Device,
+):
+    """Create a causal mask for autoregressive attention.
 
     Args:
-        dim: Dimension to normalize over.
-        eps: Epsilon for numerical stability.
+        sequence_length: Length of the sequence.
+        num_tokens: Number of tokens.
+        dtype: Data type for the mask.
+        device: Device to create the mask on.
+
+    Returns:
+        A causal mask tensor.
     """
-
-    def __init__(self, dim: DimLike, *, eps: float = 1e-5):
-        super().__init__()
-        self.eps = eps
-        self.weight = Tensor.ones([dim])
-        self.bias = Tensor.zeros([dim])
-
-    def __call__(self, x: Tensor) -> Tensor:
-        """Apply layer normalization.
-
-        Args:
-            x: Input tensor.
-
-        Returns:
-            Normalized tensor.
-        """
-        return F.layer_norm(x, gamma=self.weight, beta=self.bias, epsilon=self.eps)
+    n = Dim(sequence_length) + num_tokens
+    mask = Tensor.constant(float("-inf"), dtype=dtype, device=device)
+    mask = F.broadcast_to(mask, shape=(sequence_length, n))
+    return F.band_part(mask, num_lower=None, num_upper=0, exclude=True)

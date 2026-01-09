@@ -1,44 +1,81 @@
 """
-Step 06: Position Embeddings
+Step 06: Transformer Block
 
-Implement position embeddings that encode sequence order information.
+Combine multi-head attention, MLP, layer normalization, and residual
+connections into a complete transformer block.
 
 Tasks:
-1. Import Tensor from max.experimental.tensor
-2. Import Embedding and Module from max.nn.module_v3
-3. Create position embedding layer using Embedding(n_positions, dim=n_embd)
-4. Implement forward pass that looks up embeddings for position indices
+1. Import Module and all previous solution components
+2. Create ln_1, attn, ln_2, and mlp layers
+3. Implement forward pass with pre-norm residual pattern
 
 Run: pixi run s06
 """
 
-# TODO: Import required modules from MAX
-# Hint: You'll need Tensor from max.experimental.tensor
-# Hint: You'll need Embedding and Module from max.nn.module_v3
+# TODO: Import required modules
+# Hint: You'll need Module from max.nn.module_v3
+# Hint: Import GPT2Config from solutions.solution_01
+# Hint: Import GPT2MLP from solutions.solution_02
+# Hint: Import GPT2MultiHeadAttention from solutions.solution_04
+# Hint: Import LayerNorm from solutions.solution_05     
 
-from solutions.solution_01 import GPT2Config
 
-
-class GPT2PositionEmbeddings(Module):
-    """Position embeddings for GPT-2."""
+class GPT2Block(Module):
+    """Complete GPT-2 transformer block."""
 
     def __init__(self, config: GPT2Config):
-        super().__init__()
-
-        # TODO: Create position embedding layer
-        # Hint: Use Embedding(config.n_positions, dim=config.n_embd)
-        # This creates a lookup table for position indices (0, 1, 2, ..., n_positions-1)
-        self.wpe = None
-
-    def __call__(self, position_ids):
-        """Convert position indices to embeddings.
+        """Initialize transformer block.
 
         Args:
-            position_ids: Tensor of position indices, shape [seq_length] or [batch_size, seq_length]
+            config: GPT2Config containing model hyperparameters
+        """
+        super().__init__()
+
+        hidden_size = config.n_embd
+        inner_dim = (
+            config.n_inner
+            if hasattr(config, "n_inner") and config.n_inner is not None
+            else 4 * hidden_size
+        )
+
+        # TODO: Create first layer norm (before attention)
+        # Hint: Use LayerNorm(hidden_size, eps=config.layer_norm_epsilon)
+        self.ln_1 = None
+
+        # TODO: Create multi-head attention
+        # Hint: Use GPT2MultiHeadAttention(config)
+        self.attn = None
+
+        # TODO: Create second layer norm (before MLP)
+        # Hint: Use LayerNorm(hidden_size, eps=config.layer_norm_epsilon)
+        self.ln_2 = None
+
+        # TODO: Create MLP
+        # Hint: Use GPT2MLP(inner_dim, config)
+        self.mlp = None
+
+    def __call__(self, hidden_states):
+        """Apply transformer block.
+
+        Args:
+            hidden_states: Input tensor, shape [batch, seq_length, n_embd]
 
         Returns:
-            Position embeddings, shape matching input with added embedding dimension
+            Output tensor, shape [batch, seq_length, n_embd]
         """
-        # TODO: Return the position embeddings
-        # Hint: Simply call self.wpe with position_ids
+        # TODO: Attention block with residual connection
+        # Hint: residual = hidden_states
+        # Hint: hidden_states = self.ln_1(hidden_states)
+        # Hint: attn_output = self.attn(hidden_states)
+        # Hint: hidden_states = attn_output + residual
+        pass
+
+        # TODO: MLP block with residual connection
+        # Hint: residual = hidden_states
+        # Hint: hidden_states = self.ln_2(hidden_states)
+        # Hint: feed_forward_hidden_states = self.mlp(hidden_states)
+        # Hint: hidden_states = residual + feed_forward_hidden_states
+        pass
+
+        # TODO: Return the output
         return None

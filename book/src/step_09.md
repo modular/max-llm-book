@@ -2,39 +2,43 @@
 
 <div class="note">
 
-Learn to implement autoregressive text generation with sampling and temperature control.
+Learn to convert between text and token IDs using tokenizers and MAX tensors.
 
 </div>
 
-In this final step, you'll implement the generation loop that produces text one token at a time. The model predicts the next token, appends it to the sequence, and repeats until reaching the desired length.
+In this step, you'll implement utility functions to bridge the gap between text and the token IDs your model operates on. The `tokenize_text` function converts strings to MAX tensors, while `decode_tokens` converts tensors back to readable text.
 
-Start with a prompt like "Hello world" (tokens `[15496, 995]`). The model predicts the next token, giving you `[15496, 995, 318]` ("Hello world is"). It predicts again, producing `[15496, 995, 318, 257]` ("Hello world is a"). This process continues, with each prediction feeding back as input for the next.
+Language models don't work with raw text. Instead, they process token IDs - integers that represent pieces of text according to a vocabulary. GPT-2 uses Byte Pair Encoding (BPE), which breaks text into subword units. For example, "Hello world" becomes `[15496, 995]` - two tokens representing the words.
 
-You'll implement two generation strategies: greedy decoding (always pick the highest-scoring token) and sampling (randomly choose according to probabilities). You'll also add temperature control to adjust how random or focused the generation is.
+You'll use the HuggingFace tokenizer to handle the text-to-token conversion, then wrap it with functions that work with MAX tensors. This separation keeps tokenization (a preprocessing step) separate from model inference (tensor operations).
 
-## Understanding the generation loop
+## Understanding tokenization
 
-The generation loop is simple: run the model, extract the next token prediction, append it to the sequence, repeat. Each iteration requires a full forward pass through all 12 transformer blocks.
+Tokenization converts text to a list of integers. The GPT-2 tokenizer uses a vocabulary of 50,257 tokens, where common words get single tokens and rare words split into subwords.
 
-The model outputs logits with shape `[batch, seq_length, vocab_size]`. Since you only care about predicting the next token, extract the last position: `logits[0, -1, :]`. This gives you a vector of 50,257 scores, one per vocabulary token.
+The HuggingFace tokenizer provides an `encode` method that takes text and returns a Python list of token IDs. For example:
 
-These scores are logits (unnormalized), not probabilities. To convert them to probabilities, apply softmax. Then you can either pick the highest-probability token (greedy) or sample from the distribution (random).
+```python
+tokenizer.encode("Hello world")  # Returns [15496, 995]
+```
 
-## Understanding temperature control
+You can specify `max_length` and `truncation=True` to limit sequence length. If the text exceeds `max_length`, the tokenizer cuts it off. This prevents memory issues with very long inputs.
 
-Temperature scaling adjusts how random the generation is using the formula `scaled_logits = logits / temperature`.
+After encoding, you need to convert the Python list to a MAX tensor. Use `Tensor.constant` to create a tensor with the token IDs, specifying `dtype=DType.int64` (GPT-2 expects 64-bit integers) and the target device.
 
-With temperature 1.0, you use the original distribution. With temperature 0.7, you sharpen the distribution, and high-probability tokens become even more likely, making generation more focused and deterministic. With temperature 1.2, you flatten the distribution, and lower-probability tokens get more chances, making generation more diverse and creative.
+The tensor needs shape `[batch, seq_length]` for model input. Wrap the token list in another list to add the batch dimension: `[tokens]` becomes `[[15496, 995]]` with shape `[1, 2]`.
 
-Temperature is applied before softmax. Dividing by a value less than 1 makes large logits even larger (sharpening), while dividing by a value greater than 1 reduces the differences between logits (flattening).
+## Understanding decoding
 
-## Understanding sampling vs greedy
+Decoding reverses tokenization: convert token IDs back to text. This requires moving tensors from GPU to CPU, converting to NumPy, then using the tokenizer's `decode` method.
 
-Greedy decoding always picks the highest-probability token using [`F.argmax`](https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.argmax). It's fast, deterministic, and simple, but often produces repetitive text because the model keeps choosing the safest option.
+First, transfer the tensor to CPU with `.to(CPU())`. MAX tensors can live on GPU or CPU, but Python libraries like NumPy only work with CPU data.
 
-Sampling randomly selects tokens according to their probabilities. Convert logits to probabilities with `F.softmax`, transfer to CPU, convert to NumPy with `np.from_dlpack`, then sample with `np.random.choice`. You use NumPy because MAX doesn't have built-in sampling yet.
+Next, convert to NumPy using `np.from_dlpack`. DLPack is a standard that enables zero-copy tensor sharing between frameworks. The MAX tensor and NumPy array share the same underlying memory.
 
-Most practical generation uses sampling with temperature control. This balances creativity with coherence, as the model can explore different possibilities while still favoring high-quality continuations.
+If the tensor is 2D (batch dimension present), flatten it to 1D with `.flatten()`. The tokenizer expects a flat list of token IDs, not a batched format.
+
+Finally, convert to a Python list with `.tolist()` and decode with `tokenizer.decode(token_ids, skip_special_tokens=True)`. The `skip_special_tokens=True` parameter removes padding and end-of-sequence markers from the output.
 
 <div class="note">
 
@@ -42,59 +46,51 @@ Most practical generation uses sampling with temperature control. This balances 
 
 You'll use the following MAX operations to complete this task:
 
-**Probability operations**:
+**Tensor creation**:
 
-- [`F.softmax(logits)`](https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.softmax): Converts logits to probabilities
-- [`F.argmax(logits)`](https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.argmax): Selects highest-probability token (greedy)
+- [`Tensor.constant(data, dtype, device)`](https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.constant): Creates tensor from Python data
 
-**Sequence building**:
+**Device transfer**:
 
-- [`F.concat([seq, new_token], axis=1)`](https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.concat): Appends token to sequence
-- [`Tensor.constant(value, dtype, device)`](https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.constant): Creates scalar tensors
+- [`tensor.to(CPU())`](https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.to): Moves tensor to CPU for NumPy conversion
 
 **NumPy interop**:
 
-- `probs.to(CPU())`: Transfers tensor to CPU
-- `np.from_dlpack(probs)`: Converts MAX tensor to NumPy for sampling
+- `np.from_dlpack(tensor)`: Converts MAX tensor to NumPy using DLPack protocol
 
 </div>
 
-## Implementing text generation
+## Implementing tokenization
 
-You'll create two functions: `generate_next_token` that predicts a single token, and `generate` that loops to produce full sequences.
+You'll create two functions: `tokenize_text` to convert strings to tensors, and `decode_tokens` to convert tensors back to strings.
 
-First, import the required modules. You'll need `numpy` for sampling, `CPU` from MAX's driver, `DType` for type constants, `functional as F` for operations like softmax and argmax, and `Tensor` for creating tensors.
+First, import the required modules. You'll need `numpy as np` for array operations, `CPU` from MAX's driver for device specification, `DType` for specifying integer types, and `Tensor` for creating and manipulating tensors.
 
-In `generate_next_token`, implement the prediction logic:
+In `tokenize_text`, implement the encoding and conversion:
 
-1. Run the model to get logits: `logits = model(input_ids)`
-2. Extract the last position (next token prediction): `next_token_logits = logits[0, -1, :]`
-3. If using temperature, scale the logits by dividing by the temperature tensor
-4. For sampling: convert to probabilities with `F.softmax`, transfer to CPU, convert to NumPy with `np.from_dlpack`, sample with `np.random.choice`, then convert back to a MAX tensor
-5. For greedy: use `F.argmax` to select the highest-scoring token
+1. Encode the text to token IDs using the tokenizer: `tokens = tokenizer.encode(text, max_length=max_length, truncation=True)`
+2. Convert to a MAX tensor with batch dimension: `Tensor.constant([tokens], dtype=DType.int64, device=device)`
 
-The temperature must be a tensor with the same dtype and device as the logits. Create it with `Tensor.constant(temperature, dtype=..., device=...)`.
+Note the `[tokens]` wrapping to create the batch dimension. This gives shape `[1, seq_length]` instead of just `[seq_length]`.
 
-In `generate`, implement the generation loop:
+In `decode_tokens`, implement the reverse process:
 
-1. Initialize with the input: `generated_tokens = input_ids`
-2. Loop `max_new_tokens` times
-3. Generate the next token: `next_token = generate_next_token(model, generated_tokens, ...)`
-4. Reshape to 2D: `next_token_2d = next_token.reshape([1, -1])`
-5. Concatenate to the sequence: `generated_tokens = F.concat([generated_tokens, next_token_2d], axis=1)`
-6. Return the complete sequence
+1. Transfer to CPU and convert to NumPy: `token_ids = np.from_dlpack(token_ids.to(CPU()))`
+2. Flatten if needed: `if token_ids.ndim > 1: token_ids = token_ids.flatten()`
+3. Convert to Python list: `token_ids = token_ids.tolist()`
+4. Decode to text: `return tokenizer.decode(token_ids, skip_special_tokens=True)`
 
-The reshape is necessary because `concat` requires matching dimensions, and the generated token is 0D (scalar).
+The flattening step handles both 1D and 2D tensors, making the function work with single sequences or batches.
 
-**Implementation** (`step_12.py`):
+**Implementation** (`step_09.py`):
 
 ```python
-{{#include ../../steps/step_12.py}}
+{{#include ../../steps/step_09.py}}
 ```
 
 ### Validation
 
-Run `pixi run s12` to verify your implementation.
+Run `pixi run s09` to verify your implementation correctly converts text to tensors and back.
 
 <details>
 <summary>Show solution</summary>
@@ -105,46 +101,4 @@ Run `pixi run s12` to verify your implementation.
 
 </details>
 
-## What you've built
-
-You've completed all 12 steps and built a complete GPT-2 model from scratch
-using MAX. You now have a working implementation of:
-
-**Core components**:
-
-- Model configuration and architecture definition
-- Causal masking for autoregressive generation
-- Layer normalization for training stability
-- Feed-forward networks with GELU activation
-- Token and position embeddings
-- Multi-head self-attention
-- Residual connections and transformer blocks
-- Language model head for next-token prediction
-- Text generation with temperature and sampling
-
-Your model loads OpenAI's pretrained GPT-2 weights and generates text. You
-understand how every component works, from the low-level tensor operations to
-the high-level architecture decisions.
-
-## What's next?
-
-You now understand the architectural foundation that powers modern language
-models. LLaMA, Mistral, and more build on these same components with incremental
-refinements. You have everything you need to implement those refinements
-yourself.
-
-Consider extending your implementation with:
-
-- **Grouped-query attention (GQA)**: Reduce memory consumption by sharing key-value pairs across multiple query heads, as used in LLaMA 2.
-- **Rotary position embeddings (RoPE)**: Replace learned position embeddings with rotation-based encoding, improving length extrapolation in models like LLaMA and GPT-NeoX.
-- **SwiGLU activation**: Swap GELU for the gated linear unit variant used in LLaMA and PaLM.
-- **Mixture of experts (MoE)**: Add sparse expert routing to scale model capacity efficiently, as in Mixtral and GPT-4.
-
-Each refinement builds directly on what you've implemented. The attention
-mechanism you wrote becomes grouped-query attention with a simple modification
-to how you reshape key-value tensors. Your position embeddings can be replaced
-with RoPE by changing how you encode positional information. The feed-forward
-network you built becomes SwiGLU by adding a gating mechanism.
-
-Pick an architecture that interests you and start building. You'll find the
-patterns are familiar because the fundamentals haven't changed.
+**Next**: In [Step 10](./step_10.md), you'll implement the text generation loop that uses these functions to produce coherent text autoregressively.

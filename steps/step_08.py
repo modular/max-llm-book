@@ -1,101 +1,59 @@
 """
-Step 08: Residual Connections and Layer Normalization
+Step 08: Language Model Head
 
-Implement layer normalization and residual connections, which enable
-training deep transformer networks by stabilizing gradients.
+Add the final projection layer that converts hidden states to vocabulary logits.
 
 Tasks:
-1. Import F (functional), Tensor, DimLike, and Module
-2. Create LayerNorm class with learnable weight and bias parameters
-3. Implement layer norm using F.layer_norm
-4. Implement residual connection (simple addition)
+1. Import Linear, Module, and previous components
+2. Create transformer and lm_head layers
+3. Implement forward pass: transformer -> lm_head
 
 Run: pixi run s08
 """
 
 # TODO: Import required modules
-# Hint: You'll need F from max.experimental
-# Hint: You'll need Tensor from max.experimental.tensor
-# Hint: You'll need DimLike from max.graph
-# Hint: You'll need Module from max.nn.module_v3
+# Hint: You'll need Linear and Module from max.nn.module_v3
+# Hint: Import GPT2Config from solutions.solution_01
+# Hint: Import MaxGPT2Model from solutions.solution_07
 
+class MaxGPT2LMHeadModel(Module):
+    """Complete GPT-2 model with language modeling head."""
 
-class LayerNorm(Module):
-    """Layer normalization module matching HuggingFace GPT-2."""
-
-    def __init__(self, dim: DimLike, *, eps: float = 1e-5):
-        """Initialize layer normalization.
+    def __init__(self, config: GPT2Config):
+        """Initialize GPT-2 with LM head.
 
         Args:
-            dim: Dimension to normalize (embedding dimension)
-            eps: Small epsilon for numerical stability
-        """
-        super().__init__()
-        self.eps = eps
-
-        # TODO: Create learnable scale parameter (weight)
-        # Hint: Use Tensor.ones([dim])
-        self.weight = None
-
-        # TODO: Create learnable shift parameter (bias)
-        # Hint: Use Tensor.zeros([dim])
-        self.bias = None
-
-    def __call__(self, x: Tensor) -> Tensor:
-        """Apply layer normalization.
-
-        Args:
-            x: Input tensor, shape [..., dim]
-
-        Returns:
-            Normalized tensor, same shape as input
-        """
-        # TODO: Apply layer normalization
-        # Hint: Use F.layer_norm(x, gamma=self.weight, beta=self.bias, epsilon=self.eps)
-        return None
-
-
-class ResidualBlock(Module):
-    """Demonstrates residual connections with layer normalization."""
-
-    def __init__(self, dim: int, eps: float = 1e-5):
-        """Initialize residual block.
-
-        Args:
-            dim: Dimension of the input/output
-            eps: Epsilon for layer normalization
+            config: GPT2Config containing model hyperparameters
         """
         super().__init__()
 
-        # TODO: Create layer normalization
-        # Hint: Use LayerNorm(dim, eps=eps)
-        self.ln = None
+        self.config = config
 
-    def __call__(self, x: Tensor, sublayer_output: Tensor) -> Tensor:
-        """Apply residual connection.
+        # TODO: Create the transformer
+        # Hint: Use MaxGPT2Model(config)
+        self.transformer = None
+
+        # TODO: Create language modeling head
+        # Hint: Use Linear(config.n_embd, config.vocab_size, bias=False)
+        # Projects from hidden dimension to vocabulary size
+        self.lm_head = None
+
+    def __call__(self, input_ids):
+        """Forward pass through transformer and LM head.
 
         Args:
-            x: Input tensor (the residual)
-            sublayer_output: Output from sublayer applied to ln(x)
+            input_ids: Token IDs, shape [batch, seq_length]
 
         Returns:
-            x + sublayer_output
+            Logits over vocabulary, shape [batch, seq_length, vocab_size]
         """
-        # TODO: Add input and sublayer output (residual connection)
-        # Hint: return x + sublayer_output
+        # TODO: Get hidden states from transformer
+        # Hint: hidden_states = self.transformer(input_ids)
+        pass
+
+        # TODO: Project to vocabulary logits
+        # Hint: logits = self.lm_head(hidden_states)
+        pass
+
+        # TODO: Return logits
         return None
-
-
-def apply_residual_connection(input_tensor: Tensor, sublayer_output: Tensor) -> Tensor:
-    """Apply a residual connection by adding input to sublayer output.
-
-    Args:
-        input_tensor: Original input (the residual)
-        sublayer_output: Output from a sublayer (attention, MLP, etc.)
-
-    Returns:
-        input_tensor + sublayer_output
-    """
-    # TODO: Add the two tensors
-    # Hint: return input_tensor + sublayer_output
-    return None

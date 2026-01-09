@@ -1,42 +1,61 @@
 """
-Step 05: Token Embeddings
+Step 05: Layer Normalization
 
-Implement token embeddings that convert discrete token IDs into continuous vectors.
+Implement layer normalization that normalizes activations for training stability.
 
 Tasks:
-1. Import Embedding and Module from max.nn.module_v3
-2. Create token embedding layer using Embedding(vocab_size, dim=n_embd)
-3. Implement forward pass that looks up embeddings for input token IDs
+1. Import functional module (as F) and Tensor from max.experimental
+2. Initialize learnable weight (gamma) and bias (beta) parameters
+3. Apply layer normalization using F.layer_norm in the forward pass
 
 Run: pixi run s05
 """
 
-# TODO: Import required modules from MAX
-# Hint: You'll need Embedding and Module from max.nn.module_v3
+# 1: Import the required modules from MAX
+# TODO: Import functional module from max.experimental with the alias F
+# https://docs.modular.com/max/api/python/experimental/functional
 
-from solutions.solution_01 import GPT2Config
+# TODO: Import Tensor from max.experimental.tensor
+# https://docs.modular.com/max/api/python/experimental/tensor.Tensor
+
+from max.graph import DimLike
+from max.nn.module_v3 import Module
 
 
-class GPT2Embeddings(Module):
-    """Token embeddings for GPT-2."""
+class LayerNorm(Module):
+    """Layer normalization module.
 
-    def __init__(self, config: GPT2Config):
+    Args:
+        dim: Dimension to normalize over.
+        eps: Epsilon for numerical stability.
+    """
+
+    def __init__(self, dim: DimLike, *, eps: float = 1e-5):
         super().__init__()
+        self.eps = eps
 
-        # TODO: Create token embedding layer
-        # Hint: Use Embedding(config.vocab_size, dim=config.n_embd)
-        # This creates a lookup table that converts token IDs to embedding vectors
-        self.wte = None
+        # 2: Initialize learnable weight and bias parameters
+        # TODO: Create self.weight as a Tensor of ones with shape [dim]
+        # https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.ones
+        # Hint: This is the gamma parameter in layer normalization
+        self.weight = None
 
-    def __call__(self, input_ids):
-        """Convert token IDs to embeddings.
+        # TODO: Create self.bias as a Tensor of zeros with shape [dim]
+        # https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.zeros
+        # Hint: This is the beta parameter in layer normalization
+        self.bias = None
+
+    def __call__(self, x: Tensor) -> Tensor:
+        """Apply layer normalization.
 
         Args:
-            input_ids: Tensor of token IDs, shape [batch_size, seq_length]
+            x: Input tensor.
 
         Returns:
-            Token embeddings, shape [batch_size, seq_length, n_embd]
+            Normalized tensor.
         """
-        # TODO: Return the embedded tokens
-        # Hint: Simply call self.wte with input_ids
+        # 3: Apply layer normalization and return the result
+        # TODO: Use F.layer_norm() with x, gamma=self.weight, beta=self.bias, epsilon=self.eps
+        # https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.layer_norm
+        # Hint: Layer normalization normalizes across the last dimension
         return None

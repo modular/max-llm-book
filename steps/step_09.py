@@ -1,81 +1,68 @@
 """
-Step 09: Transformer Block
+Step 09: Encode and decode tokens
 
-Combine multi-head attention, MLP, layer normalization, and residual
-connections into a complete transformer block.
+This module provides utility functions to tokenize input text
+and decode token IDs back to text using a tokenizer.
 
 Tasks:
-1. Import Module and all previous solution components
-2. Create ln_1, attn, ln_2, and mlp layers
-3. Implement forward pass with pre-norm residual pattern
+1. Tokenize text and convert to tensor
+2. Decode token IDs back to text
 
 Run: pixi run s09
 """
 
 # TODO: Import required modules
-# Hint: You'll need Module from max.nn.module_v3
-# Hint: Import GPT2Config from solutions.solution_01
-# Hint: Import GPT2MLP from solutions.solution_04
-# Hint: Import GPT2MultiHeadAttention from solutions.solution_07
-# Hint: Import LayerNorm from solutions.solution_08
+# Hint: You'll need numpy as np
+# Hint: You'll need CPU from max.driver
+# Hint: You'll need DType from max.dtype
+# Hint: You'll need Tensor from max.experimental.tensor
 
 
-class GPT2Block(Module):
-    """Complete GPT-2 transformer block."""
+def tokenize_text(text: str, tokenizer, device, max_length: int = 128):
+    """Tokenize text and convert to tensor.
 
-    def __init__(self, config: GPT2Config):
-        """Initialize transformer block.
+    Args:
+        text: Input text to tokenize
+        tokenizer: HuggingFace tokenizer
+        device: Device to place tensor on
+        max_length: Maximum sequence length
 
-        Args:
-            config: GPT2Config containing model hyperparameters
-        """
-        super().__init__()
+    Returns:
+        Tensor of token IDs with shape [1, seq_length]
+    """
+    # TODO: Encode text to token IDs
+    # Hint: tokens = tokenizer.encode(text, max_length=max_length, truncation=True)
+    pass
 
-        hidden_size = config.n_embd
-        inner_dim = (
-            config.n_inner
-            if hasattr(config, "n_inner") and config.n_inner is not None
-            else 4 * hidden_size
-        )
+    # TODO: Convert to MAX tensor
+    # Hint: return Tensor.constant([tokens], dtype=DType.int64, device=device)
+    # Note: Wrap tokens in a list to create batch dimension
+    return None
 
-        # TODO: Create first layer norm (before attention)
-        # Hint: Use LayerNorm(hidden_size, eps=config.layer_norm_epsilon)
-        self.ln_1 = None
 
-        # TODO: Create multi-head attention
-        # Hint: Use GPT2MultiHeadAttention(config)
-        self.attn = None
+def decode_tokens(token_ids: Tensor, tokenizer):
+    """Decode token IDs back to text.
 
-        # TODO: Create second layer norm (before MLP)
-        # Hint: Use LayerNorm(hidden_size, eps=config.layer_norm_epsilon)
-        self.ln_2 = None
+    Args:
+        token_ids: Tensor of token IDs
+        tokenizer: HuggingFace tokenizer
 
-        # TODO: Create MLP
-        # Hint: Use GPT2MLP(inner_dim, config)
-        self.mlp = None
+    Returns:
+        Decoded text string
+    """
+    # TODO: Convert MAX tensor to NumPy
+    # Hint: Move to CPU first with token_ids.to(CPU())
+    # Hint: Then convert with np.from_dlpack(...)
+    pass
 
-    def __call__(self, hidden_states):
-        """Apply transformer block.
+    # TODO: Flatten if needed
+    # Hint: if token_ids.ndim > 1: token_ids = token_ids.flatten()
+    pass
 
-        Args:
-            hidden_states: Input tensor, shape [batch, seq_length, n_embd]
+    # TODO: Convert to Python list
+    # Hint: token_ids = token_ids.tolist()
+    pass
 
-        Returns:
-            Output tensor, shape [batch, seq_length, n_embd]
-        """
-        # TODO: Attention block with residual connection
-        # Hint: residual = hidden_states
-        # Hint: hidden_states = self.ln_1(hidden_states)
-        # Hint: attn_output = self.attn(hidden_states)
-        # Hint: hidden_states = attn_output + residual
-        pass
-
-        # TODO: MLP block with residual connection
-        # Hint: residual = hidden_states
-        # Hint: hidden_states = self.ln_2(hidden_states)
-        # Hint: feed_forward_hidden_states = self.mlp(hidden_states)
-        # Hint: hidden_states = residual + feed_forward_hidden_states
-        pass
-
-        # TODO: Return the output
-        return None
+    # TODO: Decode to text
+    # Hint: return tokenizer.decode(token_ids, skip_special_tokens=True)
+    return None

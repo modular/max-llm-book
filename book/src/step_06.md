@@ -91,15 +91,15 @@ In the `forward` method, implement the two sublayer blocks:
 
 Finally, return `hidden_states`.
 
-**Implementation** (`step_09.py`):
+**Implementation** (`step_06.py`):
 
 ```python
-{{#include ../../steps/step_09.py}}
+{{#include ../../steps/step_06.py}}
 ```
 
 ### Validation
 
-Run `pixi run s09` to verify your implementation.
+Run `pixi run s06` to verify your implementation.
 
 <details>
 <summary>Show solution</summary>
@@ -110,4 +110,4 @@ Run `pixi run s09` to verify your implementation.
 
 </details>
 
-**Next**: In [Step 10](./step_10.md), you'll stack 12 transformer blocks together to create the complete GPT-2 model architecture.
+**Next**: In [Step 07](./step_07.md), you'll stack 12 transformer blocks together to create the complete GPT-2 model architecture.

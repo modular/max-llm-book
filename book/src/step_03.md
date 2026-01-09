@@ -65,15 +65,15 @@ You'll create the causal mask in several steps:
 
 6. **Apply band part**: Use `F.band_part(mask, num_lower=None, num_upper=0, exclude=True)` to create the lower triangular pattern. This keeps 0s on and below the diagonal, `-inf` above.
 
-**Implementation** (`step_02.py`):
+**Implementation** (`step_03.py`):
 
 ```python
-{{#include ../../steps/step_02.py}}
+{{#include ../../steps/step_03.py}}
 ```
 
 ### Validation
 
-Run `pixi run s02` to verify your implementation.
+Run `pixi run s03` to verify your implementation.
 
 <details>
 <summary>Show solution</summary>
@@ -84,4 +84,4 @@ Run `pixi run s02` to verify your implementation.
 
 </details>
 
-**Next**: In [Step 03](./step_03.md), you'll implement layer normalization to stabilize activations for effective training.
+**Next**: In [Step 04](./step_04.md), you’ll implement multi-head attention.

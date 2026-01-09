@@ -1,72 +1,67 @@
 """
-Solution for Step 10: Stacking Transformer Blocks
+Solution for Step 10: Text Generation
 
-This module stacks multiple transformer blocks and adds embeddings
-to create the complete GPT-2 transformer architecture.
+This module implements autoregressive text generation using the GPT-2 model.
 """
 
+import numpy as np
+
+from max.driver import CPU
+from max.dtype import DType
+from max.experimental import functional as F
 from max.experimental.tensor import Tensor
-from max.nn.module_v3 import Embedding, Module, Sequential
 
-from solutions.solution_01 import GPT2Config
-from solutions.solution_08 import LayerNorm
-from solutions.solution_09 import GPT2Block
+from solution_09 import tokenize_text, decode_tokens
 
+def generate_text(
+    model,
+    tokenizer,
+    device,
+    prompt: str,
+    max_new_tokens: int = 50,
+    temperature: float = 0.8,
+    do_sample: bool = True,
+):
+    """Generate text using the Max model."""
+    generated_tokens = tokenize_text(prompt, tokenizer, device, max_length=100)
 
-class GPT2Model(Module):
-    """Complete GPT-2 transformer model matching HuggingFace structure.
+    print(f"Starting generation from: '{prompt}'")
+    print(
+        f"Settings: max_new_tokens={max_new_tokens}, temperature={temperature}, do_sample={do_sample}"
+    )
+    print("-" * 50)
 
-    Architecture:
-    1. Token embeddings + position embeddings
-    2. Stack of n_layer transformer blocks
-    3. Final layer normalization
-    """
+    for step in range(max_new_tokens):
+        logits = model(generated_tokens)
+        next_token_logits = logits[0, -1, :]
 
-    def __init__(self, config: GPT2Config):
-        """Initialize GPT-2 model.
+        if do_sample and temperature > 0:
+            # Simple temperature scaling without top-k
+            temp_tensor = Tensor.constant(
+                temperature,
+                dtype=next_token_logits.dtype,
+                device=next_token_logits.device,
+            )
+            next_token_logits = next_token_logits / temp_tensor
+            probs = F.softmax(next_token_logits)
 
-        Args:
-            config: GPT2Config containing model hyperparameters
-        """
-        super().__init__()
+            # Convert to numpy for actual sampling
+            probs_np = np.from_dlpack(probs.to(CPU()))
+            next_token_id = np.random.choice(len(probs_np), p=probs_np)
+            next_token_tensor = Tensor.constant(
+                next_token_id, dtype=DType.int64, device=generated_tokens.device
+            )
+        else:
+            next_token_tensor = F.argmax(next_token_logits)
 
-        # Token embeddings (vocabulary -> embeddings)
-        self.wte = Embedding(config.vocab_size, dim=config.n_embd)
-        # Position embeddings (positions -> embeddings)
-        self.wpe = Embedding(config.n_positions, dim=config.n_embd)
+        next_token_2d = next_token_tensor.reshape([1, -1])
+        generated_tokens = F.concat([generated_tokens, next_token_2d], axis=1)
 
-        # Stack of transformer blocks
-        self.h = Sequential(*(GPT2Block(config) for _ in range(config.n_layer)))
+        if step % 5 == 0 or step == max_new_tokens - 1:
+            current_text = decode_tokens(generated_tokens, tokenizer)
+            print(f"Step {step + 1:2d}: {current_text}")
 
-        # Final layer normalization
-        self.ln_f = LayerNorm(config.n_embd, eps=config.layer_norm_epsilon)
-
-    def __call__(self, input_ids):
-        """Forward pass through the transformer.
-
-        Args:
-            input_ids: Token IDs, shape [batch, seq_length]
-
-        Returns:
-            Hidden states, shape [batch, seq_length, n_embd]
-        """
-        batch_size, seq_length = input_ids.shape
-
-        # Get token embeddings
-        tok_embeds = self.wte(input_ids)
-
-        # Get position embeddings
-        pos_embeds = self.wpe(
-            Tensor.arange(seq_length, dtype=input_ids.dtype, device=input_ids.device)
-        )
-
-        # Combine embeddings
-        x = tok_embeds + pos_embeds
-
-        # Apply transformer blocks
-        x = self.h(x)
-
-        # Final layer norm
-        x = self.ln_f(x)
-
-        return x
+    final_text = decode_tokens(generated_tokens, tokenizer)
+    print("-" * 50)
+    print(f"Final generated text: '{final_text}'")
+    return final_text

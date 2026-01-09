@@ -90,15 +90,15 @@ In the `forward` method, implement a simple two-step process:
 
 That's it. The model takes token IDs and returns logits. In the next step, you'll use these logits to generate text.
 
-**Implementation** (`step_11.py`):
+**Implementation** (`step_08.py`):
 
 ```python
-{{#include ../../steps/step_11.py}}
+{{#include ../../steps/step_08.py}}
 ```
 
 ### Validation
 
-Run `pixi run s11` to verify your implementation.
+Run `pixi run s08` to verify your implementation.
 
 <details>
 <summary>Show solution</summary>
@@ -109,5 +109,4 @@ Run `pixi run s11` to verify your implementation.
 
 </details>
 
-**Next**: In [Step 12](./step_12.md), you'll implement text generation using
-sampling and temperature control to generate coherent text autoregressively.
+**Next**: In [Step 09](./step_09.md), you'll implement tokenization functions to convert between text and token IDs. 

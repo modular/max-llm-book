@@ -83,15 +83,15 @@ In the `forward` method, implement the four-stage processing:
 
 The position indices must match the input's dtype and device to ensure the tensors are compatible for addition.
 
-**Implementation** (`step_10.py`):
+**Implementation** (`step_07.py`):
 
 ```python
-{{#include ../../steps/step_10.py}}
+{{#include ../../steps/step_07.py}}
 ```
 
 ### Validation
 
-Run `pixi run s10` to verify your implementation.
+Run `pixi run s07` to verify your implementation.
 
 <details>
 <summary>Show solution</summary>
@@ -102,4 +102,4 @@ Run `pixi run s10` to verify your implementation.
 
 </details>
 
-**Next**: In [Step 11](./step_11.md), you'll add the language modeling head that projects hidden states to vocabulary logits for text generation.
+**Next**: In [Step 08](./step_08.md), you'll add the language modeling head that projects hidden states to vocabulary logits for text generation.

@@ -49,11 +49,10 @@ The tutorial follows a progressive learning path:
 
 | Steps | Focus              | What you build                                        |
 |-------|--------------------|-------------------------------------------------------|
-| 01-04 | **Foundations**    | Configuration, layer norm, MLP, causal masking        |
-| 05-06 | **Embeddings**     | Token and position embeddings                         |
-| 07    | **Attention**      | Multi-head attention                                  |
-| 08-09 | **Composition**    | Residual connections, transformer blocks              |
-| 10-12 | **Complete model** | Stacking blocks, language model head, text generation |
+| 01-04 | **Foundations**    | Configuration, MLP, causal masking, multi-head attention |
+| 05-06 | **Components**     | Layer normalization, transformer block                |
+| 07-08 | **Assembly**       | Stacking blocks with embeddings, language model head  |
+| 09-11 | **Generation**     | Tokenization, text generation, load weights and run   |
 
 Each step includes:
 
@@ -69,17 +68,17 @@ max-llm-book/
 ├── book/                  # mdBook tutorial documentation
 │   └── src/
 │       ├── introduction.md
-│       ├── step_01.md ... step_12.md
+│       ├── step_01.md ... step_11.md
 │       └── SUMMARY.md
 ├── steps/                 # Skeleton files for learners
 │   ├── step_01.py
-│   └── ... step_12.py
+│   └── ... step_11.py
 ├── solutions/             # Complete reference implementations
 │   ├── solution_01.py
-│   └── ... solution_12.py
+│   └── ... solution_11.py
 ├── checks/                # Validation checks for each step
 │   ├── check_step_01.py
-│   └── ... check_step_12.py
+│   └── ... check_step_11.py
 ├── main.py               # Complete working GPT-2 implementation
 ├── pixi.toml             # Project dependencies and tasks
 └── README.md             # This file
@@ -92,8 +91,9 @@ max-llm-book/
 1. **Read the introduction**: `pixi run book` and read the introduction
 2. **Work sequentially**: Start with Step 01 and work through in order
 3. **Implement each step**: Fill in TODOs in `steps/step_XX.py`
-4. **Validate with tests**: Run `pixi run sXX` to verify your implementation
+4. **Validate with checks**: Run `pixi run sXX` to verify your implementation
 5. **Compare with solution**: Check `solutions/solution_XX.py` if stuck
+6. **Run your model**: After completing all steps, run `pixi run gpt2` to interact with your GPT-2!
 
 ### For experienced developers
 

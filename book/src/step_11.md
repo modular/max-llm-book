@@ -150,4 +150,27 @@ Run `pixi run s11` to verify your implementation. The model should load weights,
 
 </details>
 
-**Next**: In [Step 12](./step_12.md), you'll interact with the model through an interactive prompt to generate text and see your implementation in action.
+**Congratulations!** You've completed all 11 steps and built a complete GPT-2 implementation from scratch. Run `pixi run gpt2` to interact with your model through an interactive prompt and see your implementation in action!
+
+## What's next?
+
+You now understand the architectural foundation that powers modern language
+models. LLaMA, Mistral, and more build on these same components with incremental
+refinements. You have everything you need to implement those refinements
+yourself.
+
+Consider extending your implementation with:
+
+- **Grouped-query attention (GQA)**: Reduce memory consumption by sharing key-value pairs across multiple query heads, as used in LLaMA 2.
+- **Rotary position embeddings (RoPE)**: Replace learned position embeddings with rotation-based encoding, improving length extrapolation in models like LLaMA and GPT-NeoX.
+- **SwiGLU activation**: Swap GELU for the gated linear unit variant used in LLaMA and PaLM.
+- **Mixture of experts (MoE)**: Add sparse expert routing to scale model capacity efficiently, as in Mixtral and GPT-4.
+
+Each refinement builds directly on what you've implemented. The attention
+mechanism you wrote becomes grouped-query attention with a simple modification
+to how you reshape key-value tensors. Your position embeddings can be replaced
+with RoPE by changing how you encode positional information. The feed-forward
+network you built becomes SwiGLU by adding a gating mechanism.
+
+Pick an architecture that interests you and start building. You'll find the
+patterns are familiar because the fundamentals haven't changed.

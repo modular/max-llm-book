@@ -34,7 +34,7 @@ centers the activations. Adding a constant bias to all logits wouldn't change
 the relative probabilities after softmax.
 
 The output is called "logits," which are raw scores before applying softmax.
-Logits can be any real number. During text generation (Step 12), you'll convert
+Logits can be any real number. During text generation (Step 10), you'll convert
 logits to probabilities with softmax. Working with logits directly enables
 techniques like temperature scaling and top-k sampling.
 

@@ -86,15 +86,15 @@ In `generate`, implement the generation loop:
 
 The reshape is necessary because `concat` requires matching dimensions, and the generated token is 0D (scalar).
 
-**Implementation** (`step_12.py`):
+**Implementation** (`step_10.py`):
 
 ```python
-{{#include ../../steps/step_12.py}}
+{{#include ../../steps/step_10.py}}
 ```
 
 ### Validation
 
-Run `pixi run s12` to verify your implementation.
+Run `pixi run s10` to verify your implementation.
 
 <details>
 <summary>Show solution</summary>
@@ -105,46 +105,4 @@ Run `pixi run s12` to verify your implementation.
 
 </details>
 
-## What you've built
-
-You've completed all 12 steps and built a complete GPT-2 model from scratch
-using MAX. You now have a working implementation of:
-
-**Core components**:
-
-- Model configuration and architecture definition
-- Causal masking for autoregressive generation
-- Layer normalization for training stability
-- Feed-forward networks with GELU activation
-- Token and position embeddings
-- Multi-head self-attention
-- Residual connections and transformer blocks
-- Language model head for next-token prediction
-- Text generation with temperature and sampling
-
-Your model loads OpenAI's pretrained GPT-2 weights and generates text. You
-understand how every component works, from the low-level tensor operations to
-the high-level architecture decisions.
-
-## What's next?
-
-You now understand the architectural foundation that powers modern language
-models. LLaMA, Mistral, and more build on these same components with incremental
-refinements. You have everything you need to implement those refinements
-yourself.
-
-Consider extending your implementation with:
-
-- **Grouped-query attention (GQA)**: Reduce memory consumption by sharing key-value pairs across multiple query heads, as used in LLaMA 2.
-- **Rotary position embeddings (RoPE)**: Replace learned position embeddings with rotation-based encoding, improving length extrapolation in models like LLaMA and GPT-NeoX.
-- **SwiGLU activation**: Swap GELU for the gated linear unit variant used in LLaMA and PaLM.
-- **Mixture of experts (MoE)**: Add sparse expert routing to scale model capacity efficiently, as in Mixtral and GPT-4.
-
-Each refinement builds directly on what you've implemented. The attention
-mechanism you wrote becomes grouped-query attention with a simple modification
-to how you reshape key-value tensors. Your position embeddings can be replaced
-with RoPE by changing how you encode positional information. The feed-forward
-network you built becomes SwiGLU by adding a gating mechanism.
-
-Pick an architecture that interests you and start building. You'll find the
-patterns are familiar because the fundamentals haven't changed.
+**Next**: In [Step 11](./step_11.md), you'll load pretrained weights and interact with your complete GPT-2 implementation!

@@ -27,6 +27,7 @@ s11 = "python checks/check_step_11.py"
 check-all = "python checks/check_step_01.py && python checks/check_step_02.py && python checks/check_step_03.py && python checks/check_step_04.py && python checks/check_step_05.py && python checks/check_step_06.py && python checks/check_step_07.py && python checks/check_step_08.py && python checks/check_step_09.py && python checks/check_step_10.py && python checks/check_step_11.py"
 
 # Run your completed model interactively
+main = "python main.py"
 gpt2 = "python steps/step_11.py"
 
 # Format python

@@ -1,6 +1,6 @@
 # How this book works
 
-Each step includes automated tests that verify your implementation before moving
+Each step includes automated checks that verify your implementation before moving
 forward. This immediate feedback helps you catch issues early and build
 confidence.
 
@@ -17,17 +17,17 @@ Then download and install [pixi](https://pixi.sh/dev/):
 curl -fsSL https://pixi.sh/install.sh | sh
 ```
 
-To validate a step, use the corresponding test command. For example, to test
+To validate a step, use the corresponding check command. For example, to check
 Step 01:
 
 ```bash
 pixi run s01
 ```
 
-Initially, tests will fail because the implementation isn't complete:
+Initially, checks will fail because the implementation isn't complete:
 
 ```sh
-✨ Pixi task (s01): python tests/test.step_01.py
+✨ Pixi task (s01): python checks/check_step_01.py
 Running tests for Step 01: Create Model Configuration...
 
 Results:
@@ -43,7 +43,7 @@ When your implementation is
 correct, you'll see:
 
 ```output
-✨ Pixi task (s01): python tests/test.step_01.py
+✨ Pixi task (s01): python checks/check_step_01.py
 Running tests for Step 01: Create Model Configuration...
 
 Results:
@@ -53,7 +53,7 @@ Results:
 # ...
 ```
 
-The test output tells you exactly what needs to be fixed, making it easy to
+The check output tells you exactly what needs to be fixed, making it easy to
 iterate until your implementation is correct. Once all checks pass, you're ready
 to move on to the next step.
 
@@ -72,7 +72,7 @@ useful for:
   mechanisms, or any step in the tutorial
 - **Understanding the MAX API**: Get clarification on MAX Framework methods,
   parameters, and patterns
-- **Debugging test failures**: Paste test output to understand what's missing
+- **Debugging check failures**: Paste check output to understand what's missing
 - **Exploring alternatives**: Ask "why this approach?" to deepen your understanding
 
 If you're using Claude, see [claude.md](./claude.md) for custom instructions

@@ -22,8 +22,8 @@ Run: pixi run s04
 # Hint: You'll need Dim, DimLike from max.graph
 # Hint: You'll also need Linear and Module from max.nn.module_v3
 
-from solutions.solution_01 import GPT2Config
-from solutions.solution_03 import causal_mask
+from step_01 import GPT2Config
+from step_03 import causal_mask
 
 
 # TODO: Copy causal_mask function from solution_02.py

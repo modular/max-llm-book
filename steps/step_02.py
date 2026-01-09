@@ -24,7 +24,7 @@ Run: pixi run s02
 # TODO: Import Linear and Module from max.nn.module_v3
 # https://docs.modular.com/max/api/python/nn/module_v3
 
-from solutions.solution_01 import GPT2Config
+from step_01 import GPT2Config
 
 
 class GPT2MLP(Module):

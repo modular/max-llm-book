@@ -7,10 +7,10 @@ multi-head attention, MLP, layer normalization, and residual connections.
 
 from max.nn.module_v3 import Module
 
-from solution_01 import GPT2Config
-from solution_02 import GPT2MLP
-from solution_04 import GPT2MultiHeadAttention
-from solution_05 import LayerNorm
+from step_01 import GPT2Config
+from step_02 import GPT2MLP
+from step_04 import GPT2MultiHeadAttention
+from step_05 import LayerNorm
 
 
 class GPT2Block(Module):

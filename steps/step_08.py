@@ -13,8 +13,9 @@ Run: pixi run s08
 
 # TODO: Import required modules
 # Hint: You'll need Linear and Module from max.nn.module_v3
-# Hint: Import GPT2Config from solutions.solution_01
-# Hint: Import MaxGPT2Model from solutions.solution_07
+
+from step_01 import GPT2Config
+from step_07 import MaxGPT2Model
 
 class MaxGPT2LMHeadModel(Module):
     """Complete GPT-2 model with language modeling head."""

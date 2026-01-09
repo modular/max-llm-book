@@ -4,9 +4,10 @@ Step 10: Text Generation
 Implement autoregressive text generation with sampling and temperature control.
 
 Tasks:
-1. Import required modules (numpy, F, Tensor, etc.)
-2. Implement generate_next_token: get logits, apply temperature, sample/argmax
-3. Implement generate_tokens: loop to generate multiple tokens
+1. Import required modules (numpy, F, Tensor, DType, CPU)
+2. Implement the generate_text function with temperature scaling
+3. Add sampling logic with temperature control
+4. Concatenate new tokens to generate sequences
 
 Run: pixi run s10
 """
@@ -18,86 +19,79 @@ Run: pixi run s10
 # Hint: You'll need functional as F from max.experimental
 # Hint: You'll need Tensor from max.experimental.tensor
 
-
-def generate_next_token(model, input_ids, temperature=1.0, do_sample=True):
-    """Generate the next token given input context.
-
-    Args:
-        model: GPT-2 model with LM head
-        input_ids: Current sequence, shape [batch, seq_length]
-        temperature: Sampling temperature (higher = more random)
-        do_sample: If True, sample from distribution; if False, use greedy (argmax)
-
-    Returns:
-        Next token ID as a Tensor
-    """
-    # TODO: Get logits from model
-    # Hint: logits = model(input_ids)
-    pass
-
-    # TODO: Get logits for last position
-    # Hint: next_token_logits = logits[0, -1, :]
-    pass
-
-    # TODO: If sampling with temperature
-    if do_sample and temperature > 0:
-        # TODO: Apply temperature scaling
-        # Hint: temp_tensor = Tensor.constant(temperature, dtype=next_token_logits.dtype, device=next_token_logits.device)
-        # Hint: next_token_logits = next_token_logits / temp_tensor
-        pass
-
-        # TODO: Convert to probabilities
-        # Hint: probs = F.softmax(next_token_logits)
-        pass
-
-        # TODO: Sample from distribution
-        # Hint: probs_np = np.from_dlpack(probs.to(CPU()))
-        # Hint: next_token_id = np.random.choice(len(probs_np), p=probs_np)
-        # Hint: next_token_tensor = Tensor.constant(next_token_id, dtype=DType.int64, device=input_ids.device)
-        pass
-    else:
-        # TODO: Greedy decoding (select most likely token)
-        # Hint: next_token_tensor = F.argmax(next_token_logits)
-        pass
-
-    # TODO: Return the next token
-    return None
+from step_09 import tokenize_text, decode_tokens
 
 
-def generate_tokens(
-    model, input_ids, max_new_tokens=10, temperature=1.0, do_sample=True
+def generate_text(
+    model,
+    tokenizer,
+    device,
+    prompt: str,
+    max_new_tokens: int = 50,
+    temperature: float = 0.8,
+    do_sample: bool = True,
 ):
-    """Generate multiple tokens autoregressively.
+    """Generate text using the Max model.
 
     Args:
-        model: GPT-2 model with LM head
-        input_ids: Initial sequence, shape [batch, seq_length]
+        model: Compiled MAX model
+        tokenizer: HuggingFace tokenizer
+        device: Device to run on
+        prompt: Starting text
         max_new_tokens: Number of tokens to generate
-        temperature: Sampling temperature
+        temperature: Sampling temperature (higher = more random)
         do_sample: Whether to sample or use greedy decoding
 
     Returns:
-        Generated sequence including input, shape [batch, seq_length + max_new_tokens]
+        Generated text string
     """
-    # TODO: Initialize generated tokens with input
-    # Hint: generated_tokens = input_ids
-    pass
+    # TODO: Tokenize the prompt text
+    # Hint: Use tokenize_text(prompt, tokenizer, device, max_length=100)
+    generated_tokens = None
 
-    # TODO: Generation loop
-    # Hint: for _ in range(max_new_tokens):
-    pass
+    print(f"Starting generation from: '{prompt}'")
+    print(
+        f"Settings: max_new_tokens={max_new_tokens}, temperature={temperature}, do_sample={do_sample}"
+    )
+    print("-" * 50)
 
-    # TODO: Generate next token
-    # Hint: next_token = generate_next_token(model, generated_tokens, temperature=temperature, do_sample=do_sample)
+    # TODO: Implement generation loop for max_new_tokens steps
+    # Hint: for step in range(max_new_tokens):
     pass
+        # TODO: Get model predictions (logits) for current sequence
+        # Hint: logits = model(generated_tokens)
 
-    # TODO: Reshape to [1, 1] for concatenation
-    # Hint: next_token_2d = next_token.reshape([1, -1])
-    pass
+        # TODO: Extract logits for next token prediction
+        # Hint: next_token_logits = logits[0, -1, :]
+        # Note: Shape is [batch, seq_len, vocab_size], we want last position
 
-    # TODO: Append to sequence
-    # Hint: generated_tokens = F.concat([generated_tokens, next_token_2d], axis=1)
-    pass
+        # TODO: Apply temperature scaling if sampling
+        # Hint: if do_sample and temperature > 0:
+        #     Create a temperature tensor with Tensor.constant()
+        #     Divide next_token_logits by temperature
+        #     Apply softmax: probs = F.softmax(next_token_logits)
+        #     Convert to numpy: probs_np = np.from_dlpack(probs.to(CPU()))
+        #     Sample: next_token_id = np.random.choice(len(probs_np), p=probs_np)
+        #     Convert back to tensor: next_token_tensor = Tensor.constant(next_token_id, dtype=DType.int64, device=device)
 
-    # TODO: Return generated sequence
-    return None
+        # TODO: Use greedy decoding if not sampling
+        # Hint: else: next_token_tensor = F.argmax(next_token_logits)
+
+        # TODO: Reshape next token to 2D for concatenation
+        # Hint: next_token_2d = next_token_tensor.reshape([1, -1])
+
+        # TODO: Concatenate to growing sequence
+        # Hint: generated_tokens = F.concat([generated_tokens, next_token_2d], axis=1)
+
+        # TODO: Print progress every 5 steps
+        # Hint: if step % 5 == 0 or step == max_new_tokens - 1:
+        #     current_text = decode_tokens(generated_tokens, tokenizer)
+        #     print(f"Step {step + 1:2d}: {current_text}")
+
+    # TODO: Decode final generated sequence
+    # Hint: final_text = decode_tokens(generated_tokens, tokenizer)
+    final_text = None
+
+    print("-" * 50)
+    print(f"Final generated text: '{final_text}'")
+    return final_text

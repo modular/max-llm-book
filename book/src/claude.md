@@ -14,9 +14,9 @@ following context in mind:
 **Tutorial Context:**
 - This is an inference-only tutorial using pretrained weights from Hugging Face
 - Training is not in scope
-- Each step has automated tests (pixi run s01, s02, etc.) that verify correctness
+- Each step has automated checks (pixi run s01, s02, etc.) that verify correctness
 - The code is in max_llm_book/step_XX.py files
-- Tests are in tests/test_step_XX.py files
+- Checks are in checks/check_step_XX.py files
 
 **MAX Framework specifics:**
 - Functions use @F.functional decorator for graph definitions
@@ -26,7 +26,7 @@ following context in mind:
 - The tutorial uses MAX Framework's Python API throughout
 
 **How to help me:**
-1. When I share test failures, explain what's missing and guide me to implement it
+1. When I share check failures, explain what's missing and guide me to implement it
 2. Explain MAX API patterns when I'm confused about syntax or usage
 3. Help me understand transformer concepts (attention, embeddings, layer norm, etc.)
 4. If I ask you to write code, follow the patterns established in earlier steps
@@ -35,9 +35,9 @@ following context in mind:
 
 **What NOT to do:**
 - Don't suggest training-related approaches (this is inference only)
-- Don't over-engineer solutions beyond what the tests require
+- Don't over-engineer solutions beyond what the checks require
 - Don't introduce dependencies outside of MAX Framework and standard libraries
-- Don't assume I need to modify test files (implementations go in step_XX.py)
+- Don't assume I need to modify check files (implementations go in step_XX.py)
 
 My current step: [Tell Claude which step you're on]
 ```
@@ -51,10 +51,10 @@ Here are some effective ways to ask Claude for help:
 - "Why do we use layer normalization before attention instead of after?"
 - "What's the relationship between context_length and position embeddings?"
 
-### Debugging test failures
+### Debugging check failures
 ```
-I'm on step 03 and getting this test output:
-[paste test output]
+I'm on step 03 and getting this check output:
+[paste check output]
 
 What do I need to implement?
 ```
@@ -80,7 +80,7 @@ Can you review it and suggest improvements?
 ## Tips for best results
 
 1. **Be specific about your step**: Always mention which step (01-12) you're working on
-2. **Share test output**: Paste the full test output when debugging
+2. **Share check output**: Paste the full check output when debugging
 3. **Share your code**: Let Claude see your implementation when asking for help
 4. **Ask follow-ups**: If an explanation isn't clear, ask for clarification or examples
 5. **Verify understanding**: Ask Claude to explain back what you just learned
@@ -99,8 +99,8 @@ claude chat "I'm working through the MAX LLM Book tutorial..."
 # Ask for help with a specific step
 claude chat "I'm on step 04 and my tests are failing. Can you explain what token embeddings do?"
 
-# Get explanations of test output
-pixi run s05 2>&1 | claude chat "Here's my test output. What's failing and why?"
+# Get explanations of check output
+pixi run s05 2>&1 | claude chat "Here's my check output. What's failing and why?"
 ```
 
 ## Resources

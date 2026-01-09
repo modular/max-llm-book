@@ -59,7 +59,7 @@ Each step includes:
 
 - **Conceptual explanation**: What and why
 - **Implementation tasks**: Skeleton code with TODO markers
-- **Validation tests**: 5-phase verification (imports, structure, implementation, placeholders, functionality)
+- **Validation checks**: 5-phase verification (imports, structure, implementation, placeholders, functionality)
 - **Reference solution**: Complete working implementation
 
 ## Project structure
@@ -77,9 +77,9 @@ max-llm-book/
 ├── solutions/             # Complete reference implementations
 │   ├── solution_01.py
 │   └── ... solution_12.py
-├── tests/                 # Validation tests for each step
-│   ├── test.step_01.py
-│   └── ... test.step_12.py
+├── checks/                # Validation checks for each step
+│   ├── check_step_01.py
+│   └── ... check_step_12.py
 ├── main.py               # Complete working GPT-2 implementation
 ├── pixi.toml             # Project dependencies and tasks
 └── README.md             # This file
@@ -101,29 +101,29 @@ max-llm-book/
 - **Use as reference**: Check solutions for MAX API patterns
 - **Explore main.py**: See the complete implementation
 
-## Running tests
+## Running checks
 
 ```bash
-# Test a single step
+# Check a single step
 pixi run s01
 
-# Test multiple steps
+# Check multiple steps
 pixi run s05 && pixi run s06 && pixi run s07
 
-# Run all tests
-pixi run test-all
+# Run all checks
+pixi run check-all
 ```
 
-### Understanding test output
+### Understanding check output
 
-**Failed test** (skeleton code):
+**Failed check** (skeleton code):
 
 ```
 ❌ Embedding is not imported from max.nn.module_v3
    Hint: Add 'from max.nn.module_v3 import Embedding, Module'
 ```
 
-**Passed test** (completed implementation):
+**Passed check** (completed implementation):
 
 ```
 ✅ Embedding is correctly imported from max.nn.module_v3
@@ -153,9 +153,9 @@ ModuleNotFoundError: No module named 'max'
 
 **Solution**: Run `pixi install` to install MAX and dependencies.
 
-### Test failures
+### Check failures
 
-If tests fail unexpectedly, ensure you're in the correct directory and have completed the step's TODOs.
+If checks fail unexpectedly, ensure you're in the correct directory and have completed the step's TODOs.
 
 ### Device compatibility
 
@@ -174,7 +174,7 @@ For GPU acceleration, update `device=CPU()` to `device=GPU()` where appropriate.
 Found an issue or want to improve the tutorial? Contributions welcome:
 
 1. File issues for bugs or unclear explanations
-2. Suggest improvements to test coverage
+2. Suggest improvements to validation coverage
 3. Add helpful examples or visualizations
 
 ## Next steps after completion

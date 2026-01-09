@@ -17,9 +17,10 @@ Run: pixi run s10
 # TODO: Import required modules
 # Hint: You'll need Tensor from max.experimental.tensor
 # Hint: You'll need Embedding, Module, Sequential from max.nn.module_v3
-# Hint: Import GPT2Config from solutions.solution_01
-# Hint: Import LayerNorm from solutions.solution_05
-# Hint: Import GPT2Block from solutions.solution_06
+
+from step_01 import GPT2Config
+from step_05 import LayerNorm
+from step_06 import GPT2Block
 
 
 class MaxGPT2Model(Module):

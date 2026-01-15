@@ -10,10 +10,10 @@ from max.driver import CPU
 from max.experimental.tensor import Tensor
 
 
-def tokenize_text(text: str, tokenizer, device, max_length: int = 128):
+def encode_text(text: str, tokenizer, device, max_length: int = 128):
     """Tokenize text and convert to tensor."""
-    tokens = tokenizer.encode(text, max_length=max_length, truncation=True)
-    return Tensor.constant([tokens], dtype=DType.int64, device=device)
+    token_ids = tokenizer.encode(text, max_length=max_length, truncation=True)
+    return Tensor.constant([token_ids], dtype=DType.int64, device=device)
 
 def decode_tokens(token_ids: Tensor, tokenizer):
     """Decode token IDs back to text."""

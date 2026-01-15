@@ -6,7 +6,7 @@ Learn to convert between text and token IDs using tokenizers and MAX tensors.
 
 </div>
 
-In this step, you'll implement utility functions to bridge the gap between text and the token IDs your model operates on. The `tokenize_text()` function converts an input string into a tensor of token IDs, while `decode_tokens()` converts token IDs into a string.
+In this step, you'll implement utility functions to bridge the gap between text and the token IDs your model operates on. The `encode_text()` function converts an input string into a tensor of token IDs, while `decode_tokens()` converts token IDs into a string.
 
 As you saw when building the model body in step 7 (`MaxGPT2Model`), the model must receive input as token IDs (not raw text). The token IDs are integers that represent pieces of text according to a tokenizer vocabulary. GPT-2 uses a Byte Pair Encoding (BPE) tokenizer, which breaks text into subword units. For example, "Hello world" becomes `[15496, 995]` - two tokens representing the words.
 
@@ -19,14 +19,14 @@ Tokenization converts text to a list of integers. The GPT-2 tokenizer uses a voc
 The HuggingFace tokenizer provides an `encode` method that takes text and returns a Python list of token IDs. For example:
 
 ```python
-tokens = tokenizer.encode("Hello world")  # Returns [15496, 995]
+token_ids = tokenizer.encode("Hello world")  # Returns [15496, 995]
 ```
 
 You can specify `max_length` and `truncation=True` to limit sequence length. If the text exceeds `max_length`, the tokenizer cuts it off. This prevents memory issues with very long inputs.
 
 After encoding, you need to convert the Python list to a MAX tensor. Use `Tensor.constant` to create a tensor with the token IDs, specifying `dtype=DType.int64` (GPT-2 expects 64-bit integers) and the target device.
 
-The tensor needs shape `[batch, seq_length]` for model input. Wrap the token list in another list to add the batch dimension: `[tokens]` becomes `[[15496, 995]]` with shape `[1, 2]`.
+The tensor needs shape `[batch, seq_length]` for model input. Wrap the token list in another list to add the batch dimension: `[token_ids]` becomes `[[15496, 995]]` with shape `[1, 2]`.
 
 ## Understanding decoding
 
@@ -62,16 +62,16 @@ You'll use the following MAX operations to complete this task:
 
 ## Implementing tokenization
 
-You'll create two functions: `tokenize_text` to convert strings to tensors, and `decode_tokens` to convert tensors back to strings.
+You'll create two functions: `encode_text` to convert strings to tensors, and `decode_tokens` to convert tensors back to strings.
 
 First, import the required modules. You'll need `numpy as np` for array operations, `CPU` from MAX's driver for device specification, `DType` for specifying integer types, and `Tensor` for creating and manipulating tensors.
 
-In `tokenize_text`, implement the encoding and conversion:
+In `encode_text`, implement the encoding and conversion:
 
-1. Encode the text to token IDs using the tokenizer: `tokens = tokenizer.encode(text, max_length=max_length, truncation=True)`
-2. Convert to a MAX tensor with batch dimension: `Tensor.constant([tokens], dtype=DType.int64, device=device)`
+1. Encode the text to token IDs using the tokenizer: `token_ids = tokenizer.encode(text, max_length=max_length, truncation=True)`
+2. Convert to a MAX tensor with batch dimension: `Tensor.constant([token_ids], dtype=DType.int64, device=device)`
 
-Note the `[tokens]` wrapping to create the batch dimension. This gives shape `[1, seq_length]` instead of just `[seq_length]`.
+Note the `[token_ids]` wrapping to create the batch dimension. This gives shape `[1, seq_length]` instead of just `[seq_length]`.
 
 In `decode_tokens`, implement the reverse process:
 

@@ -18,7 +18,7 @@ Run: pixi run s09
 # Hint: You'll need Tensor from max.experimental.tensor
 
 
-def tokenize_text(text: str, tokenizer, device, max_length: int = 128):
+def encode_text(text: str, tokenizer, device, max_length: int = 128):
     """Tokenize text and convert to tensor.
 
     Args:
@@ -31,11 +31,11 @@ def tokenize_text(text: str, tokenizer, device, max_length: int = 128):
         Tensor of token IDs with shape [1, seq_length]
     """
     # TODO: Encode text to token IDs
-    # Hint: tokens = tokenizer.encode(text, max_length=max_length, truncation=True)
+    # Hint: token_ids = tokenizer.encode(text, max_length=max_length, truncation=True)
     pass
 
     # TODO: Convert to MAX tensor
-    # Hint: return Tensor.constant([tokens], dtype=DType.int64, device=device)
+    # Hint: return Tensor.constant([token_ids], dtype=DType.int64, device=device)
     # Note: Wrap tokens in a list to create batch dimension
     return None
 

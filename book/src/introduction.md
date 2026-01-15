@@ -111,7 +111,7 @@ pixi run main
 
 This runs the complete GPT-2 implementation from [`main.py`](https://github.com/modular/max-llm-book/blob/main/main.py), loading pretrained weights and starting an interactive prompt where you can enter text and see the model generate completions. It's the same model you'll build step-by-step through the tutorial.
 
-When you've completed all 11 steps of the tutorial, you can run your own implementation the exact same way:
+When you've completed every step of the tutorial, you can run your own implementation the exact same way:
 
 ```bash
 pixi run gpt2

@@ -15,7 +15,7 @@ from main import (
     GPT2Block,
     MaxGPT2Model,
     MaxGPT2LMHeadModel,
-    tokenize_text,
+    encode_text,
     decode_tokens,
 )
 
@@ -261,13 +261,13 @@ class TestTokenizationFunctions:
     """Test tokenization and decoding functions."""
 
     @patch('main.GPT2Tokenizer')
-    def test_tokenize_text(self, mock_tokenizer_class):
-        """Test tokenize_text function."""
+    def test_encode_text(self, mock_tokenizer_class):
+        """Test encode_text function."""
         # Setup mock
         mock_tokenizer = Mock()
         mock_tokenizer.encode.return_value = [15496, 995]  # "Hello world"
 
-        result = tokenize_text("Hello world", mock_tokenizer, CPU(), max_length=128)
+        result = encode_text("Hello world", mock_tokenizer, CPU(), max_length=128)
 
         # Check that tokenizer.encode was called correctly
         mock_tokenizer.encode.assert_called_once_with("Hello world", max_length=128, truncation=True)

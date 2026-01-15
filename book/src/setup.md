@@ -1,4 +1,4 @@
-# How this book works
+# Project Setup
 
 Each step includes automated checks that verify your implementation before moving
 forward. This immediate feedback helps you catch issues early and build

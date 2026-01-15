@@ -7,9 +7,10 @@ vocabulary logits for next-token prediction.
 
 </div>
 
-In this step, you'll create the `MaxGPT2LMHeadModel` - the complete language
-model that can predict next tokens. This class wraps the transformer from Step
-07 and adds a final linear layer that projects 768-dimensional hidden states to
+In this step, you'll create the `MaxGPT2LMHeadModel`, which combines the
+model body (`MaxGPT2Model`) with a head `Linear` layer, thus completing the
+GPT-2 model that can predict next tokens. This class wraps the transformer from step
+7 and adds a final linear layer that projects 768-dimensional hidden states to
 50,257-dimensional vocabulary logits.
 
 The language model head is a single linear layer without bias. For each position

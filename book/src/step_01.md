@@ -60,4 +60,4 @@ Run `pixi run s01` to verify your implementation matches the expected configurat
 
 </details>
 
-**Next**: In [Step 02](./step_02.md), you'll implement the MLP used in each transformer block.
+**Next**: In [Step 02](./step_02.md), you'll implement the feed-forward network—also known as a multilayer perceptron (MLP)—that processes information after attention in each transformer block.

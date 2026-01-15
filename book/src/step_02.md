@@ -2,7 +2,7 @@
 
 <div class="note">
 
-Learn to build the feed-forward network (MLP) that processes information after attention in each transformer block.
+Learn to build the feed-forward network—also known as a multilayer perceptron (MLP)—that processes information after attention in each transformer block.
 
 </div>
 

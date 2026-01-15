@@ -150,7 +150,9 @@ Run `pixi run s11` to verify your implementation. The model should load weights,
 
 </details>
 
-**Congratulations!** You've completed all 11 steps and built a complete GPT-2 implementation from scratch. Run `pixi run gpt2` to interact with your model through an interactive prompt and see your implementation in action!
+**Congratulations!** You've completed built a complete GPT-2 implementation from scratch. 
+
+If code verification passed, you can execute your `step_11.py` code with `pixi run gpt2`. 
 
 ## What's next?
 

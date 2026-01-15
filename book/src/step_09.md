@@ -19,7 +19,7 @@ Tokenization converts text to a list of integers. The GPT-2 tokenizer uses a voc
 The HuggingFace tokenizer provides an `encode` method that takes text and returns a Python list of token IDs. For example:
 
 ```python
-tokenizer.encode("Hello world")  # Returns [15496, 995]
+tokens = tokenizer.encode("Hello world")  # Returns [15496, 995]
 ```
 
 You can specify `max_length` and `truncation=True` to limit sequence length. If the text exceeds `max_length`, the tokenizer cuts it off. This prevents memory issues with very long inputs.

@@ -18,7 +18,7 @@ Weight loading involves three steps: loading the HuggingFace model, transferring
 
 First, load the pretrained model with `GPT2LMHeadModel.from_pretrained("gpt2")`. This downloads the weights (about 500MB) and returns a PyTorch model with the exact architecture you've implemented.
 
-Next, transfer these weights to your MAX model using `max_model.load_state_dict(torch_model.state_dict())`. The `state_dict` is a dictionary mapping layer names to weight tensors. Since your MAX model has the exact same architecture and layer names, this transfer works seamlessly.
+Next, transfer these weights to your MAX model using `max_model.load_state_dict(hf_model.state_dict())`. The `state_dict` is a dictionary mapping layer names to weight tensors. Since your MAX model has the exact same architecture and layer names, this transfer works seamlessly.
 
 Finally, transpose the weights for layers that use Conv1D in HuggingFace: `c_attn`, `c_proj`, and `c_fc`. Conv1D stores weights in shape `[in_features, out_features]`, while Linear expects `[out_features, in_features]`. Use the `.T` property to transpose: `child.weight = child.weight.T`.
 
@@ -60,7 +60,7 @@ You'll implement the `main()` function that orchestrates the entire pipeline: lo
 Start by loading the pretrained HuggingFace model:
 
 ```python
-torch_model = GPT2LMHeadModel.from_pretrained("gpt2")
+hf_model = GPT2LMHeadModel.from_pretrained("gpt2")
 ```
 
 Initialize your MAX model with the default device and configuration:
@@ -76,7 +76,7 @@ The `defaults()` function returns `(dtype, device)` tuples. You only need the de
 Load and transpose the weights:
 
 ```python
-max_model.load_state_dict(torch_model.state_dict())
+max_model.load_state_dict(hf_model.state_dict())
 max_model.to(device)
 for name, child in max_model.descendents:
     if isinstance(child, Linear):

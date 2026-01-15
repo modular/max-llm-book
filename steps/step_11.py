@@ -30,9 +30,9 @@ def run_model():
     """Load GPT-2 model, compile it, and run interactive text generation."""
 
     # TODO: Load HuggingFace model
-    # Hint: torch_model = GPT2LMHeadModel.from_pretrained("gpt2")
-    # Hint: print(f"Loaded HuggingFace model:\n{torch_model}")
-    torch_model = None
+    # Hint: hf_model = GPT2LMHeadModel.from_pretrained("gpt2")
+    # Hint: print(f"Loaded HuggingFace model:\n{hf_model}")
+    hf_model = None
 
     # TODO: Initialize MAX model with device
     # Hint: _, device = defaults()
@@ -48,7 +48,7 @@ def run_model():
     )
 
     # TODO: Load state dict and move to device
-    # Hint: max_model.load_state_dict(torch_model.state_dict())
+    # Hint: max_model.load_state_dict(hf_model.state_dict())
     # Hint: max_model.to(device)
 
     # TODO: Transpose weights for Linear layers

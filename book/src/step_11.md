@@ -139,7 +139,7 @@ The loop continues until the user types 'quit', 'exit', 'q', or presses Ctrl+C.
 
 ### Validation
 
-Run `pixi run s11` to verify your implementation. The model should load weights, compile successfully, and be ready for text generation.
+Run `pixi run s11` to verify your implementation.
 
 <details>
 <summary>Show solution</summary>

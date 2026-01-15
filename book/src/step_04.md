@@ -80,7 +80,10 @@ You'll use the following MAX operations to complete this task:
 
 You'll create the `GPT2MultiHeadAttention` class with helper methods for splitting and merging heads.
 
-First, import the required modules. You'll need `math` for scaling, `functional as F` for operations, `Tensor` for type hints, device and dtype utilities, and `Linear` and `Module` from MAX's neural network module. You'll also reuse the `causal_mask` function from Step 02.
+First, import the required modules. You'll need `math` for scaling, `functional
+as F` for operations, `Tensor` for type hints, `device` and `dtype` utilities, and
+`Linear` and `Module` from MAX's neural network module. You'll also need the
+`causal_mask()` function created in step 3.
 
 In the `__init__` method, create the projection layers and store configuration:
 

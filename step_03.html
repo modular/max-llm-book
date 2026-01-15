@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Layer normalization - Build an LLM from scratch with MAX</title>
+        <title>Causal masking - Build an LLM from scratch with MAX</title>
 
 
         <!-- Custom HTML head -->
@@ -197,154 +197,182 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="step-03-layer-normalization"><a class="header" href="#step-03-layer-normalization">Step 03: Layer normalization</a></h1>
+                        <h1 id="causal-masking"><a class="header" href="#causal-masking">Causal masking</a></h1>
 <div class="note">
-<p>Learn to implement layer normalization for stabilizing neural network training.</p>
+<p>Learn to create attention masks to prevent the model from <em>seeing</em> future tokens during <a href="https://docs.modular.com/glossary/ai/autoregression">autoregressive</a> generation.</p>
 </div>
-<h2 id="building-layer-normalization"><a class="header" href="#building-layer-normalization">Building layer normalization</a></h2>
-<p>In this step, you’ll create the <code>LayerNorm</code> class that normalizes activations across the feature dimension. For each input, you compute the mean and variance across all features, normalize by subtracting the mean and dividing by the standard deviation, then apply learned weight and bias parameters to scale and shift the result.</p>
-<p>Unlike batch normalization, <a href="https://arxiv.org/abs/1607.06450">layer normalization</a> works independently for each example. This makes it ideal for transformers - no dependence on batch size, no tracking running statistics during inference, and consistent behavior between training and generation.</p>
-<p>GPT-2 applies layer normalization before the attention and MLP blocks in each of its 12 transformer layers. This pre-normalization pattern stabilizes training in deep networks by keeping activations in a consistent range.</p>
-<h2 id="understanding-the-operation"><a class="header" href="#understanding-the-operation">Understanding the operation</a></h2>
-<p>Layer normalization normalizes across the feature dimension (the last dimension) independently for each example. It learns two parameters per feature: weight (gamma) for scaling and bias (beta) for shifting.</p>
-<p>The normalization follows this formula:</p>
-<pre><code class="language-math">output = weight * (x - mean) / sqrt(variance + epsilon) + bias
-</code></pre>
-<p>The mean and variance are computed across all features in each example. After normalizing to zero mean and unit variance, the learned weight scales the result and the learned bias shifts it. The epsilon value (typically 1e-5) prevents division by zero when variance is very small.</p>
+<p>In this step you’ll implement the <code>causal_mask()</code> function that’s required for self-attention (the next step). This creates a <a href="https://docs.modular.com/glossary/ai/attention-mask/">mask matrix</a> that prevents the model from <em>seeing</em> future tokens when predicting the next token. The mask sets attention scores to negative infinity (<code>-inf</code>) for future positions. After softmax, these <code>-inf</code> values become zero probability, blocking information flow from later tokens.</p>
+<figure>
+<img src="./images/causal-masking-light.png" alt="Causal mask matrix showing the lower triangular pattern where each token can only attend to previous tokens" class="light-mode-img" width="530" height="475">
+<img src="./images/causal-masking-dark.png" alt="Causal mask matrix showing the lower triangular pattern where each token can only attend to previous tokens" class="dark-mode-img" width="530" height="475">
+</figure>
+<p>GPT-2 generates text one token at a time, left-to-right. During training, causal masking prevents the model from “cheating” by looking ahead at tokens it should be predicting. Without this mask, the model would have access to information it won’t have during actual text generation.</p>
+<h2 id="understanding-the-mask-pattern"><a class="header" href="#understanding-the-mask-pattern">Understanding the mask pattern</a></h2>
+<p>The mask creates a lower triangular pattern where each token can only attend to itself and previous tokens:</p>
+<ul>
+<li>Position 0 attends to: position 0 only</li>
+<li>Position 1 attends to: positions 0-1</li>
+<li>Position 2 attends to: positions 0-2</li>
+<li>And so on…</li>
+</ul>
+<p>The mask shape is <code>(sequence_length, sequence_length + num_tokens)</code>. This shape is designed for <a href="https://docs.modular.com/glossary/ai/kv-cache/">KV cache</a> compatibility during generation. The KV cache stores key and value tensors from previously generated tokens, so you only need to compute attention for new tokens while attending to both new tokens (sequence_length) and cached tokens (num_tokens). This significantly speeds up generation by avoiding recomputation.</p>
 <div class="note">
 <div class="title">MAX operations</div>
 <p>You’ll use the following MAX operations to complete this task:</p>
-<p><strong>Modules</strong>:</p>
+<p><strong>Functional decorator</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/nn/module_v3/"><code>Module</code></a>: The Module class used for eager tensors</li>
+<li><a href="https://docs.modular.com/max/api/python/experimental/functional/#max.experimental.functional.functional"><code>@F.functional</code></a>: Converts functions to graph operations for MAX compilation</li>
 </ul>
-<p><strong>Tensor initialization</strong>:</p>
+<p><strong>Tensor operations</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.ones"><code>Tensor.ones()</code></a>: Creates tensor filled with 1.0 values</li>
-<li><a href="https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.zeros"><code>Tensor.zeros()</code></a>: Creates tensor filled with 0.0 values</li>
-</ul>
-<p><strong>Layer normalization</strong>:</p>
-<ul>
-<li><a href="https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.layer_norm"><code>F.layer_norm()</code></a>: Applies layer normalization with parameters: <code>input</code>, <code>gamma</code> (weight), <code>beta</code> (bias), and <code>epsilon</code></li>
+<li><a href="https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.constant"><code>Tensor.constant()</code></a>: Creates a scalar constant tensor</li>
+<li><a href="https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.broadcast_to"><code>F.broadcast_to()</code></a>: Expands tensor dimensions to target shape</li>
+<li><a href="https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.band_part"><code>F.band_part()</code></a>: Extracts band matrix (keeps diagonal band, zeros out rest)</li>
 </ul>
 </div>
-<h2 id="implementing-layer-normalization"><a class="header" href="#implementing-layer-normalization">Implementing layer normalization</a></h2>
-<p>You’ll create the <code>LayerNorm</code> class that wraps MAX’s layer normalization function with learnable parameters. The implementation is straightforward - two parameters and a single function call.</p>
-<p>First, import the required modules. You’ll need <code>functional as F</code> for the layer norm operation and <code>Tensor</code> for creating parameters.</p>
-<p>In the <code>__init__</code> method, create two learnable parameters:</p>
+<h2 id="implementing-the-mask"><a class="header" href="#implementing-the-mask">Implementing the mask</a></h2>
+<p>You’ll create the causal mask in several steps:</p>
+<ol>
+<li>
+<p><strong>Import required modules</strong>:</p>
 <ul>
-<li>Weight: <code>Tensor.ones([dim])</code> stored as <code>self.weight</code> - initialized to ones so the initial transformation is identity</li>
-<li>Bias: <code>Tensor.zeros([dim])</code> stored as <code>self.bias</code> - initialized to zeros so there’s no initial shift</li>
+<li><a href="https://docs.modular.com/max/api/python/driver"><code>Device</code></a> from <code>max.driver</code> - specifies hardware device (CPU/GPU)</li>
+<li><a href="https://docs.modular.com/max/api/python/dtype"><code>DType</code></a> from <code>max.dtype</code> - data type specification</li>
+<li><a href="https://docs.modular.com/max/api/python/experimental/functional"><code>functional</code></a> as <code>F</code> from <code>max.experimental</code> - functional operations library</li>
+<li><a href="https://docs.modular.com/max/api/python/experimental/tensor"><code>Tensor</code></a> from <code>max.experimental.tensor</code> - tensor operations</li>
+<li><a href="https://docs.modular.com/max/api/python/graph/dim/#max.graph.dim.Dim"><code>Dim</code></a> from <code>graph.dim</code> - dimension handling</li>
 </ul>
-<p>Store the epsilon value as <code>self.eps</code> for numerical stability.</p>
-<p>In the <code>forward</code> method, apply layer normalization with <code>F.layer_norm(x, gamma=self.weight, beta=self.bias, epsilon=self.eps)</code>. This computes the normalization and applies the learned parameters in one operation.</p>
+</li>
+<li>
+<p><strong>Add @F.functional decorator</strong>: This converts the function to a MAX graph operation.</p>
+</li>
+<li>
+<p><strong>Calculate total sequence length</strong>: Combine <code>sequence_length</code> and <code>num_tokens</code> using <code>Dim()</code> to determine mask width.</p>
+</li>
+<li>
+<p><strong>Create constant tensor</strong>: Use <code>Tensor.constant(float("-inf"), dtype=dtype, device=device)</code> to create a scalar that will be broadcast.</p>
+</li>
+<li>
+<p><strong>Broadcast to target shape</strong>: Use <code>F.broadcast_to(mask, shape=(sequence_length, n))</code> to expand the scalar to a 2D matrix.</p>
+</li>
+<li>
+<p><strong>Apply band part</strong>: Use <code>F.band_part(mask, num_lower=None, num_upper=0, exclude=True)</code> to create the lower triangular pattern. This keeps 0s on and below the diagonal, <code>-inf</code> above.</p>
+</li>
+</ol>
 <p><strong>Implementation</strong> (<code>step_03.py</code>):</p>
 <pre><code class="language-python">"""
-Step 03: Layer Normalization
+Step 03: Causal Masking
 
-Implement layer normalization that normalizes activations for training stability.
+Implement causal attention masking that prevents tokens from attending to future positions.
 
 Tasks:
 1. Import functional module (as F) and Tensor from max.experimental
-2. Initialize learnable weight (gamma) and bias (beta) parameters
-3. Apply layer normalization using F.layer_norm in the forward pass
+2. Add @F.functional decorator to the causal_mask function
+3. Create a constant tensor filled with negative infinity
+4. Broadcast the mask to the correct shape (sequence_length, n)
+5. Apply band_part to create the lower triangular causal structure
 
 Run: pixi run s03
 """
 
 # 1: Import the required modules from MAX
-# TODO: Import functional module from max.experimental with the alias F
+from max.driver import Device
+from max.dtype import DType
+# TODO: Import necessary funcional module from max.experimental with the alias F
 # https://docs.modular.com/max/api/python/experimental/functional
 
-# TODO: Import Tensor from max.experimental.tensor
+# TODO: Import Tensor object from max.experimental.tensor
 # https://docs.modular.com/max/api/python/experimental/tensor.Tensor
 
-from max.graph import DimLike
-from max.nn.module_v3 import Module
+from max.graph import Dim, DimLike
+
+# 2: Add the @F.functional decorator to make this a MAX functional operation
+# TODO: Add the decorator here
 
 
-class LayerNorm(Module):
-    """Layer normalization module.
+def causal_mask(
+    sequence_length: DimLike,
+    num_tokens: DimLike,
+    *,
+    dtype: DType,
+    device: Device,
+):
+    """Create a causal mask for autoregressive attention.
 
     Args:
-        dim: Dimension to normalize over.
-        eps: Epsilon for numerical stability.
+        sequence_length: Length of the sequence.
+        num_tokens: Number of tokens.
+        dtype: Data type for the mask.
+        device: Device to create the mask on.
+
+    Returns:
+        A causal mask tensor.
     """
+    # Calculate total sequence length
+    n = Dim(sequence_length) + num_tokens
 
-    def __init__(self, dim: DimLike, *, eps: float = 1e-5):
-        super().__init__()
-        self.eps = eps
+    # 3: Create a constant tensor filled with negative infinity
+    # TODO: Use Tensor.constant() with float("-inf"), dtype, and device parameters
+    # https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.constant
+    # Hint: This creates the base mask value that will block attention to future tokens
+    mask = None
 
-        # 2: Initialize learnable weight and bias parameters
-        # TODO: Create self.weight as a Tensor of ones with shape [dim]
-        # https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.ones
-        # Hint: This is the gamma parameter in layer normalization
-        self.weight = None
+    # 4: Broadcast the mask to the correct shape
+    # TODO: Use F.broadcast_to() to expand mask to shape (sequence_length, n)
+    # https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.broadcast_to
+    # Hint: This creates a 2D attention mask matrix
+    mask = None
 
-        # TODO: Create self.bias as a Tensor of zeros with shape [dim]
-        # https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.zeros
-        # Hint: This is the beta parameter in layer normalization
-        self.bias = None
-
-    def __call__(self, x: Tensor) -&gt; Tensor:
-        """Apply layer normalization.
-
-        Args:
-            x: Input tensor.
-
-        Returns:
-            Normalized tensor.
-        """
-        # 3: Apply layer normalization and return the result
-        # TODO: Use F.layer_norm() with x, gamma=self.weight, beta=self.bias, epsilon=self.eps
-        # https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.layer_norm
-        # Hint: Layer normalization normalizes across the last dimension
-        return None
+    # 5: Apply band_part to create the causal (lower triangular) structure and return the mask
+    # TODO: Use F.band_part() with num_lower=None, num_upper=0, exclude=True
+    # https://docs.modular.com/max/api/python/experimental/functional/#max.experimental.functional.band_part
+    # Hint: This keeps only the lower triangle, allowing attention to past tokens only
+    return None
 </code></pre>
 <h3 id="validation"><a class="header" href="#validation">Validation</a></h3>
 <p>Run <code>pixi run s03</code> to verify your implementation.</p>
 <details>
 <summary>Show solution</summary>
 <pre><code class="language-python">"""
-Solution for Step 03: Layer Normalization
+Solution for Step 03: Causal Masking
 
-This module implements layer normalization that normalizes activations
-across the embedding dimension for training stability.
+This module implements causal attention masking that prevents tokens from
+attending to future positions in autoregressive generation.
 """
 
+from max.driver import Device
+from max.dtype import DType
 from max.experimental import functional as F
 from max.experimental.tensor import Tensor
-from max.graph import DimLike
-from max.nn.module_v3 import Module
+from max.graph import Dim, DimLike
 
 
-class LayerNorm(Module):
-    """Layer normalization module.
+@F.functional
+def causal_mask(
+    sequence_length: DimLike,
+    num_tokens: DimLike,
+    *,
+    dtype: DType,
+    device: Device,
+):
+    """Create a causal mask for autoregressive attention.
 
     Args:
-        dim: Dimension to normalize over.
-        eps: Epsilon for numerical stability.
+        sequence_length: Length of the sequence.
+        num_tokens: Number of tokens.
+        dtype: Data type for the mask.
+        device: Device to create the mask on.
+
+    Returns:
+        A causal mask tensor.
     """
-
-    def __init__(self, dim: DimLike, *, eps: float = 1e-5):
-        super().__init__()
-        self.eps = eps
-        self.weight = Tensor.ones([dim])
-        self.bias = Tensor.zeros([dim])
-
-    def __call__(self, x: Tensor) -&gt; Tensor:
-        """Apply layer normalization.
-
-        Args:
-            x: Input tensor.
-
-        Returns:
-            Normalized tensor.
-        """
-        return F.layer_norm(x, gamma=self.weight, beta=self.bias, epsilon=self.eps)
+    n = Dim(sequence_length) + num_tokens
+    mask = Tensor.constant(float("-inf"), dtype=dtype, device=device)
+    mask = F.broadcast_to(mask, shape=(sequence_length, n))
+    return F.band_part(mask, num_lower=None, num_upper=0, exclude=True)
 </code></pre>
 </details>
-<p><strong>Next</strong>: In <a href="./step_04.html">Step 04</a>, you’ll implement the feed-forward network (MLP) with GELU activation used in each transformer block.</p>
+<p><strong>Next</strong>: In <a href="./step_04.html">Step 04</a>, you’ll implement multi-head attention.</p>
 
                     </main>
 

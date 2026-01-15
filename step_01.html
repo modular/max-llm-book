@@ -197,11 +197,10 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="step-01-model-configuration"><a class="header" href="#step-01-model-configuration">Step 01: Model configuration</a></h1>
+                        <h1 id="model-configuration"><a class="header" href="#model-configuration">Model configuration</a></h1>
 <div class="note">
 <p>Learn to define the GPT-2 model architecture parameters using configuration classes.</p>
 </div>
-<h2 id="defining-the-model-architecture"><a class="header" href="#defining-the-model-architecture">Defining the model architecture</a></h2>
 <p>Before you can implement GPT-2, you need to define its architecture: the dimensions, layer counts, and structural parameters that determine how the model processes information.</p>
 <p>In this step, you’ll create <code>GPT2Config</code>, a class that holds all the architectural decisions for GPT-2. This class describes things like: embedding dimensions, number of transformer layers, and number of attention heads. These parameters define the shape and capacity of your model.</p>
 <p>OpenAI trained the original GPT-2 model with specific parameters that you can see in the <a href="https://huggingface.co/openai-community/gpt2/blob/main/config.json">config.json file</a> on Hugging Face. By using the exact same values, we can access OpenAI’s pretrained weights in subsequent steps.</p>
@@ -307,7 +306,7 @@ class GPT2Config:
     layer_norm_epsilon: float = 1e-5
 </code></pre>
 </details>
-<p><strong>Next</strong>: In <a href="./step_02.html">Step 02</a>, you’ll implement causal masking to prevent tokens from attending to future positions in autoregressive generation.</p>
+<p><strong>Next</strong>: In <a href="./step_02.html">Step 02</a>, you’ll implement the feed-forward network—also known as a multilayer perceptron (MLP)—that processes information after attention in each transformer block.</p>
 
                     </main>
 

@@ -220,7 +220,6 @@ will be pinned to a major release version.</p>
 <li>multi-head attention</li>
 <li>feed-forward layers</li>
 <li>layer normalization</li>
-<li>residual connections</li>
 </ul>
 <p>Modern variants add refinements like grouped-query attention or mixture of experts, but the fundamentals remain the same. GPT-2 is complex enough to teach real transformer architecture but simple enough to implement completely and understand deeply. When you grasp how its pieces fit together, you understand how to build any transformer-based model.</p>
 <blockquote>
@@ -260,18 +259,16 @@ useful independently while building toward a complete implementation.</p>
 <p>This tutorial guides you through building GPT-2 in manageable steps:</p>
 <div class="table-wrapper"><table><thead><tr><th>Step</th><th>Component</th><th>What you’ll learn</th></tr></thead><tbody>
 <tr><td>1</td><td><a href="./step_01.html">Model configuration</a></td><td>Define architecture hyperparameters matching HuggingFace GPT-2.</td></tr>
-<tr><td>2</td><td><a href="./step_02.html">Causal masking</a></td><td>Create attention masks to prevent looking at future tokens.</td></tr>
-<tr><td>3</td><td><a href="./step_03.html">Layer normalization</a></td><td>Stabilize activations for effective training.</td></tr>
-<tr><td>4</td><td><a href="./step_04.html">GPT-2 MLP (feed-forward network)</a></td><td>Build the position-wise feed-forward network with GELU activation.</td></tr>
-<tr><td>5</td><td><a href="./step_05.html">Token embeddings</a></td><td>Convert token IDs to continuous vector representations.</td></tr>
-<tr><td>6</td><td><a href="./step_06.html">Position embeddings</a></td><td>Encode sequence order information.</td></tr>
-<tr><td>7</td><td><a href="./step_07.html">Multi-head attention</a></td><td>Extend to multiple parallel attention heads.</td></tr>
-<tr><td>8</td><td><a href="./step_08.html">Residual connections &amp; layer norm</a></td><td>Enable training deep networks with skip connections.</td></tr>
-<tr><td>9</td><td><a href="./step_09.html">Transformer block</a></td><td>Combine attention and MLP into the core building block.</td></tr>
-<tr><td>10</td><td><a href="./step_10.html">Stacking transformer blocks</a></td><td>Create the complete 12-layer GPT-2 model.</td></tr>
-<tr><td>11</td><td><a href="./step_11.html">Language model head</a></td><td>Project hidden states to vocabulary logits.</td></tr>
-<tr><td>12</td><td><a href="./step_12.html">Text generation</a></td><td>Generate text autoregressively with temperature sampling.</td></tr>
-<tr><td>00</td><td>Serve your model</td><td>Run GPT-2 as an endpoint with MAX Serve…. coming soon.</td></tr>
+<tr><td>2</td><td><a href="./step_02.html">Feed-forward network</a></td><td>Build the position-wise feed-forward network with GELU activation.</td></tr>
+<tr><td>3</td><td><a href="./step_03.html">Causal masking</a></td><td>Create attention masks to prevent looking at future tokens.</td></tr>
+<tr><td>4</td><td><a href="./step_04.html">Multi-head attention</a></td><td>Implement scaled dot-product attention with multiple heads.</td></tr>
+<tr><td>5</td><td><a href="./step_05.html">Layer normalization</a></td><td>Ensure activation values are within a stable range.</td></tr>
+<tr><td>6</td><td><a href="./step_06.html">Transformer block</a></td><td>Combine attention and MLP with residual connections.</td></tr>
+<tr><td>7</td><td><a href="./step_07.html">Stacking transformer blocks</a></td><td>Create the complete 12-layer GPT-2 model with embeddings.</td></tr>
+<tr><td>8</td><td><a href="./step_08.html">Language model head</a></td><td>Project hidden states to vocabulary logits.</td></tr>
+<tr><td>9</td><td><a href="./step_09.html">Encode and decode tokens</a></td><td>Convert between text and token IDs using HuggingFace tokenizer.</td></tr>
+<tr><td>10</td><td><a href="./step_10.html">Text generation</a></td><td>Generate text autoregressively with temperature sampling.</td></tr>
+<tr><td>11</td><td><a href="./step_11.html">Load weights and run model</a></td><td>Load pretrained weights and interact with your complete model.</td></tr>
 </tbody></table>
 </div>
 <p>By the end, you’ll have a complete GPT-2 implementation and practical experience
@@ -284,7 +281,17 @@ Training is not in scope, but we include these architectural details for
 learning purposes and completeness—understanding why each layer exists helps
 you reason about model behavior and adapt architectures for your own needs.</p>
 </blockquote>
-<p>To install the puzzles, follow the steps in
+<h2 id="try-it-first"><a class="header" href="#try-it-first">Try it first</a></h2>
+<p>Before diving into the implementation, you can experience what you’ll build by running the complete reference model:</p>
+<pre><code class="language-bash">pixi run main
+</code></pre>
+<p>This runs the complete GPT-2 implementation from <a href="https://github.com/modular/max-llm-book/blob/main/main.py"><code>main.py</code></a>, loading pretrained weights and starting an interactive prompt where you can enter text and see the model generate completions. It’s the same model you’ll build step-by-step through the tutorial.</p>
+<p>When you’ve completed every step of the tutorial, you can run your own implementation the exact same way:</p>
+<pre><code class="language-bash">pixi run gpt2
+</code></pre>
+<p>This runs your completed <code>steps/step_11.py</code>, demonstrating that your implementation works identically to the reference. Both commands load the same pretrained weights, compile the model, and provide an interactive generation experience.</p>
+<h2 id="get-started"><a class="header" href="#get-started">Get started</a></h2>
+<p>To install the tutorial and begin building, follow the steps in
 <a href="./setup.html">Setup</a>.</p>
 
                     </main>

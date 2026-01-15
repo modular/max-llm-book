@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Causal masking - Build an LLM from scratch with MAX</title>
+        <title>Feed-forward network - Build an LLM from scratch with MAX</title>
 
 
         <!-- Custom HTML head -->
@@ -197,183 +197,199 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="step-02-causal-masking"><a class="header" href="#step-02-causal-masking">Step 02: Causal masking</a></h1>
+                        <h1 id="feed-forward-network-mlp"><a class="header" href="#feed-forward-network-mlp">Feed-forward network (MLP)</a></h1>
 <div class="note">
-<p>Learn to create attention masks to prevent the model from <em>seeing</em> future tokens during <a href="https://docs.modular.com/glossary/ai/autoregression">autoregressive</a> generation.</p>
+<p>Learn to build the feed-forward network—also known as a multilayer perceptron (MLP)—that processes information after attention in each transformer block.</p>
 </div>
-<h2 id="implementing-causal-masking"><a class="header" href="#implementing-causal-masking">Implementing causal masking</a></h2>
-<p>In this step you’ll implement the <code>causal_mask()</code> function. This creates a <a href="https://docs.modular.com/glossary/ai/attention-mask/">mask matrix</a> that prevents the model from <em>seeing</em> future tokens when predicting the next token. The mask sets attention scores to negative infinity (<code>-inf</code>) for future positions. After softmax, these <code>-inf</code> values become zero probability, blocking information flow from later tokens.</p>
-<figure>
-<img src="./images/causal-masking-light.png" alt="Causal mask matrix showing the lower triangular pattern where each token can only attend to previous tokens" class="light-mode-img" width="530" height="475">
-<img src="./images/causal-masking-dark.png" alt="Causal mask matrix showing the lower triangular pattern where each token can only attend to previous tokens" class="dark-mode-img" width="530" height="475">
-</figure>
-<p>GPT-2 generates text one token at a time, left-to-right. During training, causal masking prevents the model from “cheating” by looking ahead at tokens it should be predicting. Without this mask, the model would have access to information it won’t have during actual text generation.</p>
-<h2 id="understanding-the-mask-pattern"><a class="header" href="#understanding-the-mask-pattern">Understanding the mask pattern</a></h2>
-<p>The mask creates a lower triangular pattern where each token can only attend to itself and previous tokens:</p>
-<ul>
-<li>Position 0 attends to: position 0 only</li>
-<li>Position 1 attends to: positions 0-1</li>
-<li>Position 2 attends to: positions 0-2</li>
-<li>And so on…</li>
-</ul>
-<p>The mask shape is <code>(sequence_length, sequence_length + num_tokens)</code>. This shape is designed for <a href="https://docs.modular.com/glossary/ai/kv-cache/">KV cache</a> compatibility during generation. The KV cache stores key and value tensors from previously generated tokens, so you only need to compute attention for new tokens while attending to both new tokens (sequence_length) and cached tokens (num_tokens). This significantly speeds up generation by avoiding recomputation.</p>
+<p>In this step, you’ll create the <code>GPT2MLP</code> class: a two-layer feed-forward
+network that appears after attention in every transformer block. The MLP expands
+the embedding dimension by 4× (768 → 3,072), applies GELU activation for
+non-linearity, then projects back to the original dimension.</p>
+<p>While attention lets tokens communicate with each other, the MLP processes each
+position independently. Attention aggregates information through weighted sums
+(linear operations), but the MLP adds non-linearity through GELU activation.
+This combination allows the model to learn complex patterns beyond what linear
+transformations alone can capture.</p>
+<p>GPT-2 uses a 4× expansion ratio (768 to 3,072 dimensions) because this was found
+to work well in the original Transformer paper and has been validated across
+many architectures since.</p>
+<h2 id="understanding-the-components"><a class="header" href="#understanding-the-components">Understanding the components</a></h2>
+<p>The MLP has three steps applied in sequence:</p>
+<p><strong>Expansion layer (<code>c_fc</code>)</strong>: Projects from 768 to 3,072 dimensions using a linear layer. This expansion gives the network more capacity to process information.</p>
+<p><strong>GELU activation</strong>: Applies Gaussian Error Linear Unit, a smooth non-linear
+function. GPT-2 uses <code>approximate="tanh"</code> for the tanh-based approximation
+instead of the exact computation. This approximation was faster when GPT-2 was
+implemented, but while exact GELU is fast enough now, we use the approximation
+to match the original weights.</p>
+<p><strong>Projection layer (<code>c_proj</code>)</strong>: Projects back from 3,072 to 768 dimensions
+using another linear layer. This returns to the embedding dimension so outputs
+can be added to residual connections.</p>
+<p>The layer names <code>c_fc</code> (fully connected) and <code>c_proj</code> (projection) match Hugging
+Face’s GPT-2 checkpoint structure. This naming is essential for loading
+pretrained weights.</p>
 <div class="note">
 <div class="title">MAX operations</div>
 <p>You’ll use the following MAX operations to complete this task:</p>
-<p><strong>Functional decorator</strong>:</p>
+<p><strong>Linear layers</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/experimental/functional/#max.experimental.functional.functional"><code>@F.functional</code></a>: Converts functions to graph operations for MAX compilation</li>
+<li><a href="https://docs.modular.com/max/api/python/nn/module_v3#max.nn.module_v3.Linear"><code>Linear(in_features, out_features, bias=True)</code></a>: Applies linear transformation <code>y = xW^T + b</code></li>
 </ul>
-<p><strong>Tensor operations</strong>:</p>
+<p><strong>GELU activation</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.constant"><code>Tensor.constant()</code></a>: Creates a scalar constant tensor</li>
-<li><a href="https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.broadcast_to"><code>F.broadcast_to()</code></a>: Expands tensor dimensions to target shape</li>
-<li><a href="https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.band_part"><code>F.band_part()</code></a>: Extracts band matrix (keeps diagonal band, zeros out rest)</li>
+<li><a href="https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.gelu"><code>F.gelu(input, approximate="tanh")</code></a>: Applies GELU activation with tanh approximation for faster computation</li>
 </ul>
 </div>
-<h2 id="implementing-the-mask"><a class="header" href="#implementing-the-mask">Implementing the mask</a></h2>
-<p>You’ll create the causal mask in several steps:</p>
-<ol>
-<li>
-<p><strong>Import required modules</strong>:</p>
+<h2 id="implementing-the-mlp"><a class="header" href="#implementing-the-mlp">Implementing the MLP</a></h2>
+<p>You’ll create the <code>GPT2MLP</code> class that chains two linear layers with GELU
+activation between them. The implementation is straightforward - three
+operations applied in sequence.</p>
+<p>First, import the required modules. You’ll need <code>functional as F</code> for the GELU
+activation, <code>Tensor</code> for type hints, <code>Linear</code> for the layers, and <code>Module</code> as
+the base class.</p>
+<p>In the <code>__init__</code> method, create two linear layers:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/driver"><code>Device</code></a> from <code>max.driver</code> - specifies hardware device (CPU/GPU)</li>
-<li><a href="https://docs.modular.com/max/api/python/dtype"><code>DType</code></a> from <code>max.dtype</code> - data type specification</li>
-<li><a href="https://docs.modular.com/max/api/python/experimental/functional"><code>functional</code></a> as <code>F</code> from <code>max.experimental</code> - functional operations library</li>
-<li><a href="https://docs.modular.com/max/api/python/experimental/tensor"><code>Tensor</code></a> from <code>max.experimental.tensor</code> - tensor operations</li>
-<li><a href="https://docs.modular.com/max/api/python/graph/dim/#max.graph.dim.Dim"><code>Dim</code></a> from <code>graph.dim</code> - dimension handling</li>
+<li>Expansion layer: <code>Linear(embed_dim, intermediate_size, bias=True)</code> stored as
+<code>self.c_fc</code></li>
+<li>Projection layer: <code>Linear(intermediate_size, embed_dim, bias=True)</code> stored as
+<code>self.c_proj</code></li>
 </ul>
-</li>
-<li>
-<p><strong>Add @F.functional decorator</strong>: This converts the function to a MAX graph operation.</p>
-</li>
-<li>
-<p><strong>Calculate total sequence length</strong>: Combine <code>sequence_length</code> and <code>num_tokens</code> using <code>Dim()</code> to determine mask width.</p>
-</li>
-<li>
-<p><strong>Create constant tensor</strong>: Use <code>Tensor.constant(float("-inf"), dtype=dtype, device=device)</code> to create a scalar that will be broadcast.</p>
-</li>
-<li>
-<p><strong>Broadcast to target shape</strong>: Use <code>F.broadcast_to(mask, shape=(sequence_length, n))</code> to expand the scalar to a 2D matrix.</p>
-</li>
-<li>
-<p><strong>Apply band part</strong>: Use <code>F.band_part(mask, num_lower=None, num_upper=0, exclude=True)</code> to create the lower triangular pattern. This keeps 0s on and below the diagonal, <code>-inf</code> above.</p>
-</li>
+<p>Both layers include bias terms (<code>bias=True</code>). The intermediate size is typically
+4× the embedding dimension.</p>
+<p>In the <code>forward</code> method, apply the three transformations:</p>
+<ol>
+<li>Expand: <code>hidden_states = self.c_fc(hidden_states)</code></li>
+<li>Activate: <code>hidden_states = F.gelu(hidden_states, approximate="tanh")</code></li>
+<li>Project: <code>hidden_states = self.c_proj(hidden_states)</code></li>
 </ol>
+<p>Return the final <code>hidden_states</code>. The input and output shapes are the same:
+<code>[batch, seq_length, embed_dim]</code>.</p>
 <p><strong>Implementation</strong> (<code>step_02.py</code>):</p>
 <pre><code class="language-python">"""
-Step 02: Causal Masking
+Step 02: Feed-forward Network (MLP)
 
-Implement causal attention masking that prevents tokens from attending to future positions.
+Implement the MLP used in each transformer block with GELU activation.
 
 Tasks:
-1. Import functional module (as F) and Tensor from max.experimental
-2. Add @F.functional decorator to the causal_mask function
-3. Create a constant tensor filled with negative infinity
-4. Broadcast the mask to the correct shape (sequence_length, n)
-5. Apply band_part to create the lower triangular causal structure
+1. Import functional (as F), Tensor, Linear, and Module from MAX
+2. Create c_fc linear layer (embedding to intermediate dimension)
+3. Create c_proj linear layer (intermediate back to embedding dimension)
+4. Apply c_fc transformation in forward pass
+5. Apply GELU activation function
+6. Apply c_proj transformation and return result
 
 Run: pixi run s02
 """
 
 # 1: Import the required modules from MAX
-from max.driver import Device
-from max.dtype import DType
-# TODO: Import necessary funcional module from max.experimental with the alias F
+# TODO: Import functional module from max.experimental with the alias F
 # https://docs.modular.com/max/api/python/experimental/functional
 
-# TODO: Import Tensor object from max.experimental.tensor
+# TODO: Import Tensor from max.experimental.tensor
 # https://docs.modular.com/max/api/python/experimental/tensor.Tensor
 
-from max.graph import Dim, DimLike
+# TODO: Import Linear and Module from max.nn.module_v3
+# https://docs.modular.com/max/api/python/nn/module_v3
 
-# 2: Add the @F.functional decorator to make this a MAX functional operation
-# TODO: Add the decorator here
+from step_01 import GPT2Config
 
 
-def causal_mask(
-    sequence_length: DimLike,
-    num_tokens: DimLike,
-    *,
-    dtype: DType,
-    device: Device,
-):
-    """Create a causal mask for autoregressive attention.
+class GPT2MLP(Module):
+    """Feed-forward network matching HuggingFace GPT-2 structure.
 
     Args:
-        sequence_length: Length of the sequence.
-        num_tokens: Number of tokens.
-        dtype: Data type for the mask.
-        device: Device to create the mask on.
-
-    Returns:
-        A causal mask tensor.
+        intermediate_size: Size of the intermediate layer.
+        config: GPT-2 configuration.
     """
-    # Calculate total sequence length
-    n = Dim(sequence_length) + num_tokens
 
-    # 3: Create a constant tensor filled with negative infinity
-    # TODO: Use Tensor.constant() with float("-inf"), dtype, and device parameters
-    # https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.constant
-    # Hint: This creates the base mask value that will block attention to future tokens
-    mask = None
+    def __init__(self, intermediate_size: int, config: GPT2Config):
+        super().__init__()
+        embed_dim = config.n_embd
 
-    # 4: Broadcast the mask to the correct shape
-    # TODO: Use F.broadcast_to() to expand mask to shape (sequence_length, n)
-    # https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.broadcast_to
-    # Hint: This creates a 2D attention mask matrix
-    mask = None
+        # 2: Create the first linear layer (embedding to intermediate)
+        # TODO: Create self.c_fc as a Linear layer from embed_dim to intermediate_size with bias=True
+        # https://docs.modular.com/max/api/python/nn/module_v3#max.nn.module_v3.Linear
+        # Hint: This is the expansion layer in the MLP
+        self.c_fc = None
 
-    # 5: Apply band_part to create the causal (lower triangular) structure and return the mask
-    # TODO: Use F.band_part() with num_lower=None, num_upper=0, exclude=True
-    # https://docs.modular.com/max/api/python/experimental/functional/#max.experimental.functional.band_part
-    # Hint: This keeps only the lower triangle, allowing attention to past tokens only
-    return None
+        # 3: Create the second linear layer (intermediate back to embedding)
+        # TODO: Create self.c_proj as a Linear layer from intermediate_size to embed_dim with bias=True
+        # https://docs.modular.com/max/api/python/nn/module_v3#max.nn.module_v3.Linear
+        # Hint: This is the projection layer that brings us back to the embedding dimension
+        self.c_proj = None
+
+    def __call__(self, hidden_states: Tensor) -&gt; Tensor:
+        """Apply feed-forward network.
+
+        Args:
+            hidden_states: Input hidden states.
+
+        Returns:
+            MLP output.
+        """
+        # 4: Apply the first linear transformation
+        # TODO: Apply self.c_fc to hidden_states
+        # Hint: This expands the hidden dimension to the intermediate size
+        hidden_states = None
+
+        # 5: Apply GELU activation function
+        # TODO: Use F.gelu() with hidden_states and approximate="tanh"
+        # https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.gelu
+        # Hint: GELU is the non-linear activation used in GPT-2's MLP
+        hidden_states = None
+
+        # 6: Apply the second linear transformation and return
+        # TODO: Apply self.c_proj to hidden_states and return the result
+        # Hint: This projects back to the embedding dimension
+        return None
 </code></pre>
 <h3 id="validation"><a class="header" href="#validation">Validation</a></h3>
 <p>Run <code>pixi run s02</code> to verify your implementation.</p>
 <details>
 <summary>Show solution</summary>
 <pre><code class="language-python">"""
-Solution for Step 02: Causal Masking
+Solution for Step 02: Feed-forward Network (MLP)
 
-This module implements causal attention masking that prevents tokens from
-attending to future positions in autoregressive generation.
+This module implements the feed-forward network (MLP) used in each
+transformer block with GELU activation.
 """
 
-from max.driver import Device
-from max.dtype import DType
 from max.experimental import functional as F
 from max.experimental.tensor import Tensor
-from max.graph import Dim, DimLike
+from max.nn.module_v3 import Linear, Module
+
+from solution_01 import GPT2Config
 
 
-@F.functional
-def causal_mask(
-    sequence_length: DimLike,
-    num_tokens: DimLike,
-    *,
-    dtype: DType,
-    device: Device,
-):
-    """Create a causal mask for autoregressive attention.
+class GPT2MLP(Module):
+    """Feed-forward network matching HuggingFace GPT-2 structure.
 
     Args:
-        sequence_length: Length of the sequence.
-        num_tokens: Number of tokens.
-        dtype: Data type for the mask.
-        device: Device to create the mask on.
-
-    Returns:
-        A causal mask tensor.
+        intermediate_size: Size of the intermediate layer.
+        config: GPT-2 configuration.
     """
-    n = Dim(sequence_length) + num_tokens
-    mask = Tensor.constant(float("-inf"), dtype=dtype, device=device)
-    mask = F.broadcast_to(mask, shape=(sequence_length, n))
-    return F.band_part(mask, num_lower=None, num_upper=0, exclude=True)
+
+    def __init__(self, intermediate_size: int, config: GPT2Config):
+        super().__init__()
+        embed_dim = config.n_embd
+        self.c_fc = Linear(embed_dim, intermediate_size, bias=True)
+        self.c_proj = Linear(intermediate_size, embed_dim, bias=True)
+
+    def __call__(self, hidden_states: Tensor) -&gt; Tensor:
+        """Apply feed-forward network.
+
+        Args:
+            hidden_states: Input hidden states.
+
+        Returns:
+            MLP output.
+        """
+        hidden_states = self.c_fc(hidden_states)
+        hidden_states = F.gelu(hidden_states, approximate="tanh")
+        hidden_states = self.c_proj(hidden_states)
+        return hidden_states
 </code></pre>
 </details>
-<p><strong>Next</strong>: In <a href="./step_03.html">Step 03</a>, you’ll implement layer normalization to stabilize activations for effective training.</p>
+<p><strong>Next</strong>: In <a href="./step_03.html">Step 03</a>, you’ll implement causal masking to prevent tokens from attending to future positions in autoregressive generation.</p>
 
                     </main>
 

@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Token embeddings - Build an LLM from scratch with MAX</title>
+        <title>Layer normalization - Build an LLM from scratch with MAX</title>
 
 
         <!-- Custom HTML head -->
@@ -197,93 +197,108 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="step-05-token-embeddings"><a class="header" href="#step-05-token-embeddings">Step 05: Token embeddings</a></h1>
+                        <h1 id="layer-normalization"><a class="header" href="#layer-normalization">Layer normalization</a></h1>
 <div class="note">
-<p>Learn to create token embeddings that convert discrete token IDs into continuous vector representations.</p>
+<p>Learn to implement layer normalization for stabilizing neural network training.</p>
 </div>
-<h2 id="implementing-token-embeddings"><a class="header" href="#implementing-token-embeddings">Implementing token embeddings</a></h2>
-<p>In this step you’ll create the <code>Embedding</code> class. This converts discrete token
-IDs (integers) into continuous vector representations that the model can
-process. The embedding layer is a lookup table with shape [50257, 768] where
-50257 is GPT-2’s vocabulary size and 768 is the embedding dimension.</p>
-<p>Neural networks operate on continuous values, not discrete symbols. Token
-embeddings convert discrete token IDs into dense vectors that can be processed
-by matrix operations. During training, these embeddings naturally cluster
-semantically similar words closer together in vector space.</p>
-<h2 id="understanding-embeddings"><a class="header" href="#understanding-embeddings">Understanding embeddings</a></h2>
-<p>The embedding layer stores one vector per vocabulary token. When you pass in
-token ID 1000, it returns row 1000 as the embedding vector. The layer name <code>wte</code>
-stands for “word token embeddings” and matches the naming in the original GPT-2
-code for weight loading compatibility.</p>
-<p><strong>Key parameters</strong>:</p>
-<ul>
-<li>Vocabulary size: 50,257 tokens (byte-pair encoding)</li>
-<li>Embedding dimension: 768 for GPT-2 base</li>
-<li>Shape: [vocab_size, embedding_dim]</li>
-</ul>
+<p>In this step, you’ll create the <code>LayerNorm</code> class that normalizes activations across the feature dimension. For each input, you compute the mean and variance across all features, normalize by subtracting the mean and dividing by the standard deviation, then apply learned weight and bias parameters to scale and shift the result.</p>
+<p>Unlike batch normalization, <a href="https://arxiv.org/abs/1607.06450">layer normalization</a> works independently for each example. This makes it ideal for transformers - no dependence on batch size, no tracking running statistics during inference, and consistent behavior between training and generation.</p>
+<p>GPT-2 applies layer normalization before the attention and MLP blocks in each of its 12 transformer layers. This pre-normalization pattern stabilizes training in deep networks by keeping activations in a consistent range.</p>
+<p>While layer normalization is most critical during training to stabilize gradients and prevent activations from exploding or vanishing, <strong>it’s still required during inference</strong>. The pretrained GPT-2 model we’re loading was trained with layer normalization - its learned weights and biases expect normalized inputs. Skipping layer normalization during inference would cause activations to be in completely different ranges than what the model learned during training, leading to poor or nonsensical outputs.</p>
+<h2 id="understanding-the-operation"><a class="header" href="#understanding-the-operation">Understanding the operation</a></h2>
+<p>Layer normalization normalizes across the feature dimension (the last dimension) independently for each example. It learns two parameters per feature: weight (gamma) for scaling and bias (beta) for shifting.</p>
+<p>The normalization follows this formula:</p>
+<pre><code class="language-math">output = weight * (x - mean) / sqrt(variance + epsilon) + bias
+</code></pre>
+<p>The mean and variance are computed across all features in each example. After normalizing to zero mean and unit variance, the learned weight scales the result and the learned bias shifts it. The epsilon value (typically 1e-5) prevents division by zero when variance is very small.</p>
 <div class="note">
 <div class="title">MAX operations</div>
 <p>You’ll use the following MAX operations to complete this task:</p>
-<p><strong>Embedding layer</strong>:</p>
+<p><strong>Modules</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/nn/module_v3#max.nn.module_v3.Embedding"><code>Embedding(num_embeddings, dim)</code></a>: Creates embedding lookup table with automatic weight initialization</li>
+<li><a href="https://docs.modular.com/max/api/python/nn/module_v3/"><code>Module</code></a>: The Module class used for eager tensors</li>
+</ul>
+<p><strong>Tensor initialization</strong>:</p>
+<ul>
+<li><a href="https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.ones"><code>Tensor.ones()</code></a>: Creates tensor filled with 1.0 values</li>
+<li><a href="https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.zeros"><code>Tensor.zeros()</code></a>: Creates tensor filled with 0.0 values</li>
+</ul>
+<p><strong>Layer normalization</strong>:</p>
+<ul>
+<li><a href="https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.layer_norm"><code>F.layer_norm()</code></a>: Applies layer normalization with parameters: <code>input</code>, <code>gamma</code> (weight), <code>beta</code> (bias), and <code>epsilon</code></li>
 </ul>
 </div>
-<h2 id="implementing-the-class"><a class="header" href="#implementing-the-class">Implementing the class</a></h2>
-<p>You’ll implement the <code>Embedding</code> class in several steps:</p>
-<ol>
-<li>
-<p><strong>Import required modules</strong>: Import <code>Embedding</code> and <code>Module</code> from MAX libraries.</p>
-</li>
-<li>
-<p><strong>Create embedding layer</strong>: Use <code>Embedding(config.vocab_size, dim=config.n_embd)</code> and store in <code>self.wte</code>.</p>
-</li>
-<li>
-<p><strong>Implement forward pass</strong>: Call <code>self.wte(input_ids)</code> to lookup embeddings. Input shape: [batch_size, seq_length]. Output shape: [batch_size, seq_length, n_embd].</p>
-</li>
-</ol>
+<h2 id="implementing-layer-normalization"><a class="header" href="#implementing-layer-normalization">Implementing layer normalization</a></h2>
+<p>You’ll create the <code>LayerNorm</code> class that wraps MAX’s layer normalization function with learnable parameters. The implementation is straightforward - two parameters and a single function call.</p>
+<p>First, import the required modules. You’ll need <code>functional as F</code> for the layer norm operation and <code>Tensor</code> for creating parameters.</p>
+<p>In the <code>__init__</code> method, create two learnable parameters:</p>
+<ul>
+<li>Weight: <code>Tensor.ones([dim])</code> stored as <code>self.weight</code> - initialized to ones so the initial transformation is identity</li>
+<li>Bias: <code>Tensor.zeros([dim])</code> stored as <code>self.bias</code> - initialized to zeros so there’s no initial shift</li>
+</ul>
+<p>Store the epsilon value as <code>self.eps</code> for numerical stability.</p>
+<p>In the <code>forward</code> method, apply layer normalization with <code>F.layer_norm(x, gamma=self.weight, beta=self.bias, epsilon=self.eps)</code>. This computes the normalization and applies the learned parameters in one operation.</p>
 <p><strong>Implementation</strong> (<code>step_05.py</code>):</p>
 <pre><code class="language-python">"""
-Step 05: Token Embeddings
+Step 05: Layer Normalization
 
-Implement token embeddings that convert discrete token IDs into continuous vectors.
+Implement layer normalization that normalizes activations for training stability.
 
 Tasks:
-1. Import Embedding and Module from max.nn.module_v3
-2. Create token embedding layer using Embedding(vocab_size, dim=n_embd)
-3. Implement forward pass that looks up embeddings for input token IDs
+1. Import functional module (as F) and Tensor from max.experimental
+2. Initialize learnable weight (gamma) and bias (beta) parameters
+3. Apply layer normalization using F.layer_norm in the forward pass
 
 Run: pixi run s05
 """
 
-# TODO: Import required modules from MAX
-# Hint: You'll need Embedding and Module from max.nn.module_v3
+# 1: Import the required modules from MAX
+# TODO: Import functional module from max.experimental with the alias F
+# https://docs.modular.com/max/api/python/experimental/functional
 
-from solutions.solution_01 import GPT2Config
+# TODO: Import Tensor from max.experimental.tensor
+# https://docs.modular.com/max/api/python/experimental/tensor.Tensor
+
+from max.graph import DimLike
+from max.nn.module_v3 import Module
 
 
-class GPT2Embeddings(Module):
-    """Token embeddings for GPT-2."""
+class LayerNorm(Module):
+    """Layer normalization module.
 
-    def __init__(self, config: GPT2Config):
+    Args:
+        dim: Dimension to normalize over.
+        eps: Epsilon for numerical stability.
+    """
+
+    def __init__(self, dim: DimLike, *, eps: float = 1e-5):
         super().__init__()
+        self.eps = eps
 
-        # TODO: Create token embedding layer
-        # Hint: Use Embedding(config.vocab_size, dim=config.n_embd)
-        # This creates a lookup table that converts token IDs to embedding vectors
-        self.wte = None
+        # 2: Initialize learnable weight and bias parameters
+        # TODO: Create self.weight as a Tensor of ones with shape [dim]
+        # https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.ones
+        # Hint: This is the gamma parameter in layer normalization
+        self.weight = None
 
-    def __call__(self, input_ids):
-        """Convert token IDs to embeddings.
+        # TODO: Create self.bias as a Tensor of zeros with shape [dim]
+        # https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.zeros
+        # Hint: This is the beta parameter in layer normalization
+        self.bias = None
+
+    def __call__(self, x: Tensor) -&gt; Tensor:
+        """Apply layer normalization.
 
         Args:
-            input_ids: Tensor of token IDs, shape [batch_size, seq_length]
+            x: Input tensor.
 
         Returns:
-            Token embeddings, shape [batch_size, seq_length, n_embd]
+            Normalized tensor.
         """
-        # TODO: Return the embedded tokens
-        # Hint: Simply call self.wte with input_ids
+        # 3: Apply layer normalization and return the result
+        # TODO: Use F.layer_norm() with x, gamma=self.weight, beta=self.bias, epsilon=self.eps
+        # https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.layer_norm
+        # Hint: Layer normalization normalizes across the last dimension
         return None
 </code></pre>
 <h3 id="validation"><a class="header" href="#validation">Validation</a></h3>
@@ -291,46 +306,45 @@ class GPT2Embeddings(Module):
 <details>
 <summary>Show solution</summary>
 <pre><code class="language-python">"""
-Solution for Step 05: Token Embeddings
+Solution for Step 05: Layer Normalization
 
-This module implements token embeddings that convert discrete token IDs
-into continuous vector representations.
+This module implements layer normalization that normalizes activations
+across the embedding dimension for training stability.
 """
 
-from max.nn.module_v3 import Embedding, Module
+from max.experimental import functional as F
+from max.experimental.tensor import Tensor
+from max.graph import DimLike
+from max.nn.module_v3 import Module
 
-from solutions.solution_01 import GPT2Config
 
+class LayerNorm(Module):
+    """Layer normalization module.
 
-class GPT2Embeddings(Module):
-    """Token embeddings for GPT-2, matching HuggingFace structure."""
+    Args:
+        dim: Dimension to normalize over.
+        eps: Epsilon for numerical stability.
+    """
 
-    def __init__(self, config: GPT2Config):
-        """Initialize token embedding layer.
-
-        Args:
-            config: GPT2Config containing vocab_size and n_embd
-        """
+    def __init__(self, dim: DimLike, *, eps: float = 1e-5):
         super().__init__()
+        self.eps = eps
+        self.weight = Tensor.ones([dim])
+        self.bias = Tensor.zeros([dim])
 
-        # Token embedding: lookup table from vocab_size to embedding dimension
-        # This converts discrete token IDs (0 to vocab_size-1) into dense vectors
-        self.wte = Embedding(config.vocab_size, dim=config.n_embd)
-
-    def __call__(self, input_ids):
-        """Convert token IDs to embeddings.
+    def __call__(self, x: Tensor) -&gt; Tensor:
+        """Apply layer normalization.
 
         Args:
-            input_ids: Tensor of token IDs, shape [batch_size, seq_length]
+            x: Input tensor.
 
         Returns:
-            Token embeddings, shape [batch_size, seq_length, n_embd]
+            Normalized tensor.
         """
-        # Simple lookup: each token ID becomes its corresponding embedding vector
-        return self.wte(input_ids)
+        return F.layer_norm(x, gamma=self.weight, beta=self.bias, epsilon=self.eps)
 </code></pre>
 </details>
-<p><strong>Next</strong>: In <a href="./step_06.html">Step 06</a>, you’ll implement position embeddings to encode sequence order information, which will be combined with these token embeddings.</p>
+<p><strong>Next</strong>: In <a href="./step_06.html">Step 06</a>, you’ll combine multi-head attention, MLP, layer norm, and residual connections into a complete transformer block.</p>
 
                     </main>
 

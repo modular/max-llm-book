@@ -8,7 +8,7 @@ Learn to convert between text and token IDs using tokenizers and MAX tensors.
 
 In this step, you'll implement utility functions to bridge the gap between text and the token IDs your model operates on. The `tokenize_text()` function converts an input string into a tensor of token IDs, while `decode_tokens()` converts token IDs into a string.
 
-Language models don't work with raw text. Instead, they process token IDs - integers that represent pieces of text according to a vocabulary. GPT-2 uses Byte Pair Encoding (BPE), which breaks text into subword units. For example, "Hello world" becomes `[15496, 995]` - two tokens representing the words.
+As you saw when building the model body in step 7 (`MaxGPT2Model`), the model must receive input as token IDs (not raw text). The token IDs are integers that represent pieces of text according to a tokenizer vocabulary. GPT-2 uses a Byte Pair Encoding (BPE) tokenizer, which breaks text into subword units. For example, "Hello world" becomes `[15496, 995]` - two tokens representing the words.
 
 You'll use the HuggingFace tokenizer to handle the text-to-token conversion, then wrap it with functions that work with MAX tensors. This separation keeps tokenization (a preprocessing step) separate from model inference (tensor operations).
 

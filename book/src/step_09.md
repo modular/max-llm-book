@@ -10,7 +10,7 @@ In this step, you'll implement utility functions to bridge the gap between text 
 
 As you saw when building the model body in step 7 (`MaxGPT2Model`), the model must receive input as token IDs (not raw text). The token IDs are integers that represent pieces of text according to a tokenizer vocabulary. GPT-2 uses a Byte Pair Encoding (BPE) tokenizer, which breaks text into subword units. For example, "Hello world" becomes `[15496, 995]` - two tokens representing the words.
 
-You'll use the HuggingFace tokenizer to handle the text-to-token conversion, then wrap it with functions that work with MAX tensors. This separation keeps tokenization (a preprocessing step) separate from model inference (tensor operations).
+You'll use the Hugging Face tokenizer to handle the text-to-token conversion, then wrap it with functions that work with MAX tensors. This separation keeps tokenization (a preprocessing step) separate from model inference (tensor operations).
 
 ## Understanding tokenization
 

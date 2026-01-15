@@ -114,7 +114,7 @@ Implement `_attn` to compute scaled dot-product attention for all heads:
 - Apply softmax to get attention weights
 - Multiply weights by values: `attn_weights @ value`
 
-In the `forward` method, orchestrate the complete multi-head attention:
+In the `__call__` method, orchestrate the complete multi-head attention:
 
 - Project to Q/K/V: `qkv = self.c_attn(hidden_states)`
 - Split into separate tensors: `F.split(qkv, [self.split_size, self.split_size, self.split_size], axis=-1)`

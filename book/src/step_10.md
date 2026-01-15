@@ -6,11 +6,11 @@ Learn to implement autoregressive text generation with sampling and temperature 
 
 </div>
 
-In this final step, you'll implement the generation loop that produces text one token at a time. The model predicts the next token, appends it to the sequence, and repeats until reaching the desired length.
+In this final step, you'll implement the generation loop that produces text one token at a time. The model predicts the next token, appends it to the sequence, feeds that into the model again, and repeats until reaching the desired length.
 
 Start with a prompt like "Hello world" (tokens `[15496, 995]`). The model predicts the next token, giving you `[15496, 995, 318]` ("Hello world is"). It predicts again, producing `[15496, 995, 318, 257]` ("Hello world is a"). This process continues, with each prediction feeding back as input for the next.
 
-You'll implement two generation strategies: greedy decoding (always pick the highest-scoring token) and sampling (randomly choose according to probabilities). You'll also add temperature control to adjust how random or focused the generation is.
+You'll implement two generation strategies: greedy decoding (always pick the highest-scoring token) and sampling (randomly choose according to probabilities). You'll also add temperature control to adjust how random or focused the generation is—a higher temperature produces more variety (more hallucinations).
 
 ## Understanding the generation loop
 
@@ -24,7 +24,7 @@ These scores are logits (unnormalized), not probabilities. To convert them to pr
 
 Temperature scaling adjusts how random the generation is using the formula `scaled_logits = logits / temperature`.
 
-With temperature 1.0, you use the original distribution. With temperature 0.7, you sharpen the distribution, and high-probability tokens become even more likely, making generation more focused and deterministic. With temperature 1.2, you flatten the distribution, and lower-probability tokens get more chances, making generation more diverse and creative.
+For GPT-2, setting the temperature to 1.0 uses the original distribution. With temperature 0.7, you sharpen the distribution, and high-probability tokens become even more likely, making generation more focused and deterministic. With temperature 1.2, you flatten the distribution, and lower-probability tokens get more chances, making generation more diverse and creative. GPT-2 temperature must be between 0 and 2.0.
 
 Temperature is applied before softmax. Dividing by a value less than 1 makes large logits even larger (sharpening), while dividing by a value greater than 1 reduces the differences between logits (flattening).
 

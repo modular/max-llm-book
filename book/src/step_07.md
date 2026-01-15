@@ -36,7 +36,9 @@ First, create position indices using [`Tensor.arange`](https://docs.modular.com/
 
 Next, look up embeddings. Get token embeddings with `self.wte(input_ids)` and position embeddings with `self.wpe(position_indices)`. Add them together element-wise, as both are shape `[batch, seq_length, 768]`.
 
-Then, pass through the transformer blocks with `self.h(x)`. Sequential applies all 12 blocks in order, each refining the representation.
+Then, pass through the transformer blocks with `self.h(x)`. The
+[`Sequential`](/max/api/python/nn/module_v3#max.nn.module_v3.Sequential)
+module applies all 12 transformer blocks in order, each refining the representation.
 
 Finally, normalize the output with `self.ln_f(x)` and return the result. The output shape matches the input: `[batch, seq_length, 768]`.
 

@@ -211,10 +211,10 @@ class MaxGPT2LMHeadModel(Module):
 # ANCHOR_END: language_model_head
 
 # ANCHOR: encode_and_decode
-def tokenize_text(text: str, tokenizer, device, max_length: int = 128):
+def encode_text(text: str, tokenizer, device, max_length: int = 128):
     """Tokenize text and convert to tensor."""
-    tokens = tokenizer.encode(text, max_length=max_length, truncation=True)
-    return Tensor.constant([tokens], dtype=DType.int64, device=device)
+    token_ids = tokenizer.encode(text, max_length=max_length, truncation=True)
+    return Tensor.constant([token_ids], dtype=DType.int64, device=device)
 
 def decode_tokens(token_ids: Tensor, tokenizer):
     """Decode token IDs back to text."""
@@ -237,7 +237,7 @@ def generate_text(
     do_sample: bool = True,
 ):
     """Generate text using the Max model."""
-    generated_tokens = tokenize_text(prompt, tokenizer, device, max_length=100)
+    generated_tokens = encode_text(prompt, tokenizer, device, max_length=100)
 
     print(f"Starting generation from: '{prompt}'")
     print(

@@ -4,22 +4,20 @@ Step 11: Load Weights and Run Model
 Load pretrained GPT-2 weights from HuggingFace and run the complete model.
 
 Tasks:
-1. Import required modules (transformers, MAX modules, previous steps)
-2. Load HuggingFace GPT-2 model and weights
-3. Initialize MAX model and load state dict
-4. Transpose weights for Conv1D->Linear compatibility
-5. Compile model with correct input specification
-6. Create interactive generation loop
+1. Load HuggingFace GPT-2 model and weights
+2. Initialize MAX model and load state dict
+3. Transpose weights for Conv1D->Linear compatibility
+4. Compile model with correct input specification
+5. Create interactive generation loop
 
 Run: pixi run s11
 """
 
-# TODO: Import required modules
-# Hint: You'll need DType from max.dtype
-# Hint: You'll need Tensor, TensorType, defaults from max.experimental.tensor
-# Hint: You'll need DeviceRef from max.graph
-# Hint: You'll need Linear from max.nn.module_v3
-# Hint: You'll need GPT2LMHeadModel, GPT2Tokenizer from transformers
+from max.dtype import DType
+from max.experimental.tensor import Tensor, TensorType, defaults
+from max.graph import DeviceRef
+from max.nn.module_v3 import Linear
+from transformers import GPT2LMHeadModel, GPT2Tokenizer
 
 from step_01 import GPT2Config
 from step_08 import MaxGPT2LMHeadModel

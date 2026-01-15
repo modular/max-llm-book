@@ -7,10 +7,11 @@ into a complete transformer block.
 
 </div>
 
-In this step, you'll build the `GPT2Block` class. This is a fundamental
-repeating unit of GPT-2. Each block combines multi-head attention and a
-feed-forward network, with layer normalization and residual connections around
-each.
+In this step, you'll build a GPT-2 transformer block in the `GPT2Block` class. 
+The transformer block is the definitive feature of GPT-2 and any other transformer
+model. It includes a series of self-attention layers (the multi-head attention block),
+a simple feed-forward network (the MLP block), and layer normalization—all of which
+you’ve already built in the previous steps.
 
 The block processes input through two sequential operations. First, it applies
 layer norm, runs multi-head attention, then adds the result back to the input

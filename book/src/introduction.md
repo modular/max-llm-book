@@ -83,7 +83,7 @@ This tutorial guides you through building GPT-2 in manageable steps:
 | 2    | [Feed-forward network](./step_02.md)         | Build the position-wise feed-forward network with GELU activation. |
 | 3    | [Causal masking](./step_03.md)               | Create attention masks to prevent looking at future tokens.        |
 | 4    | [Multi-head attention](./step_04.md)         | Implement scaled dot-product attention with multiple heads.        |
-| 5    | [Layer normalization](./step_05.md)          | Stabilize activations for effective training.                      |
+| 5    | [Layer normalization](./step_05.md)          | Ensure activation values are within a stable range.                      |
 | 6    | [Transformer block](./step_06.md)            | Combine attention and MLP with residual connections.               |
 | 7    | [Stacking transformer blocks](./step_07.md)  | Create the complete 12-layer GPT-2 model with embeddings.          |
 | 8    | [Language model head](./step_08.md)          | Project hidden states to vocabulary logits.                        |

@@ -12,6 +12,8 @@ Unlike batch normalization, [layer normalization](https://arxiv.org/abs/1607.064
 
 GPT-2 applies layer normalization before the attention and MLP blocks in each of its 12 transformer layers. This pre-normalization pattern stabilizes training in deep networks by keeping activations in a consistent range.
 
+While layer normalization is most critical during training to stabilize gradients and prevent activations from exploding or vanishing, **it's still required during inference**. The pretrained GPT-2 model we're loading was trained with layer normalization - its learned weights and biases expect normalized inputs. Skipping layer normalization during inference would cause activations to be in completely different ranges than what the model learned during training, leading to poor or nonsensical outputs.
+
 ## Understanding the operation
 
 Layer normalization normalizes across the feature dimension (the last dimension) independently for each example. It learns two parameters per feature: weight (gamma) for scaling and bias (beta) for shifting.

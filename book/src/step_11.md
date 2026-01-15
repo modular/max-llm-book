@@ -26,7 +26,7 @@ Finally, transpose the weights for layers that use Conv1D in HuggingFace: `c_att
 
 Before you can run text generation, compile the model with `.compile(token_type)`. Compilation analyzes the model's computation graph and generates optimized code for your hardware.
 
-You need to specify the input type using `TensorType`. This tells MAX what shape and dtype to expect:
+First, you need to specify the `token_type` input using `TensorType`. This tells the MAX compiler what shape and dtype to expect:
 
 ```python
 token_type = TensorType(
@@ -42,7 +42,10 @@ Compilation takes a few seconds but only happens once. After compilation, infere
 
 ## Understanding the tokenizer
 
-The tokenizer converts text to token IDs and back. Load it with `GPT2Tokenizer.from_pretrained("gpt2")`, which downloads the same tokenization rules OpenAI used during training.
+Back in step 9, you implemented functions to encode and decode tokens, but both
+functions require a `tokenizer` argument. Now you’ll load that tokenizer from
+Hugging Face, using `GPT2Tokenizer.from_pretrained("gpt2")`,
+which downloads the same tokenization rules OpenAI used during training.
 
 Set the padding token to match the end-of-sequence token: `tokenizer.pad_token = tokenizer.eos_token`. GPT-2 doesn't have a dedicated padding token, so we reuse the EOS token for this purpose.
 

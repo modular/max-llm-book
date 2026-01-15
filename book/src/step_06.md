@@ -111,4 +111,4 @@ Run `pixi run s06` to verify your implementation.
 
 </details>
 
-**Next**: In [Step 07](./step_07.md), you'll stack 12 transformer blocks together to create the complete GPT-2 model architecture.
+**Next**: In [Step 07](./step_07.md), you'll stack 12 transformer blocks together to create the main body of the GPT-2 model.

@@ -46,11 +46,9 @@ The tokenizer converts text to token IDs and back. Load it with `GPT2Tokenizer.f
 
 Set the padding token to match the end-of-sequence token: `tokenizer.pad_token = tokenizer.eos_token`. GPT-2 doesn't have a dedicated padding token, so we reuse the EOS token for this purpose.
 
-The tokenizer provides two key methods:
-- `tokenizer.encode(text)`: Converts text to a list of token IDs
-- `tokenizer.decode(token_ids)`: Converts token IDs back to text
-
-Your helper functions `tokenize_text` and `decode_tokens` wrap these methods to convert between Python lists and MAX tensors.
+Then pass the `tokenizer` to the `generate_text()` function you created
+in step 10 (which passes it to `tokenize_text()` and `decode_tokens()`
+from step 9).
 
 ## Implementing the main function
 

@@ -29,19 +29,37 @@ cd max-llm-book
 pixi install
 ```
 
-### Running the tutorial
+### Running the complete model
 
-Each step has a skeleton file to implement and a test to verify:
+The `main.py` file contains a complete, working GPT-2 implementation that you can run:
 
 ```bash
-# Run tests for a specific step
+# Run the complete pre-built model
+pixi run main
+```
+
+This demonstrates how all components fit together and provides a preview of what you will build over the course of the tutorial.  When you have completed all the tutorial steps, you can run the model you built and achieve the same functionality.
+
+```bash
+# Run the complete model built over the course of the book
+pixi run gpt2
+```
+
+### Running the tutorial
+
+Each step has a skeleton file to implement and a check to verify that you have completed the step accurately:
+
+```bash
+# Run checks for a specific step
 pixi run s01  # Step 1: Model configuration
-pixi run s05  # Step 5: Token embeddings
-pixi run s12  # Step 12: Text generation
+pixi run s05  # Step 5: Layer normalization
+pixi run s10  # Step 10: Text generation
 
 # View the tutorial book
 pixi run book
 ```
+
+You can always view the book at https://llm.modular.com/ instead of running it locally.
 
 ## Tutorial structure
 
@@ -49,10 +67,10 @@ The tutorial follows a progressive learning path:
 
 | Steps | Focus              | What you build                                        |
 |-------|--------------------|-------------------------------------------------------|
-| 01-04 | **Foundations**    | Configuration, MLP, causal masking, multi-head attention |
-| 05-06 | **Components**     | Layer normalization, transformer block                |
-| 07-08 | **Assembly**       | Stacking blocks with embeddings, language model head  |
-| 09-11 | **Generation**     | Tokenization, text generation, load weights and run   |
+| 00-01 | **Get started**    | Project setup and model configuration |
+| 05-06 | **Build the transformer block**     | Feed-forward network, attention, layer normalization, etc  |
+| 07-08 | **Assemble the model**       | Stacking transformer blocks, language model head  |
+| 09-11 | **Generate text**     | Tokenization, text generation, load weights and run   |
 
 Each step includes:
 
@@ -132,17 +150,6 @@ pixi run check-all
 🎉 All checks passed! Your implementation is complete.
 ```
 
-## Complete GPT-2 example
-
-The `main.py` file contains a complete, working GPT-2 implementation that you can run:
-
-```bash
-# Run the complete model (requires HuggingFace weights)
-pixi run huggingface
-```
-
-This demonstrates how all components fit together in production.
-
 ## Common issues
 
 ### Import errors
@@ -179,7 +186,7 @@ Found an issue or want to improve the tutorial? Contributions welcome:
 
 ## Next steps after completion
 
-Once you've completed all 12 steps:
+Once you've completed all the steps:
 
 1. **Experiment with generation**: Modify temperature, sampling strategies in Step 12
 2. **Analyze attention**: Visualize attention weights from your model

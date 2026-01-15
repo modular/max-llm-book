@@ -77,7 +77,7 @@ In the `__init__` method, create two linear layers:
 Both layers include bias terms (`bias=True`). The intermediate size is typically
 4× the embedding dimension.
 
-In the `forward` method, apply the three transformations:
+In the `__call__` method, apply the three transformations:
 
 1. Expand: `hidden_states = self.c_fc(hidden_states)`
 2. Activate: `hidden_states = F.gelu(hidden_states, approximate="tanh")`

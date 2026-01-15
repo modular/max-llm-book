@@ -285,8 +285,8 @@ def generate_text(
 # ANCHOR: load_weights_and_run_model
 def main():
     # Load HuggingFace model
-    torch_model = GPT2LMHeadModel.from_pretrained("gpt2")
-    print(f"Loaded HuggingFace model:\n{torch_model}")
+    hf_model = GPT2LMHeadModel.from_pretrained("gpt2")
+    print(f"Loaded HuggingFace model:\n{hf_model}")
 
     # Initialize Max model
     _, device = defaults()
@@ -299,7 +299,7 @@ def main():
     )
 
     # Load state dict and transpose weights
-    max_model.load_state_dict(torch_model.state_dict())
+    max_model.load_state_dict(hf_model.state_dict())
     max_model.to(device)
     for name, child in max_model.descendents:
         if isinstance(child, Linear):

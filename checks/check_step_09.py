@@ -1,7 +1,7 @@
 """
 Check for Step 09: Encode and Decode Tokens
 
-Validates that tokenize_text and decode_tokens functions are correctly implemented.
+Validates that encode_text and decode_tokens functions are correctly implemented.
 """
 
 import sys
@@ -14,29 +14,29 @@ sys.path.insert(0, str(steps_dir))
 
 
 def check_step_09():
-    """Validate tokenize_text and decode_tokens implementation."""
+    """Validate encode_text and decode_tokens implementation."""
     print("Running checks for Step 09: Encode and Decode Tokens...\n")
 
     errors = []
 
     # Import the functions
     try:
-        from step_09 import tokenize_text, decode_tokens
+        from step_09 import encode_text, decode_tokens
     except ImportError as e:
         print(f"❌ Failed to import functions from step_09: {e}")
         return False
 
-    print("✅ Successfully imported tokenize_text and decode_tokens")
+    print("✅ Successfully imported encode_text and decode_tokens")
 
-    # Check 1: Verify tokenize_text signature
-    sig = inspect.signature(tokenize_text)
+    # Check 1: Verify encode_text signature
+    sig = inspect.signature(encode_text)
     params = list(sig.parameters.keys())
     required_params = ['text', 'tokenizer', 'device']
     for param in required_params:
         if param not in params:
-            errors.append(f"tokenize_text missing required parameter: {param}")
+            errors.append(f"encode_text missing required parameter: {param}")
         else:
-            print(f"✅ tokenize_text has parameter: {param}")
+            print(f"✅ encode_text has parameter: {param}")
 
     # Check 2: Verify decode_tokens signature
     sig = inspect.signature(decode_tokens)
@@ -48,7 +48,7 @@ def check_step_09():
         else:
             print(f"✅ decode_tokens has parameter: {param}")
 
-    # Check 3: Test tokenize_text
+    # Check 3: Test encode_text
     try:
         from transformers import GPT2Tokenizer
         from max.driver import CPU
@@ -56,24 +56,24 @@ def check_step_09():
         tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
         device = CPU()
 
-        tokens = tokenize_text("Hello, world!", tokenizer, device, max_length=128)
+        token_ids = encode_text("Hello, world!", tokenizer, device, max_length=128)
 
         from max.experimental.tensor import Tensor
-        if not isinstance(tokens, Tensor):
-            errors.append(f"tokenize_text should return a Tensor, got {type(tokens)}")
+        if not isinstance(token_ids, Tensor):
+            errors.append(f"encode_text should return a Tensor, got {type(token_ids)}")
         else:
-            print(f"✅ tokenize_text returns a Tensor with shape: {tokens.shape}")
+            print(f"✅ encode_text returns a Tensor with shape: {token_ids.shape}")
 
         # Check shape is 2D [batch, seq_len]
-        if len(tokens.shape) != 2:
-            errors.append(f"tokenize_text should return 2D tensor [batch, seq_len], got shape {tokens.shape}")
+        if len(token_ids.shape) != 2:
+            errors.append(f"encode_text should return 2D tensor [batch, seq_len], got shape {token_ids.shape}")
 
         # Check batch size is 1
-        if tokens.shape[0] != 1:
-            errors.append(f"tokenize_text should return batch_size=1, got {tokens.shape[0]}")
+        if token_ids.shape[0] != 1:
+            errors.append(f"encode_text should return batch_size=1, got {token_ids.shape[0]}")
 
     except Exception as e:
-        errors.append(f"tokenize_text test failed: {e}")
+        errors.append(f"encode_text test failed: {e}")
 
     # Check 4: Test decode_tokens
     try:

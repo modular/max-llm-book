@@ -74,7 +74,7 @@ In the `__init__` method, create the four sublayers:
 
 The MLP uses `4 * config.n_embd` (3,072 dimensions) as its inner dimension, following the standard transformer ratio.
 
-In the `forward` method, implement the two sublayer blocks:
+In the `__call__` method, implement the two sublayer blocks:
 
 **Attention block**:
 

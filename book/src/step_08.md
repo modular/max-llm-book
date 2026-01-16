@@ -83,7 +83,7 @@ In the `__init__` method, create two components:
 Note the `bias=False` parameter, which creates a linear layer without bias
 terms.
 
-In the `forward` method, implement a simple two-step process:
+In the `__call__` method, implement a simple two-step process:
 
 1. Get hidden states from the transformer: `hidden_states = self.transformer(input_ids)`
 2. Project to vocabulary logits: `logits = self.lm_head(hidden_states)`

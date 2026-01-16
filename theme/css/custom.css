@@ -49,7 +49,7 @@
   --links: #8199ff;
   --modular-blue: #33c9ff;
   --modular-dark-blue: #5bd0ff;
-  --modular-bg: #020c13;
+  --modular-bg: #181c1f;
   --modular-text: #ffffff;
   --modular-secondary-text: #e5e9ef;
   --modular-code-bg: #181c1f;
@@ -1261,20 +1261,20 @@ details:last-child {
 
 .warning {
   border: none;
-  background-color: #ffeba4;
+  background-color: #fff4cc;
   padding: 16px 40px;
   margin: 0 0 0 -8px;
   box-sizing: border-box;
-  color: #000;
   &:before {
     display: none;
   }
   p {
     margin: 0;
   }
-  a {
-    color: #637bff;
-  }
+}
+
+.ayu .warning {
+  background-color: #ffc70026;
 }
 
 /* Dark theme adjustments for note */

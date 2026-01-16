@@ -15,6 +15,7 @@ from max.nn.module_v3 import (
     Sequential,
 )
 
+
 # ANCHOR: model_configuration
 @dataclass
 class GPT2Config:
@@ -28,7 +29,9 @@ class GPT2Config:
     n_inner = None
     layer_norm_epsilon = 1e-5
 
+
 # ANCHOR_END: model_configuration
+
 
 # ANCHOR: feed_forward_network
 class GPT2MLP(Module):
@@ -40,13 +43,15 @@ class GPT2MLP(Module):
         self.c_fc = Linear(embed_dim, intermediate_size, bias=True)
         self.c_proj = Linear(intermediate_size, embed_dim, bias=True)
 
-    def __call__(self, hidden_states):
+    def forward(self, hidden_states):
         hidden_states = self.c_fc(hidden_states)
         hidden_states = F.gelu(hidden_states, approximate="tanh")
         hidden_states = self.c_proj(hidden_states)
         return hidden_states
 
+
 # ANCHOR_END: feed_forward_network
+
 
 # ANCHOR: causal_mask
 @F.functional
@@ -62,7 +67,9 @@ def causal_mask(
     mask = F.broadcast_to(mask, shape=(sequence_length, n))
     return F.band_part(mask, num_lower=None, num_upper=0, exclude=True)
 
+
 # ANCHOR_END: causal_mask
+
 
 # ANCHOR: multi_head_attention
 class GPT2MultiHeadAttention(Module):
@@ -106,7 +113,7 @@ class GPT2MultiHeadAttention(Module):
         new_shape = tensor.shape[:-2] + [num_heads * attn_head_size]
         return tensor.reshape(new_shape)
 
-    def __call__(self, hidden_states):
+    def forward(self, hidden_states):
         query, key, value = F.split(
             self.c_attn(hidden_states),
             [self.split_size, self.split_size, self.split_size],
@@ -123,7 +130,9 @@ class GPT2MultiHeadAttention(Module):
 
         return attn_output
 
+
 # ANCHOR_END: multi_head_attention
+
 
 # ANCHOR: layer_normalization
 class LayerNorm(Module):
@@ -132,10 +141,12 @@ class LayerNorm(Module):
         self.weight = Tensor.ones([dim])
         self.bias = Tensor.zeros([dim])
 
-    def __call__(self, x: Tensor) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         return F.layer_norm(x, gamma=self.weight, beta=self.bias, epsilon=self.eps)
 
+
 # ANCHOR_END: layer_normalization
+
 
 # ANCHOR: transformer_block
 class GPT2Block(Module):
@@ -155,7 +166,7 @@ class GPT2Block(Module):
         self.ln_2 = LayerNorm(hidden_size, eps=config.layer_norm_epsilon)
         self.mlp = GPT2MLP(inner_dim, config)
 
-    def __call__(self, hidden_states):
+    def forward(self, hidden_states):
         residual = hidden_states
         hidden_states = self.ln_1(hidden_states)
         attn_output = self.attn(hidden_states)
@@ -168,7 +179,9 @@ class GPT2Block(Module):
 
         return hidden_states
 
+
 # ANCHOR_END: transformer_block
+
 
 # ANCHOR: stacking_transformer_blocks
 class MaxGPT2Model(Module):
@@ -181,7 +194,7 @@ class MaxGPT2Model(Module):
         self.h = Sequential(*(GPT2Block(config) for _ in range(config.n_layer)))
         self.ln_f = LayerNorm(config.n_embd, eps=config.layer_norm_epsilon)
 
-    def __call__(self, input_ids):
+    def forward(self, input_ids):
         batch_size, seq_length = input_ids.shape
         tok_embeds = self.wte(input_ids)
         pos_embeds = self.wpe(
@@ -192,7 +205,9 @@ class MaxGPT2Model(Module):
         x = self.ln_f(x)
         return x
 
+
 # ANCHOR_END: stacking_transformer_blocks
+
 
 # ANCHOR: language_model_head
 class MaxGPT2LMHeadModel(Module):
@@ -204,17 +219,20 @@ class MaxGPT2LMHeadModel(Module):
         self.transformer = MaxGPT2Model(config)
         self.lm_head = Linear(config.n_embd, config.vocab_size, bias=False)
 
-    def __call__(self, input_ids):
+    def forward(self, input_ids):
         input_ids = self.transformer(input_ids)
         return self.lm_head(input_ids)
 
+
 # ANCHOR_END: language_model_head
+
 
 # ANCHOR: encode_and_decode
 def encode_text(text: str, tokenizer, device, max_length: int = 128):
     """Tokenize text and convert to tensor."""
     token_ids = tokenizer.encode(text, max_length=max_length, truncation=True)
     return Tensor.constant([token_ids], dtype=DType.int64, device=device)
+
 
 def decode_tokens(token_ids: Tensor, tokenizer):
     """Decode token IDs back to text."""
@@ -224,7 +242,9 @@ def decode_tokens(token_ids: Tensor, tokenizer):
     token_ids = token_ids.tolist()
     return tokenizer.decode(token_ids, skip_special_tokens=True)
 
+
 # ANCHOR_END: encode_and_decode
+
 
 # ANCHOR: text_generation
 def generate_text(
@@ -280,7 +300,9 @@ def generate_text(
     print(f"Final generated text: '{final_text}'")
     return final_text
 
+
 # ANCHOR_END: text_generation
+
 
 # ANCHOR: load_weights_and_run_model
 def main():
@@ -301,7 +323,7 @@ def main():
     # Load state dict and transpose weights
     max_model.load_state_dict(hf_model.state_dict())
     max_model.to(device)
-    for name, child in max_model.descendents:
+    for name, child in max_model.descendants:
         if isinstance(child, Linear):
             if any(layer_name in name for layer_name in ["c_attn", "c_proj", "c_fc"]):
                 print(f"Transposing {name}: {child.weight.shape}")
@@ -330,7 +352,7 @@ def main():
         while True:
             user_input = input("Enter your prompt: ").strip()
 
-            if user_input.lower() in ['quit', 'exit', 'q']:
+            if user_input.lower() in ["quit", "exit", "q"]:
                 print("Exiting...")
                 break
 
@@ -346,13 +368,14 @@ def main():
                 user_input,
                 max_new_tokens=50,
                 temperature=0.8,
-                do_sample=True
+                do_sample=True,
             )
             print(f"\nGenerated text:\n{generated_text}\n")
             print("-" * 50 + "\n")
 
     except KeyboardInterrupt:
         print("\n\nExiting...")
+
 
 # ANCHOR_END: load_weights_and_run_model
 

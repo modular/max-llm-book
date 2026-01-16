@@ -41,7 +41,7 @@ class MaxGPT2Model(Module):
         # Final layer normalization
         self.ln_f = LayerNorm(config.n_embd, eps=config.layer_norm_epsilon)
 
-    def __call__(self, input_ids):
+    def forward(self, input_ids):
         """Forward pass through the transformer.
 
         Args:

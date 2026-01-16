@@ -107,7 +107,7 @@ class GPT2MultiHeadAttention(Module):
 
         return attn_output
 
-    def __call__(self, hidden_states):
+    def forward(self, hidden_states):
         """Apply multi-head attention.
 
         Args:

@@ -55,11 +55,11 @@ def check_step_08():
         if not isinstance(model.lm_head, Linear):
             errors.append(f"lm_head should be Linear, got {type(model.lm_head)}")
 
-    # Check 4: Verify __call__ method
-    if not hasattr(model, '__call__'):
-        errors.append("MaxGPT2LMHeadModel missing __call__ method")
+    # Check 4: Verify forward method
+    if not hasattr(model, 'forward'):
+        errors.append("MaxGPT2LMHeadModel missing forward method")
     else:
-        print("✅ Has __call__ method")
+        print("✅ Has forward method")
 
     # Check 5: Try a forward pass
     try:

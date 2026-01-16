@@ -25,7 +25,7 @@ class LayerNorm(Module):
         self.weight = Tensor.ones([dim])
         self.bias = Tensor.zeros([dim])
 
-    def __call__(self, x: Tensor) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         """Apply layer normalization.
 
         Args:

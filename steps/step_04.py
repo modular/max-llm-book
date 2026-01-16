@@ -109,7 +109,7 @@ class GPT2MultiHeadAttention(Module):
         # Hint: Weighted sum: attn_weights @ value
         return None
 
-    def __call__(self, hidden_states):
+    def forward(self, hidden_states):
         """Apply multi-head attention.
 
         Args:

@@ -60,11 +60,11 @@ def check_step_07():
         if not isinstance(model.wpe, Embedding):
             errors.append(f"wpe should be an Embedding, got {type(model.wpe)}")
 
-    # Check 4: Verify __call__ method
-    if not hasattr(model, '__call__'):
-        errors.append("MaxGPT2Model missing __call__ method")
+    # Check 4: Verify forward method
+    if not hasattr(model, 'forward'):
+        errors.append("MaxGPT2Model missing forward method")
     else:
-        print("✅ Has __call__ method")
+        print("✅ Has forward method")
 
     # Check 5: Try a forward pass
     try:

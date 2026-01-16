@@ -31,7 +31,7 @@ class MaxGPT2LMHeadModel(Module):
         # Language modeling head (hidden states -> vocabulary logits)
         self.lm_head = Linear(config.n_embd, config.vocab_size, bias=False)
 
-    def __call__(self, input_ids):
+    def forward(self, input_ids):
         """Forward pass through transformer and LM head.
 
         Args:

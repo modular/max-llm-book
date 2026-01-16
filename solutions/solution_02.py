@@ -26,7 +26,7 @@ class GPT2MLP(Module):
         self.c_fc = Linear(embed_dim, intermediate_size, bias=True)
         self.c_proj = Linear(intermediate_size, embed_dim, bias=True)
 
-    def __call__(self, hidden_states: Tensor) -> Tensor:
+    def forward(self, hidden_states: Tensor) -> Tensor:
         """Apply feed-forward network.
 
         Args:

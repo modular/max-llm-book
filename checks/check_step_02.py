@@ -50,16 +50,16 @@ def check_step_02():
         else:
             print(f"✅ GPT2MLP has attribute: {attr}")
 
-    # Check 3: Verify __call__ method exists and has correct signature
-    if not hasattr(mlp, '__call__'):
-        errors.append("GPT2MLP missing __call__ method")
+    # Check 3: Verify forward method exists and has correct signature
+    if not hasattr(mlp, 'forward'):
+        errors.append("GPT2MLP missing forward method")
     else:
-        sig = inspect.signature(mlp.__call__)
+        sig = inspect.signature(mlp.forward)
         params = list(sig.parameters.keys())
         if 'hidden_states' not in params:
-            errors.append("__call__ method should accept 'hidden_states' parameter")
+            errors.append("forward method should accept 'hidden_states' parameter")
         else:
-            print("✅ GPT2MLP has __call__ method with correct signature")
+            print("✅ GPT2MLP has forward method with correct signature")
 
     # Check 4: Try a forward pass with dummy tensor
     try:

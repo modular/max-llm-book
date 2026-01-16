@@ -45,7 +45,7 @@ class LayerNorm(Module):
         # Hint: This is the beta parameter in layer normalization
         self.bias = None
 
-    def __call__(self, x: Tensor) -> Tensor:
+    def forward(self, x: Tensor) -> Tensor:
         """Apply layer normalization.
 
         Args:

@@ -19,7 +19,7 @@ Run: pixi run s10
 # Hint: You'll need functional as F from max.experimental
 # Hint: You'll need Tensor from max.experimental.tensor
 
-from step_09 import tokenize_text, decode_tokens
+from step_09 import encode_text, decode_tokens
 
 
 def generate_text(
@@ -46,7 +46,7 @@ def generate_text(
         Generated text string
     """
     # TODO: Tokenize the prompt text
-    # Hint: Use tokenize_text(prompt, tokenizer, device, max_length=100)
+    # Hint: Use encode_text(prompt, tokenizer, device, max_length=100)
     generated_tokens = None
 
     print(f"Starting generation from: '{prompt}'")

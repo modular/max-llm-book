@@ -11,7 +11,7 @@ from max.dtype import DType
 from max.experimental import functional as F
 from max.experimental.tensor import Tensor
 
-from solution_09 import tokenize_text, decode_tokens
+from solution_09 import encode_text, decode_tokens
 
 
 def generate_text(
@@ -24,7 +24,7 @@ def generate_text(
     do_sample: bool = True,
 ):
     """Generate text using the Max model."""
-    generated_tokens = tokenize_text(prompt, tokenizer, device, max_length=100)
+    generated_tokens = encode_text(prompt, tokenizer, device, max_length=100)
 
     print(f"Starting generation from: '{prompt}'")
     print(

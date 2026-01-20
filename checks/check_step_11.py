@@ -77,7 +77,7 @@ def check_step_11():
         return False
 
     print("🎉 All checks passed for Step 11!")
-    print("Note: Full testing requires running the interactive model (use: pixi run s11)")
+    print("Note: Full testing requires running the interactive model (use: pixi run gpt2)")
     return True
 
 

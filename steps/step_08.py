@@ -39,7 +39,7 @@ class MaxGPT2LMHeadModel(Module):
         # Projects from hidden dimension to vocabulary size
         self.lm_head = None
 
-    def __call__(self, input_ids):
+    def forward(self, input_ids):
         """Forward pass through transformer and LM head.
 
         Args:

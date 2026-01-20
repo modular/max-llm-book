@@ -73,11 +73,11 @@ def check_step_05():
             else:
                 print(f"✅ bias has correct shape: {actual_shape}")
 
-    # Check 4: Verify __call__ method
-    if not hasattr(ln, '__call__'):
-        errors.append("LayerNorm missing __call__ method")
+    # Check 4: Verify forward method
+    if not hasattr(ln, 'forward'):
+        errors.append("LayerNorm missing forward method")
     else:
-        print("✅ Has __call__ method")
+        print("✅ Has forward method")
 
     # Check 5: Try a forward pass
     try:

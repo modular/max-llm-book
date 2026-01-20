@@ -61,7 +61,7 @@ def check_step_04():
         errors.append(f"head_dim should be 64 (768/12), got {attn.head_dim}")
 
     # Check 4: Verify methods exist
-    required_methods = ['_split_heads', '_merge_heads', '_attn', '__call__']
+    required_methods = ['_split_heads', '_merge_heads', '_attn', 'forward']
     for method in required_methods:
         if not hasattr(attn, method):
             errors.append(f"GPT2MultiHeadAttention missing method: {method}")

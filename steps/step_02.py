@@ -51,7 +51,7 @@ class GPT2MLP(Module):
         # Hint: This is the projection layer that brings us back to the embedding dimension
         self.c_proj = None
 
-    def __call__(self, hidden_states: Tensor) -> Tensor:
+    def forward(self, hidden_states: Tensor) -> Tensor:
         """Apply feed-forward network.
 
         Args:

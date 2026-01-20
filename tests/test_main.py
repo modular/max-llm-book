@@ -59,7 +59,7 @@ class TestGPT2MLP:
         mlp = GPT2MLP(intermediate_size=3072, config=config)
 
         # Create input tensor [batch=2, seq=10, embd=768]
-        hidden_states = Tensor.ones([2, 10, config.n_embd], dtype=DType.float32, device=CPU())
+        hidden_states = Tensor.ones([2, 10, config.n_embd], dtype=DType.float32)
         output = mlp(hidden_states)
 
         # Output should have same shape as input
@@ -73,9 +73,7 @@ class TestCausalMask:
         """Test that causal mask has correct shape."""
         seq_len = 5
         num_tokens = 0
-        mask = causal_mask(
-            seq_len, num_tokens, dtype=DType.float32, device=CPU()
-        )
+        mask = causal_mask(seq_len, num_tokens, dtype=DType.float32, device=CPU())
         # Compare as lists of ints since MAX returns Dim objects
         assert [int(d) for d in mask.shape] == [seq_len, seq_len]
 
@@ -83,9 +81,7 @@ class TestCausalMask:
         """Test that causal mask has correct values (upper triangle is -inf)."""
         seq_len = 4
         num_tokens = 0
-        mask = causal_mask(
-            seq_len, num_tokens, dtype=DType.float32, device=CPU()
-        )
+        mask = causal_mask(seq_len, num_tokens, dtype=DType.float32, device=CPU())
 
         # Convert to numpy for inspection
         mask_np = np.from_dlpack(mask)
@@ -98,7 +94,7 @@ class TestCausalMask:
         # Upper triangle should be -inf
         for i in range(seq_len):
             for j in range(i + 1, seq_len):
-                assert mask_np[i, j] == float('-inf')
+                assert mask_np[i, j] == float("-inf")
 
 
 class TestGPT2MultiHeadAttention:
@@ -120,11 +116,16 @@ class TestGPT2MultiHeadAttention:
         attn = GPT2MultiHeadAttention(config)
 
         batch_size, seq_len = 2, 10
-        tensor = Tensor.ones([batch_size, seq_len, config.n_embd], dtype=DType.float32, device=CPU())
+        tensor = Tensor.ones([batch_size, seq_len, config.n_embd], dtype=DType.float32)
         split = attn._split_heads(tensor, config.n_head, attn.head_dim)
 
         # Should be [batch, n_head, seq_len, head_dim]
-        assert [int(d) for d in split.shape] == [batch_size, config.n_head, seq_len, attn.head_dim]
+        assert [int(d) for d in split.shape] == [
+            batch_size,
+            config.n_head,
+            seq_len,
+            attn.head_dim,
+        ]
 
     def test_merge_heads_shape(self):
         """Test that _merge_heads produces correct shape."""
@@ -132,7 +133,9 @@ class TestGPT2MultiHeadAttention:
         attn = GPT2MultiHeadAttention(config)
 
         batch_size, seq_len = 2, 10
-        tensor = Tensor.ones([batch_size, config.n_head, seq_len, attn.head_dim], dtype=DType.float32, device=CPU())
+        tensor = Tensor.ones(
+            [batch_size, config.n_head, seq_len, attn.head_dim], dtype=DType.float32
+        )
         merged = attn._merge_heads(tensor, config.n_head, attn.head_dim)
 
         # Should be [batch, seq_len, n_embd]
@@ -143,7 +146,7 @@ class TestGPT2MultiHeadAttention:
         config = GPT2Config()
         attn = GPT2MultiHeadAttention(config)
 
-        hidden_states = Tensor.ones([2, 10, config.n_embd], dtype=DType.float32, device=CPU())
+        hidden_states = Tensor.ones([2, 10, config.n_embd], dtype=DType.float32)
         output = attn(hidden_states)
 
         assert output.shape == hidden_states.shape
@@ -165,11 +168,7 @@ class TestLayerNorm:
         dim = 768
         ln = LayerNorm(dim)
 
-        # Move LayerNorm params to CPU to match input device
-        ln.weight = ln.weight.to(CPU())
-        ln.bias = ln.bias.to(CPU())
-
-        x = Tensor.ones([2, 10, dim], dtype=DType.float32, device=CPU())
+        x = Tensor.ones([2, 10, dim])
         output = ln(x)
 
         assert output.shape == x.shape
@@ -199,10 +198,7 @@ class TestGPT2Block:
         config = GPT2Config()
         block = GPT2Block(config)
 
-        # Move all block parameters to CPU to match input device
-        block.to(CPU())
-
-        hidden_states = Tensor.ones([2, 10, config.n_embd], dtype=DType.float32, device=CPU())
+        hidden_states = Tensor.ones([2, 10, config.n_embd])
         output = block(hidden_states)
 
         assert output.shape == hidden_states.shape
@@ -226,7 +222,7 @@ class TestMaxGPT2Model:
         model = MaxGPT2Model(config)
 
         batch_size, seq_len = 2, 10
-        input_ids = Tensor.zeros([batch_size, seq_len], dtype=DType.int64, device=CPU())
+        input_ids = Tensor.zeros([batch_size, seq_len], dtype=DType.int64)
         output = model(input_ids)
 
         # Output should be [batch, seq_len, n_embd]
@@ -250,17 +246,21 @@ class TestMaxGPT2LMHeadModel:
         model = MaxGPT2LMHeadModel(config)
 
         batch_size, seq_len = 2, 10
-        input_ids = Tensor.zeros([batch_size, seq_len], dtype=DType.int64, device=CPU())
+        input_ids = Tensor.zeros([batch_size, seq_len], dtype=DType.int64)
         output = model(input_ids)
 
         # Output should be [batch, seq_len, vocab_size]
-        assert [int(d) for d in output.shape] == [batch_size, seq_len, config.vocab_size]
+        assert [int(d) for d in output.shape] == [
+            batch_size,
+            seq_len,
+            config.vocab_size,
+        ]
 
 
 class TestTokenizationFunctions:
     """Test tokenization and decoding functions."""
 
-    @patch('main.GPT2Tokenizer')
+    @patch("main.GPT2Tokenizer")
     def test_encode_text(self, mock_tokenizer_class):
         """Test encode_text function."""
         # Setup mock
@@ -270,14 +270,16 @@ class TestTokenizationFunctions:
         result = encode_text("Hello world", mock_tokenizer, CPU(), max_length=128)
 
         # Check that tokenizer.encode was called correctly
-        mock_tokenizer.encode.assert_called_once_with("Hello world", max_length=128, truncation=True)
+        mock_tokenizer.encode.assert_called_once_with(
+            "Hello world", max_length=128, truncation=True
+        )
 
         # Check result shape and type
         assert isinstance(result, Tensor)
         assert result.shape[0] == 1  # batch size
         assert result.shape[1] == 2  # number of tokens
 
-    @patch('main.GPT2Tokenizer')
+    @patch("main.GPT2Tokenizer")
     def test_decode_tokens(self, mock_tokenizer_class):
         """Test decode_tokens function."""
         # Setup mock
@@ -292,7 +294,7 @@ class TestTokenizationFunctions:
         assert mock_tokenizer.decode.called
         assert result == "Hello world"
 
-    @patch('main.GPT2Tokenizer')
+    @patch("main.GPT2Tokenizer")
     def test_decode_tokens_2d_tensor(self, mock_tokenizer_class):
         """Test decode_tokens with 2D tensor input."""
         # Setup mock

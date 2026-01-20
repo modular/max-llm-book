@@ -49,11 +49,11 @@ def check_step_06():
         else:
             print(f"✅ Has attribute: {attr}")
 
-    # Check 3: Verify __call__ method
-    if not hasattr(block, '__call__'):
-        errors.append("GPT2Block missing __call__ method")
+    # Check 3: Verify forward method
+    if not hasattr(block, 'forward'):
+        errors.append("GPT2Block missing forward method")
     else:
-        print("✅ Has __call__ method")
+        print("✅ Has forward method")
 
     # Check 4: Try a forward pass
     try:

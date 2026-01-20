@@ -46,7 +46,7 @@ class GPT2Block(Module):
         # Feed-forward MLP
         self.mlp = GPT2MLP(inner_dim, config)
 
-    def __call__(self, hidden_states):
+    def forward(self, hidden_states):
         """Apply transformer block.
 
         Args:

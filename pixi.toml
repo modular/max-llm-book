@@ -37,7 +37,7 @@ fmt = "ruff format ."
 test = "pytest tests/ -v"
 
 [dependencies]
-modular = "==26.1.0.dev2026011405"
+modular = ">=26.1.0.dev2026012100"
 transformers = ">=4.57.0,<5"
 pytorch = ">=2.8.0,<3"
 numpy = ">=2.3.3,<3"

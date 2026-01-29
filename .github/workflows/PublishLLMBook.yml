@@ -3,23 +3,19 @@
 # This file is Modular Inc proprietary.
 #
 ##===----------------------------------------------------------------------===##
-name: CI
+name: Publish LLM Book
 
 on:
   push:
     branches:
       - main
-    paths-ignore:
-      - "README.md"
-      - "LICENSE"
-      - "CODE_OF_CONDUCT.md"
+    paths:
+      - "pixi.lock"
   pull_request:
     branches:
       - main
-    paths-ignore:
-      - "README.md"
-      - "LICENSE"
-      - "CODE_OF_CONDUCT.md"
+    paths:
+      - "pixi.lock"
 
 permissions:
   id-token: write

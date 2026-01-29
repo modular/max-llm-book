@@ -47,29 +47,29 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
 
-        <meta name="description" content="">
+        <meta name="description" content="This guide walks you through implementing GPT-2 using Modular’s MAX framework.">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
-        <link rel="icon" href="favicon.svg">
-        <link rel="shortcut icon" href="favicon.png">
-        <link rel="stylesheet" href="css/variables.css">
-        <link rel="stylesheet" href="css/general.css">
-        <link rel="stylesheet" href="css/chrome.css">
-        <link rel="stylesheet" href="css/print.css" media="print">
+        <link rel="icon" href="favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="favicon-8114d1fc.png">
+        <link rel="stylesheet" href="css/variables-8adf115d.css">
+        <link rel="stylesheet" href="css/general-2459343d.css">
+        <link rel="stylesheet" href="css/chrome-ae938929.css">
+        <link rel="stylesheet" href="css/print-9e4910d8.css" media="print">
 
         <!-- Fonts -->
-        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
-        <link rel="stylesheet" href="fonts/fonts.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+        <link rel="stylesheet" href="fonts/fonts-8490e396.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" id="highlight-css" href="highlight.css">
-        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
-        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
+        <link rel="stylesheet" id="highlight-css" href="highlight-493f70e1.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="theme/css/custom.css">
-        <link rel="stylesheet" href="theme/css/highlight.css">
+        <link rel="stylesheet" href="theme/css/custom-a345be71.css">
+        <link rel="stylesheet" href="theme/css/highlight-efe4ab2a.css">
 
         <!-- MathJax -->
         <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
@@ -81,7 +81,7 @@
             const default_dark_theme = "ayu";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc.js"></script>
+        <script src="toc-d18eda26.js"></script>
     </head>
     <body>
     <div id="body-container">
@@ -175,7 +175,7 @@
                         <i id="print-button" class="fa fa-print"></i>
                     </a>
                     <a class="menu-btn" href="https://github.com/modular/max-llm-book" title="Git repository" aria-label="Git repository">
-                        <i id="git-repository-button" class="fa fa-github"></i>
+                        <i id="git-repository-button" class="fa fa-brands fa-github"></i>
                     </a>
                 </div>
             </div>
@@ -202,6 +202,7 @@
 <p>Learn to add the final linear projection layer that converts hidden states to
 vocabulary logits for next-token prediction.</p>
 </div>
+
 <p>In this step, you’ll create the <code>MaxGPT2LMHeadModel</code>, which combines the
 model body (<code>MaxGPT2Model</code>) with a head <code>Linear</code> layer, thus completing the
 GPT-2 model that can predict next tokens. This class wraps the transformer from step
@@ -215,7 +216,7 @@ in GPT-2, representing about 33% of the model’s 117M total parameters. This is
 larger than all 12 transformer blocks combined.</p>
 <h2 id="understanding-the-projection"><a class="header" href="#understanding-the-projection">Understanding the projection</a></h2>
 <p>The language model head performs a simple linear projection using MAX’s
-<a href="https://docs.modular.com/max/api/python/nn/module_v3#max.nn.module_v3.Linear"><code>Linear</code></a>
+<a href="https://docs.modular.com/max/api/python/nn/module_v3#max.nn.Linear"><code>Linear</code></a>
 layer. It maps each 768-dimensional hidden state to 50,257 scores, one per
 vocabulary token.</p>
 <p>The layer uses <code>bias=False</code>, meaning it only has weights and no bias vector.
@@ -232,7 +233,8 @@ techniques like temperature scaling and top-k sampling.</p>
 <ol>
 <li><strong>Input</strong>: Token IDs <code>[batch, seq_length]</code></li>
 <li><strong>Embeddings</strong>: Token + position <code>[batch, seq_length, 768]</code></li>
-<li><strong>Transformer blocks</strong>: 12 blocks process the embeddings <code>[batch, seq_length, 768]</code></li>
+<li><strong>Transformer blocks</strong>: 12 blocks process the embeddings
+<code>[batch, seq_length, 768]</code></li>
 <li><strong>Final layer norm</strong>: Normalizes the output <code>[batch, seq_length, 768]</code></li>
 <li><strong>LM head</strong>: Projects to vocabulary <code>[batch, seq_length, 50257]</code></li>
 <li><strong>Output</strong>: Logits <code>[batch, seq_length, 50257]</code></li>
@@ -242,12 +244,15 @@ token after position i, you look at the logits at position i. The highest
 scoring token is the model’s top prediction.</p>
 <div class="note">
 <div class="title">MAX operations</div>
+
 <p>You’ll use the following MAX operations to complete this task:</p>
 <p><strong>Linear layer</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/nn/module_v3#max.nn.module_v3.Linear"><code>Linear(in_features, out_features, bias=False)</code></a>: Projects hidden states to vocabulary logits</li>
+<li><a href="https://docs.modular.com/max/api/python/nn/module_v3#max.nn.Linear"><code>Linear(in_features, out_features, bias=False)</code></a>:
+Projects hidden states to vocabulary logits</li>
 </ul>
 </div>
+
 <h2 id="implementing-the-language-model"><a class="header" href="#implementing-the-language-model">Implementing the language model</a></h2>
 <p>You’ll create the <code>MaxGPT2LMHeadModel</code> class that wraps the transformer with a
 language modeling head. The implementation is straightforward, with just two
@@ -267,9 +272,15 @@ terms.</p>
 <li>Project to vocabulary logits: <code>logits = self.lm_head(hidden_states)</code></li>
 <li>Return <code>logits</code></li>
 </ol>
-<p>That’s it. The model takes token IDs and returns logits. In the next step, you’ll use these logits to generate text.</p>
+<p>That’s it. The model takes token IDs and returns logits. In the next step,
+you’ll use these logits to generate text.</p>
 <p><strong>Implementation</strong> (<code>step_08.py</code>):</p>
-<pre><code class="language-python">"""
+<pre><code class="language-python"># ===----------------------------------------------------------------------=== #
+#
+# This file is Modular Inc proprietary.
+#
+# ===----------------------------------------------------------------------=== #
+"""
 Step 08: Language Model Head
 
 Add the final projection layer that converts hidden states to vocabulary logits.
@@ -283,15 +294,16 @@ Run: pixi run s08
 """
 
 # TODO: Import required modules
-# Hint: You'll need Linear and Module from max.nn.module_v3
+# Hint: You'll need Linear and Module from max.nn
 
+from max.tensor import Tensor
 from step_01 import GPT2Config
-from step_07 import MaxGPT2Model
+
 
 class MaxGPT2LMHeadModel(Module):
     """Complete GPT-2 model with language modeling head."""
 
-    def __init__(self, config: GPT2Config):
+    def __init__(self, config: GPT2Config) -&gt; None:
         """Initialize GPT-2 with LM head.
 
         Args:
@@ -310,7 +322,7 @@ class MaxGPT2LMHeadModel(Module):
         # Projects from hidden dimension to vocabulary size
         self.lm_head = None
 
-    def __call__(self, input_ids):
+    def forward(self, input_ids: Tensor) -&gt; Tensor:
         """Forward pass through transformer and LM head.
 
         Args:
@@ -334,17 +346,22 @@ class MaxGPT2LMHeadModel(Module):
 <p>Run <code>pixi run s08</code> to verify your implementation.</p>
 <details>
 <summary>Show solution</summary>
-<pre><code class="language-python">"""
+<pre><code class="language-python"># ===----------------------------------------------------------------------=== #
+#
+# This file is Modular Inc proprietary.
+#
+# ===----------------------------------------------------------------------=== #
+"""
 Solution for Step 08: Language Model Head
 
 This module adds the final projection layer that converts hidden states
 to vocabulary logits for predicting the next token.
 """
 
-from max.nn.module_v3 import Linear, Module
-
-from solution_01 import GPT2Config
-from solution_07 import MaxGPT2Model
+from max.nn import Linear, Module
+from max.tensor import Tensor
+from step_01 import GPT2Config
+from step_07 import MaxGPT2Model
 
 
 class MaxGPT2LMHeadModel(Module):
@@ -353,7 +370,7 @@ class MaxGPT2LMHeadModel(Module):
     This is the full model that can be used for text generation.
     """
 
-    def __init__(self, config: GPT2Config):
+    def __init__(self, config: GPT2Config) -&gt; None:
         """Initialize GPT-2 with LM head.
 
         Args:
@@ -367,7 +384,7 @@ class MaxGPT2LMHeadModel(Module):
         # Language modeling head (hidden states -&gt; vocabulary logits)
         self.lm_head = Linear(config.n_embd, config.vocab_size, bias=False)
 
-    def __call__(self, input_ids):
+    def forward(self, input_ids: Tensor) -&gt; Tensor:
         """Forward pass through transformer and LM head.
 
         Args:
@@ -385,7 +402,8 @@ class MaxGPT2LMHeadModel(Module):
         return logits
 </code></pre>
 </details>
-<p><strong>Next</strong>: In <a href="./step_09.html">Step 09</a>, you’ll implement tokenization functions to convert between text and token IDs.</p>
+<p><strong>Next</strong>: In <a href="./step_09.html">Step 09</a>, you’ll implement tokenization functions to
+convert between text and token IDs.</p>
 
                     </main>
 
@@ -424,19 +442,19 @@ class MaxGPT2LMHeadModel(Module):
         </script>
 
 
-        <script src="elasticlunr.min.js"></script>
-        <script src="mark.min.js"></script>
-        <script src="searcher.js"></script>
+        <script src="elasticlunr-ef4e11c1.min.js"></script>
+        <script src="mark-09e88c2c.min.js"></script>
+        <script src="searcher-c2a407aa.js"></script>
 
-        <script src="clipboard.min.js"></script>
-        <script src="highlight.js"></script>
-        <script src="book.js"></script>
+        <script src="clipboard-1626706a.min.js"></script>
+        <script src="highlight-0d94ca02.js"></script>
+        <script src="book-18d9e732.js"></script>
 
         <!-- Custom JS scripts -->
-        <script src="theme/code-highlighting.js"></script>
-        <script src="theme/sidebar.js"></script>
-        <script src="theme/init-amplitude.js"></script>
-        <script src="theme/warning.js"></script>
+        <script src="theme/code-highlighting-55fc0fa7.js"></script>
+        <script src="theme/sidebar-b3556f40.js"></script>
+        <script src="theme/init-amplitude-85677074.js"></script>
+        <script src="theme/warning-32d295ae.js"></script>
 
 
     </div>

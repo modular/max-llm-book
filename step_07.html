@@ -47,29 +47,29 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
 
-        <meta name="description" content="">
+        <meta name="description" content="This guide walks you through implementing GPT-2 using Modular’s MAX framework.">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
-        <link rel="icon" href="favicon.svg">
-        <link rel="shortcut icon" href="favicon.png">
-        <link rel="stylesheet" href="css/variables.css">
-        <link rel="stylesheet" href="css/general.css">
-        <link rel="stylesheet" href="css/chrome.css">
-        <link rel="stylesheet" href="css/print.css" media="print">
+        <link rel="icon" href="favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="favicon-8114d1fc.png">
+        <link rel="stylesheet" href="css/variables-8adf115d.css">
+        <link rel="stylesheet" href="css/general-2459343d.css">
+        <link rel="stylesheet" href="css/chrome-ae938929.css">
+        <link rel="stylesheet" href="css/print-9e4910d8.css" media="print">
 
         <!-- Fonts -->
-        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
-        <link rel="stylesheet" href="fonts/fonts.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+        <link rel="stylesheet" href="fonts/fonts-8490e396.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" id="highlight-css" href="highlight.css">
-        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
-        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
+        <link rel="stylesheet" id="highlight-css" href="highlight-493f70e1.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="theme/css/custom.css">
-        <link rel="stylesheet" href="theme/css/highlight.css">
+        <link rel="stylesheet" href="theme/css/custom-a345be71.css">
+        <link rel="stylesheet" href="theme/css/highlight-efe4ab2a.css">
 
         <!-- MathJax -->
         <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
@@ -81,7 +81,7 @@
             const default_dark_theme = "ayu";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc.js"></script>
+        <script src="toc-d18eda26.js"></script>
     </head>
     <body>
     <div id="body-container">
@@ -175,7 +175,7 @@
                         <i id="print-button" class="fa fa-print"></i>
                     </a>
                     <a class="menu-btn" href="https://github.com/modular/max-llm-book" title="Git repository" aria-label="Git repository">
-                        <i id="git-repository-button" class="fa fa-github"></i>
+                        <i id="git-repository-button" class="fa fa-brands fa-github"></i>
                     </a>
                 </div>
             </div>
@@ -199,56 +199,94 @@
                     <main>
                         <h1 id="stacking-transformer-blocks"><a class="header" href="#stacking-transformer-blocks">Stacking transformer blocks</a></h1>
 <div class="note">
-<p>Learn to stack 12 transformer blocks with embeddings and final normalization to create the complete GPT-2 model.</p>
+<p>Learn to stack 12 transformer blocks with embeddings and final normalization to
+create the complete GPT-2 model.</p>
 </div>
+
 <p>In this step, you’ll create the body of the GPT-2 model (the <code>MaxGPT2Model</code> module)
 as a sequence of transformer blocks (<code>GPT2Block</code>) plus <code>LayerNorm</code>. And because
 the model body receives raw token IDs during inference, you’ll also have to first
 convert the token IDs into token embeddings that are suitable for processing by the
 transformer blocks and the rest of the neural network.</p>
-<p>The model processes input in four stages: convert token IDs to embeddings, add position information, pass through 12 transformer blocks sequentially, and normalize the final output. Each transformer block refines the representation, building up from surface patterns in early layers to semantic understanding in later layers.</p>
-<p>GPT-2 uses 12 layers because this depth allows the model to learn complex patterns while remaining trainable. Fewer layers would limit the model’s capacity. More layers would increase training difficulty without proportional gains in quality for a 117M parameter model.</p>
+<p>The model processes input in four stages: convert token IDs to embeddings, add
+position information, pass through 12 transformer blocks sequentially, and
+normalize the final output. Each transformer block refines the representation,
+building up from surface patterns in early layers to semantic understanding in
+later layers.</p>
+<p>GPT-2 uses 12 layers because this depth allows the model to learn complex
+patterns while remaining trainable. Fewer layers would limit the model’s
+capacity. More layers would increase training difficulty without proportional
+gains in quality for a 117M parameter model.</p>
 <h2 id="understanding-the-components"><a class="header" href="#understanding-the-components">Understanding the components</a></h2>
 <p>The complete model has four main components:</p>
-<p><strong>Token embeddings (<code>wte</code>)</strong>: Maps each token ID to a 768-dimensional vector using a lookup table with 50,257 entries (one per vocabulary token).</p>
-<p><strong>Position embeddings (<code>wpe</code>)</strong>: Maps each position (0 to 1,023) to a 768-dimensional vector. These are added to token embeddings so the model knows token order.</p>
-<p><strong>Transformer blocks (<code>h</code>)</strong>: 12 identical blocks stacked using MAX’s <a href="https://docs.modular.com/max/api/python/nn/module_v3#max.nn.module_v3.Sequential"><code>Sequential</code></a> module. Sequential applies blocks in order, passing each block’s output to the next.</p>
-<p><strong>Final layer norm (<code>ln_f</code>)</strong>: Normalizes the output after all blocks. This stabilizes the representation before the language model head (added in Step 11) projects to vocabulary logits.</p>
+<p><strong>Token embeddings (<code>wte</code>)</strong>: Maps each token ID to a 768-dimensional vector
+using a lookup table with 50,257 entries (one per vocabulary token).</p>
+<p><strong>Position embeddings (<code>wpe</code>)</strong>: Maps each position (0 to 1,023) to a
+768-dimensional vector. These are added to token embeddings so the model knows
+token order.</p>
+<p><strong>Transformer blocks (<code>h</code>)</strong>: 12 identical blocks stacked using MAX’s
+<a href="https://docs.modular.com/max/api/python/nn/module_v3#max.nn.Sequential"><code>Sequential</code></a>
+module. Sequential applies blocks in order, passing each block’s output to the
+next.</p>
+<p><strong>Final layer norm (<code>ln_f</code>)</strong>: Normalizes the output after all blocks. This
+stabilizes the representation before the language model head (added in Step 11)
+projects to vocabulary logits.</p>
 <h2 id="understanding-the-forward-pass"><a class="header" href="#understanding-the-forward-pass">Understanding the forward pass</a></h2>
 <p>The forward method processes token IDs through the model:</p>
-<p>First, create position indices using <a href="https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.arange"><code>Tensor.arange</code></a>. Generate positions [0, 1, 2, …, seq_length-1] matching the input’s dtype and device. This ensures compatibility when adding to embeddings.</p>
-<p>Next, look up embeddings. Get token embeddings with <code>self.wte(input_ids)</code> and position embeddings with <code>self.wpe(position_indices)</code>. Add them together element-wise, as both are shape <code>[batch, seq_length, 768]</code>.</p>
+<p>First, create position indices using
+<a href="https://docs.modular.com/max/api/python/tensor#max.tensor.Tensor.arange"><code>Tensor.arange</code></a>.
+Generate positions [0, 1, 2, …, seq_length-1] matching the input’s dtype and
+device. This ensures compatibility when adding to embeddings.</p>
+<p>Next, look up embeddings. Get token embeddings with <code>self.wte(input_ids)</code> and
+position embeddings with <code>self.wpe(position_indices)</code>. Add them together
+element-wise, as both are shape <code>[batch, seq_length, 768]</code>.</p>
 <p>Then, pass through the transformer blocks with <code>self.h(x)</code>. The
-<a href="/max/api/python/nn/module_v3#max.nn.module_v3.Sequential"><code>Sequential</code></a>
+<a href="/max/api/python/nn/module_v3#max.nn.Sequential"><code>Sequential</code></a>
 module applies all 12 transformer blocks in order, each refining the representation.</p>
-<p>Finally, normalize the output with <code>self.ln_f(x)</code> and return the result. The output shape matches the input: <code>[batch, seq_length, 768]</code>.</p>
+<p>Finally, normalize the output with <code>self.ln_f(x)</code> and return the result. The
+output shape matches the input: <code>[batch, seq_length, 768]</code>.</p>
 <div class="note">
 <div class="title">MAX operations</div>
+
 <p>You’ll use the following MAX operations to complete this task:</p>
 <p><strong>Module composition</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/nn/module_v3#max.nn.module_v3.Sequential"><code>Sequential(*modules)</code></a>: Chains transformer blocks in sequence</li>
+<li><a href="https://docs.modular.com/max/api/python/nn/module_v3#max.nn.Sequential"><code>Sequential(*modules)</code></a>:
+Chains transformer blocks in sequence</li>
 </ul>
 <p><strong>Embeddings</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/nn/module_v3#max.nn.module_v3.Embedding"><code>Embedding(num_embeddings, dim)</code></a>: Token and position embeddings</li>
+<li><a href="https://docs.modular.com/max/api/python/nn/module_v3#max.nn.Embedding"><code>Embedding(num_embeddings, dim)</code></a>:
+Token and position embeddings</li>
 </ul>
 <p><strong>Position generation</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.arange"><code>Tensor.arange(seq_length, dtype, device)</code></a>: Creates position indices</li>
+<li><a href="https://docs.modular.com/max/api/python/tensor#max.tensor.Tensor.arange"><code>Tensor.arange(seq_length, dtype, device)</code></a>:
+Creates position indices</li>
 </ul>
 </div>
+
 <h2 id="implementing-the-model"><a class="header" href="#implementing-the-model">Implementing the model</a></h2>
-<p>You’ll create the <code>MaxGPT2Model</code> class by composing embedding layers, transformer blocks, and layer normalization. The class builds on all the components from previous steps.</p>
-<p>First, import the required modules. You’ll need <code>Tensor</code> for position indices, <code>Embedding</code>, <code>Module</code>, and <code>Sequential</code> from MAX’s neural network module, plus the previously implemented <code>GPT2Config</code>, <code>LayerNorm</code>, and <code>GPT2Block</code>.</p>
+<p>You’ll create the <code>MaxGPT2Model</code> class by composing embedding layers, transformer
+blocks, and layer normalization. The class builds on all the components from
+previous steps.</p>
+<p>First, import the required modules. You’ll need <code>Tensor</code> for position indices,
+<code>Embedding</code>, <code>Module</code>, and <code>Sequential</code> from MAX’s neural network module, plus
+the previously implemented <code>GPT2Config</code>, <code>LayerNorm</code>, and <code>GPT2Block</code>.</p>
 <p>In the <code>__init__</code> method, create the four components:</p>
 <ul>
-<li>Token embeddings: <code>Embedding(config.vocab_size, dim=config.n_embd)</code> stored as <code>self.wte</code></li>
-<li>Position embeddings: <code>Embedding(config.n_positions, dim=config.n_embd)</code> stored as <code>self.wpe</code></li>
-<li>Transformer blocks: <code>Sequential(*(GPT2Block(config) for _ in range(config.n_layer)))</code> stored as <code>self.h</code></li>
-<li>Final layer norm: <code>LayerNorm(config.n_embd, eps=config.layer_norm_epsilon)</code> stored as <code>self.ln_f</code></li>
+<li>Token embeddings: <code>Embedding(config.vocab_size, dim=config.n_embd)</code> stored as
+<code>self.wte</code></li>
+<li>Position embeddings: <code>Embedding(config.n_positions, dim=config.n_embd)</code> stored
+as <code>self.wpe</code></li>
+<li>Transformer blocks:
+<code>Sequential(*(GPT2Block(config) for _ in range(config.n_layer)))</code> stored as
+<code>self.h</code></li>
+<li>Final layer norm: <code>LayerNorm(config.n_embd, eps=config.layer_norm_epsilon)</code>
+stored as <code>self.ln_f</code></li>
 </ul>
-<p>The <code>Sequential</code> module takes a generator expression that creates 12 identical <code>GPT2Block</code> instances. The <code>*</code> unpacks them as arguments to <code>Sequential</code>.</p>
+<p>The <code>Sequential</code> module takes a generator expression that creates 12 identical
+<code>GPT2Block</code> instances. The <code>*</code> unpacks them as arguments to <code>Sequential</code>.</p>
 <p>In the <code>forward</code> method, implement the four-stage processing:</p>
 <ol>
 <li>Get the sequence length from <code>input_ids.shape</code></li>
@@ -258,9 +296,15 @@ module applies all 12 transformer blocks in order, each refining the representat
 <li>Apply final normalization: <code>x = self.ln_f(x)</code></li>
 <li>Return <code>x</code></li>
 </ol>
-<p>The position indices must match the input’s dtype and device to ensure the tensors are compatible for addition.</p>
+<p>The position indices must match the input’s dtype and device to ensure the
+tensors are compatible for addition.</p>
 <p><strong>Implementation</strong> (<code>step_07.py</code>):</p>
-<pre><code class="language-python">"""
+<pre><code class="language-python"># ===----------------------------------------------------------------------=== #
+#
+# This file is Modular Inc proprietary.
+#
+# ===----------------------------------------------------------------------=== #
+"""
 Step 07: Stacking Transformer Blocks
 
 Stack multiple transformer blocks with embeddings to create
@@ -277,18 +321,17 @@ Run: pixi run s10
 """
 
 # TODO: Import required modules
-# Hint: You'll need Tensor from max.experimental.tensor
-# Hint: You'll need Embedding, Module, Sequential from max.nn.module_v3
+# Hint: You'll need Tensor from max.tensor
+# Hint: You'll need Embedding, Module, Sequential from max.nn
 
+from max.tensor import Tensor
 from step_01 import GPT2Config
-from step_05 import LayerNorm
-from step_06 import GPT2Block
 
 
 class MaxGPT2Model(Module):
     """Complete GPT-2 transformer model."""
 
-    def __init__(self, config: GPT2Config):
+    def __init__(self, config: GPT2Config) -&gt; None:
         """Initialize GPT-2 model.
 
         Args:
@@ -313,7 +356,7 @@ class MaxGPT2Model(Module):
         # Hint: Use LayerNorm(config.n_embd, eps=config.layer_norm_epsilon)
         self.ln_f = None
 
-    def __call__(self, input_ids):
+    def forward(self, input_ids: Tensor) -&gt; Tensor:
         """Forward pass through the transformer.
 
         Args:
@@ -354,19 +397,23 @@ class MaxGPT2Model(Module):
 <p>Run <code>pixi run s07</code> to verify your implementation.</p>
 <details>
 <summary>Show solution</summary>
-<pre><code class="language-python">"""
+<pre><code class="language-python"># ===----------------------------------------------------------------------=== #
+#
+# This file is Modular Inc proprietary.
+#
+# ===----------------------------------------------------------------------=== #
+"""
 Solution for Step 07: Stacking Transformer Blocks
 
 This module stacks multiple transformer blocks and adds embeddings
 to create the complete GPT-2 transformer architecture.
 """
 
-from max.experimental.tensor import Tensor
-from max.nn.module_v3 import Embedding, Module, Sequential
-
-from solution_01 import GPT2Config
-from solution_05 import LayerNorm
-from solution_06 import GPT2Block
+from max.nn import Embedding, Module, Sequential
+from max.tensor import Tensor
+from step_01 import GPT2Config
+from step_05 import LayerNorm
+from step_06 import GPT2Block
 
 
 class MaxGPT2Model(Module):
@@ -378,7 +425,7 @@ class MaxGPT2Model(Module):
     3. Final layer normalization
     """
 
-    def __init__(self, config: GPT2Config):
+    def __init__(self, config: GPT2Config) -&gt; None:
         """Initialize GPT-2 model.
 
         Args:
@@ -397,7 +444,7 @@ class MaxGPT2Model(Module):
         # Final layer normalization
         self.ln_f = LayerNorm(config.n_embd, eps=config.layer_norm_epsilon)
 
-    def __call__(self, input_ids):
+    def forward(self, input_ids: Tensor) -&gt; Tensor:
         """Forward pass through the transformer.
 
         Args:
@@ -406,7 +453,7 @@ class MaxGPT2Model(Module):
         Returns:
             Hidden states, shape [batch, seq_length, n_embd]
         """
-        batch_size, seq_length = input_ids.shape
+        _, seq_length = input_ids.shape
 
         # Get token embeddings
         tok_embeds = self.wte(input_ids)
@@ -428,7 +475,8 @@ class MaxGPT2Model(Module):
         return x
 </code></pre>
 </details>
-<p><strong>Next</strong>: In <a href="./step_08.html">Step 08</a>, you’ll add the language modeling head that projects hidden states to vocabulary logits for text generation.</p>
+<p><strong>Next</strong>: In <a href="./step_08.html">Step 08</a>, you’ll add the language modeling head that
+projects hidden states to vocabulary logits for text generation.</p>
 
                     </main>
 
@@ -467,19 +515,19 @@ class MaxGPT2Model(Module):
         </script>
 
 
-        <script src="elasticlunr.min.js"></script>
-        <script src="mark.min.js"></script>
-        <script src="searcher.js"></script>
+        <script src="elasticlunr-ef4e11c1.min.js"></script>
+        <script src="mark-09e88c2c.min.js"></script>
+        <script src="searcher-c2a407aa.js"></script>
 
-        <script src="clipboard.min.js"></script>
-        <script src="highlight.js"></script>
-        <script src="book.js"></script>
+        <script src="clipboard-1626706a.min.js"></script>
+        <script src="highlight-0d94ca02.js"></script>
+        <script src="book-18d9e732.js"></script>
 
         <!-- Custom JS scripts -->
-        <script src="theme/code-highlighting.js"></script>
-        <script src="theme/sidebar.js"></script>
-        <script src="theme/init-amplitude.js"></script>
-        <script src="theme/warning.js"></script>
+        <script src="theme/code-highlighting-55fc0fa7.js"></script>
+        <script src="theme/sidebar-b3556f40.js"></script>
+        <script src="theme/init-amplitude-85677074.js"></script>
+        <script src="theme/warning-32d295ae.js"></script>
 
 
     </div>

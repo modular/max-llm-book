@@ -47,29 +47,29 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
 
-        <meta name="description" content="">
+        <meta name="description" content="This guide walks you through implementing GPT-2 using Modular’s MAX framework.">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
-        <link rel="icon" href="favicon.svg">
-        <link rel="shortcut icon" href="favicon.png">
-        <link rel="stylesheet" href="css/variables.css">
-        <link rel="stylesheet" href="css/general.css">
-        <link rel="stylesheet" href="css/chrome.css">
-        <link rel="stylesheet" href="css/print.css" media="print">
+        <link rel="icon" href="favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="favicon-8114d1fc.png">
+        <link rel="stylesheet" href="css/variables-8adf115d.css">
+        <link rel="stylesheet" href="css/general-2459343d.css">
+        <link rel="stylesheet" href="css/chrome-ae938929.css">
+        <link rel="stylesheet" href="css/print-9e4910d8.css" media="print">
 
         <!-- Fonts -->
-        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
-        <link rel="stylesheet" href="fonts/fonts.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+        <link rel="stylesheet" href="fonts/fonts-8490e396.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" id="highlight-css" href="highlight.css">
-        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
-        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
+        <link rel="stylesheet" id="highlight-css" href="highlight-493f70e1.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="theme/css/custom.css">
-        <link rel="stylesheet" href="theme/css/highlight.css">
+        <link rel="stylesheet" href="theme/css/custom-a345be71.css">
+        <link rel="stylesheet" href="theme/css/highlight-efe4ab2a.css">
 
         <!-- MathJax -->
         <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
@@ -81,7 +81,7 @@
             const default_dark_theme = "ayu";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc.js"></script>
+        <script src="toc-d18eda26.js"></script>
     </head>
     <body>
     <div id="body-container">
@@ -175,7 +175,7 @@
                         <i id="print-button" class="fa fa-print"></i>
                     </a>
                     <a class="menu-btn" href="https://github.com/modular/max-llm-book" title="Git repository" aria-label="Git repository">
-                        <i id="git-repository-button" class="fa fa-github"></i>
+                        <i id="git-repository-button" class="fa fa-brands fa-github"></i>
                     </a>
                 </div>
             </div>
@@ -199,38 +199,68 @@
                     <main>
                         <h1 id="load-weights-and-run-model"><a class="header" href="#load-weights-and-run-model">Load weights and run model</a></h1>
 <div class="note">
-<p>Learn to load pretrained weights from HuggingFace and prepare the model for text generation.</p>
+<p>Learn to load pretrained weights from HuggingFace and prepare the model for text
+generation.</p>
 </div>
-<p>With all components implemented, you’re ready to load OpenAI’s pretrained GPT-2 weights and run the model. This step brings everything together: loading weights from HuggingFace, handling weight format differences, initializing the tokenizer, and compiling the model for efficient inference.</p>
-<p>The HuggingFace <code>transformers</code> library provides OpenAI’s pretrained GPT-2 weights. You’ll load these weights into your MAX implementation, making your model immediately capable of generating coherent text without training.</p>
-<p>However, there’s a complication: HuggingFace’s GPT-2 uses Conv1D layers for its linear transformations, while your MAX implementation uses standard Linear layers. These store weights in transposed formats, so you’ll need to transpose specific weight matrices after loading.</p>
+
+<p>With all components implemented, you’re ready to load OpenAI’s pretrained GPT-2
+weights and run the model. This step brings everything together: loading weights
+from HuggingFace, handling weight format differences, initializing the
+tokenizer, and compiling the model for efficient inference.</p>
+<p>The HuggingFace <code>transformers</code> library provides OpenAI’s pretrained GPT-2
+weights. You’ll load these weights into your MAX implementation, making your
+model immediately capable of generating coherent text without training.</p>
+<p>However, there’s a complication: HuggingFace’s GPT-2 uses Conv1D layers for its
+linear transformations, while your MAX implementation uses standard Linear
+layers. These store weights in transposed formats, so you’ll need to transpose
+specific weight matrices after loading.</p>
 <h2 id="understanding-weight-loading"><a class="header" href="#understanding-weight-loading">Understanding weight loading</a></h2>
-<p>Weight loading involves three steps: loading the HuggingFace model, transferring weights to your MAX model, and transposing Conv1D weights.</p>
-<p>First, load the pretrained model with <code>GPT2LMHeadModel.from_pretrained("gpt2")</code>. This downloads the weights (about 500MB) and returns a PyTorch model with the exact architecture you’ve implemented.</p>
-<p>Next, transfer these weights to your MAX model using <code>max_model.load_state_dict(hf_model.state_dict())</code>. The <code>state_dict</code> is a dictionary mapping layer names to weight tensors. Since your MAX model has the exact same architecture and layer names, this transfer works seamlessly.</p>
-<p>Finally, transpose the weights for layers that use Conv1D in HuggingFace: <code>c_attn</code>, <code>c_proj</code>, and <code>c_fc</code>. Conv1D stores weights in shape <code>[in_features, out_features]</code>, while Linear expects <code>[out_features, in_features]</code>. Use the <code>.T</code> property to transpose: <code>child.weight = child.weight.T</code>.</p>
+<p>Weight loading involves three steps: loading the HuggingFace model, transferring
+weights to your MAX model, and transposing Conv1D weights.</p>
+<p>First, load the pretrained model with <code>GPT2LMHeadModel.from_pretrained("gpt2")</code>.
+This downloads the weights (about 500MB) and returns a PyTorch model with the
+exact architecture you’ve implemented.</p>
+<p>Next, transfer these weights to your MAX model using
+<code>max_model.load_state_dict(hf_model.state_dict())</code>. The <code>state_dict</code> is a
+dictionary mapping layer names to weight tensors. Since your MAX model has the
+exact same architecture and layer names, this transfer works seamlessly.</p>
+<p>Finally, transpose the weights for layers that use Conv1D in HuggingFace:
+<code>c_attn</code>, <code>c_proj</code>, and <code>c_fc</code>. Conv1D stores weights in shape
+<code>[in_features, out_features]</code>, while Linear expects
+<code>[out_features, in_features]</code>. Use the <code>.T</code> property to transpose:
+<code>child.weight = child.weight.T</code>.</p>
 <h2 id="understanding-model-compilation"><a class="header" href="#understanding-model-compilation">Understanding model compilation</a></h2>
-<p>Before you can run text generation, compile the model with <code>.compile(token_type)</code>. Compilation analyzes the model’s computation graph and generates optimized code for your hardware.</p>
-<p>First, you need to specify the <code>token_type</code> input using <code>TensorType</code>. This tells the MAX compiler what shape and dtype to expect:</p>
+<p>Before you can run text generation, compile the model with
+<code>.compile(token_type)</code>. Compilation analyzes the model’s computation graph and
+generates optimized code for your hardware.</p>
+<p>First, you need to specify the <code>token_type</code> input using <code>TensorType</code>. This tells
+the MAX compiler what shape and dtype to expect:</p>
 <pre><code class="language-python">token_type = TensorType(
     DType.int64,
     ("batch", "seqlen"),
     device=DeviceRef.from_device(device)
 )
 </code></pre>
-<p>The shape uses symbolic dimensions <code>("batch", "seqlen")</code> rather than concrete numbers like <code>[1, 20]</code>. This allows the compiled model to handle any batch size and sequence length, not just fixed dimensions.</p>
-<p>Compilation takes a few seconds but only happens once. After compilation, inference is much faster because MAX has optimized the entire computation graph.</p>
+<p>The shape uses symbolic dimensions <code>("batch", "seqlen")</code> rather than concrete
+numbers like <code>[1, 20]</code>. This allows the compiled model to handle any batch size
+and sequence length, not just fixed dimensions.</p>
+<p>Compilation takes a few seconds but only happens once. After compilation,
+inference is much faster because MAX has optimized the entire computation graph.</p>
 <h2 id="understanding-the-tokenizer"><a class="header" href="#understanding-the-tokenizer">Understanding the tokenizer</a></h2>
 <p>Back in step 9, you implemented functions to encode and decode tokens, but both
 functions require a <code>tokenizer</code> argument. Now you’ll load that tokenizer from
 Hugging Face, using <code>GPT2Tokenizer.from_pretrained("gpt2")</code>,
 which downloads the same tokenization rules OpenAI used during training.</p>
-<p>Set the padding token to match the end-of-sequence token: <code>tokenizer.pad_token = tokenizer.eos_token</code>. GPT-2 doesn’t have a dedicated padding token, so we reuse the EOS token for this purpose.</p>
+<p>Set the padding token to match the end-of-sequence token:
+<code>tokenizer.pad_token = tokenizer.eos_token</code>. GPT-2 doesn’t have a dedicated
+padding token, so we reuse the EOS token for this purpose.</p>
 <p>Then pass the <code>tokenizer</code> to the <code>generate_text()</code> function you created
 in step 10 (which passes it to <code>tokenize_text()</code> and <code>decode_tokens()</code>
 from step 9).</p>
 <h2 id="implementing-the-main-function"><a class="header" href="#implementing-the-main-function">Implementing the main function</a></h2>
-<p>You’ll implement the <code>main()</code> function that orchestrates the entire pipeline: loading models, transferring weights, initializing the tokenizer, compiling the model, and running an interactive prompt loop.</p>
+<p>You’ll implement the <code>main()</code> function that orchestrates the entire pipeline:
+loading models, transferring weights, initializing the tokenizer, compiling the
+model, and running an interactive prompt loop.</p>
 <p>Start by loading the pretrained HuggingFace model:</p>
 <pre><code class="language-python">hf_model = GPT2LMHeadModel.from_pretrained("gpt2")
 </code></pre>
@@ -239,7 +269,8 @@ from step 9).</p>
 config = GPT2Config()
 max_model = MaxGPT2LMHeadModel(config)
 </code></pre>
-<p>The <code>defaults()</code> function returns <code>(dtype, device)</code> tuples. You only need the device, so use <code>_</code> to ignore the dtype.</p>
+<p>The <code>defaults()</code> function returns <code>(dtype, device)</code> tuples. You only need the
+device, so use <code>_</code> to ignore the dtype.</p>
 <p>Load and transpose the weights:</p>
 <pre><code class="language-python">max_model.load_state_dict(hf_model.state_dict())
 max_model.to(device)
@@ -248,7 +279,8 @@ for name, child in max_model.descendents:
         if any(layer_name in name for layer_name in ["c_attn", "c_proj", "c_fc"]):
             child.weight = child.weight.T
 </code></pre>
-<p>The <code>descendents</code> property gives you all nested modules with their full paths. Check each child’s name for the Conv1D layers and transpose their weights.</p>
+<p>The <code>descendents</code> property gives you all nested modules with their full paths.
+Check each child’s name for the Conv1D layers and transpose their weights.</p>
 <p>Initialize the tokenizer:</p>
 <pre><code class="language-python">tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
 tokenizer.pad_token = tokenizer.eos_token
@@ -259,7 +291,8 @@ tokenizer.pad_token = tokenizer.eos_token
 )
 compiled_max_model = max_model.compile(token_type)
 </code></pre>
-<p>Finally, create an interactive prompt loop where users can input text and see generated results:</p>
+<p>Finally, create an interactive prompt loop where users can input text and see
+generated results:</p>
 <pre><code class="language-python">try:
     while True:
         user_input = input("Enter your prompt: ").strip()
@@ -286,7 +319,12 @@ except KeyboardInterrupt:
 </code></pre>
 <p>The loop continues until the user types ‘quit’, ‘exit’, ‘q’, or presses Ctrl+C.</p>
 <p><strong>Implementation</strong> (<code>step_11.py</code>):</p>
-<pre><code class="language-python">"""
+<pre><code class="language-python"># ===----------------------------------------------------------------------=== #
+#
+# This file is Modular Inc proprietary.
+#
+# ===----------------------------------------------------------------------=== #
+"""
 Step 11: Load Weights and Run Model
 
 Load pretrained GPT-2 weights from HuggingFace and run the complete model.
@@ -301,18 +339,8 @@ Tasks:
 Run: pixi run s11
 """
 
-from max.dtype import DType
-from max.experimental.tensor import Tensor, TensorType, defaults
-from max.graph import DeviceRef
-from max.nn.module_v3 import Linear
-from transformers import GPT2LMHeadModel, GPT2Tokenizer
 
-from step_01 import GPT2Config
-from step_08 import MaxGPT2LMHeadModel
-from step_10 import generate_text
-
-
-def run_model():
+def run_model() -&gt; None:
     """Load GPT-2 model, compile it, and run interactive text generation."""
 
     # TODO: Load HuggingFace model
@@ -387,23 +415,28 @@ if __name__ == "__main__":
 <p>Run <code>pixi run s11</code> to verify your implementation.</p>
 <details>
 <summary>Show solution</summary>
-<pre><code class="language-python">"""
+<pre><code class="language-python"># ===----------------------------------------------------------------------=== #
+#
+# This file is Modular Inc proprietary.
+#
+# ===----------------------------------------------------------------------=== #
+"""
 Solution for Step 11: Load weights and run model
 
 
 """
+
 from max.dtype import DType
-from max.experimental.tensor import Tensor, TensorType, defaults
 from max.graph import DeviceRef
-from max.nn.module_v3 import Linear
+from max.nn import Linear
+from max.tensor import TensorType, defaults
+from step_01 import GPT2Config
+from step_08 import MaxGPT2LMHeadModel
+from step_10 import generate_text
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
 
-from solution_01 import GPT2Config
-from solution_08 import MaxGPT2LMHeadModel
-from solution_10 import generate_text
 
-
-def run_model():
+def run_model() -&gt; None:
     # Load HuggingFace model
     hf_model = GPT2LMHeadModel.from_pretrained("gpt2")
     print(f"Loaded HuggingFace model:\n{hf_model}")
@@ -421,7 +454,7 @@ def run_model():
     # Load state dict and transpose weights
     max_model.load_state_dict(hf_model.state_dict())
     max_model.to(device)
-    for name, child in max_model.descendents:
+    for name, child in max_model.descendants:
         if isinstance(child, Linear):
             if any(layer_name in name for layer_name in ["c_attn", "c_proj", "c_fc"]):
                 print(f"Transposing {name}: {child.weight.shape}")
@@ -450,7 +483,7 @@ def run_model():
         while True:
             user_input = input("Enter your prompt: ").strip()
 
-            if user_input.lower() in ['quit', 'exit', 'q']:
+            if user_input.lower() in ["quit", "exit", "q"]:
                 print("Exiting...")
                 break
 
@@ -466,21 +499,23 @@ def run_model():
                 user_input,
                 max_new_tokens=50,
                 temperature=0.8,
-                do_sample=True
+                do_sample=True,
             )
             print(f"\nGenerated text:\n{generated_text}\n")
             print("-" * 50 + "\n")
 
     except KeyboardInterrupt:
         print("\n\nExiting...")
-        
+
 
 if __name__ == "__main__":
     run_model()
 </code></pre>
 </details>
-<p><strong>Congratulations!</strong> You’ve completed built a complete GPT-2 implementation from scratch.</p>
-<p>If code verification passed, you can execute your <code>step_11.py</code> code with <code>pixi run gpt2</code>.</p>
+<p><strong>Congratulations!</strong> You’ve completed built a complete GPT-2 implementation from
+scratch.</p>
+<p>If code verification passed, you can execute your <code>step_11.py</code> code with
+<code>pixi run gpt2</code>.</p>
 <h2 id="whats-next"><a class="header" href="#whats-next">What’s next?</a></h2>
 <p>You now understand the architectural foundation that powers modern language
 models. LLaMA, Mistral, and more build on these same components with incremental
@@ -488,10 +523,15 @@ refinements. You have everything you need to implement those refinements
 yourself.</p>
 <p>Consider extending your implementation with:</p>
 <ul>
-<li><strong>Grouped-query attention (GQA)</strong>: Reduce memory consumption by sharing key-value pairs across multiple query heads, as used in LLaMA 2.</li>
-<li><strong>Rotary position embeddings (RoPE)</strong>: Replace learned position embeddings with rotation-based encoding, improving length extrapolation in models like LLaMA and GPT-NeoX.</li>
-<li><strong>SwiGLU activation</strong>: Swap GELU for the gated linear unit variant used in LLaMA and PaLM.</li>
-<li><strong>Mixture of experts (MoE)</strong>: Add sparse expert routing to scale model capacity efficiently, as in Mixtral and GPT-4.</li>
+<li><strong>Grouped-query attention (GQA)</strong>: Reduce memory consumption by sharing
+key-value pairs across multiple query heads, as used in LLaMA 2.</li>
+<li><strong>Rotary position embeddings (RoPE)</strong>: Replace learned position embeddings
+with rotation-based encoding, improving length extrapolation in models like
+LLaMA and GPT-NeoX.</li>
+<li><strong>SwiGLU activation</strong>: Swap GELU for the gated linear unit variant used in
+LLaMA and PaLM.</li>
+<li><strong>Mixture of experts (MoE)</strong>: Add sparse expert routing to scale model
+capacity efficiently, as in Mixtral and GPT-4.</li>
 </ul>
 <p>Each refinement builds directly on what you’ve implemented. The attention
 mechanism you wrote becomes grouped-query attention with a simple modification
@@ -532,19 +572,19 @@ patterns are familiar because the fundamentals haven’t changed.</p>
         </script>
 
 
-        <script src="elasticlunr.min.js"></script>
-        <script src="mark.min.js"></script>
-        <script src="searcher.js"></script>
+        <script src="elasticlunr-ef4e11c1.min.js"></script>
+        <script src="mark-09e88c2c.min.js"></script>
+        <script src="searcher-c2a407aa.js"></script>
 
-        <script src="clipboard.min.js"></script>
-        <script src="highlight.js"></script>
-        <script src="book.js"></script>
+        <script src="clipboard-1626706a.min.js"></script>
+        <script src="highlight-0d94ca02.js"></script>
+        <script src="book-18d9e732.js"></script>
 
         <!-- Custom JS scripts -->
-        <script src="theme/code-highlighting.js"></script>
-        <script src="theme/sidebar.js"></script>
-        <script src="theme/init-amplitude.js"></script>
-        <script src="theme/warning.js"></script>
+        <script src="theme/code-highlighting-55fc0fa7.js"></script>
+        <script src="theme/sidebar-b3556f40.js"></script>
+        <script src="theme/init-amplitude-85677074.js"></script>
+        <script src="theme/warning-32d295ae.js"></script>
 
 
     </div>

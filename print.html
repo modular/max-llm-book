@@ -48,29 +48,29 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
 
-        <meta name="description" content="">
+        <meta name="description" content="This guide walks you through implementing GPT-2 using Modular’s MAX framework.">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
-        <link rel="icon" href="favicon.svg">
-        <link rel="shortcut icon" href="favicon.png">
-        <link rel="stylesheet" href="css/variables.css">
-        <link rel="stylesheet" href="css/general.css">
-        <link rel="stylesheet" href="css/chrome.css">
-        <link rel="stylesheet" href="css/print.css" media="print">
+        <link rel="icon" href="favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="favicon-8114d1fc.png">
+        <link rel="stylesheet" href="css/variables-8adf115d.css">
+        <link rel="stylesheet" href="css/general-2459343d.css">
+        <link rel="stylesheet" href="css/chrome-ae938929.css">
+        <link rel="stylesheet" href="css/print-9e4910d8.css" media="print">
 
         <!-- Fonts -->
-        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
-        <link rel="stylesheet" href="fonts/fonts.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+        <link rel="stylesheet" href="fonts/fonts-8490e396.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" id="highlight-css" href="highlight.css">
-        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
-        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
+        <link rel="stylesheet" id="highlight-css" href="highlight-493f70e1.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="theme/css/custom.css">
-        <link rel="stylesheet" href="theme/css/highlight.css">
+        <link rel="stylesheet" href="theme/css/custom-a345be71.css">
+        <link rel="stylesheet" href="theme/css/highlight-efe4ab2a.css">
 
         <!-- MathJax -->
         <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
@@ -82,7 +82,7 @@
             const default_dark_theme = "ayu";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc.js"></script>
+        <script src="toc-d18eda26.js"></script>
     </head>
     <body>
     <div id="body-container">
@@ -176,7 +176,7 @@
                         <i id="print-button" class="fa fa-print"></i>
                     </a>
                     <a class="menu-btn" href="https://github.com/modular/max-llm-book" title="Git repository" aria-label="Git repository">
-                        <i id="git-repository-button" class="fa fa-github"></i>
+                        <i id="git-repository-button" class="fa fa-brands fa-github"></i>
                     </a>
                 </div>
             </div>
@@ -199,30 +199,31 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="build-an-llm-from-scratch-in-max"><a class="header" href="#build-an-llm-from-scratch-in-max">Build an LLM from scratch in MAX</a></h1>
-<div class="warning">
-<p><strong>Experimental APIs:</strong> The APIs in the
-<a href="https://docs.modular.com/max/api/python/experimental/">experimental</a> package
-are subject to change. Share feedback on the
-<a href="https://forum.modular.com/tag/max-llms">MAX LLMs forum</a>.</p>
-</div>
-<p>Transformer models power today’s most impactful AI applications, from language models like ChatGPT to code generation tools like GitHub Copilot. Maybe you’ve been asked to adapt one of these models for your team, or you want to understand what’s actually happening when you call an inference API. Either way, building a transformer from scratch is one of the best ways to truly understand how they work.</p>
-<p>This guide walks you through implementing GPT-2 using Modular’s MAX framework <a href="https://docs.modular.com/max/api/python/experimental/">experimental API</a>. You’ll build each component yourself: embeddings, attention mechanisms, and feed-forward layers. You’ll see how they fit together into a complete language model by completing the sequential coding challenges in the tutorial <a href="https://github.com/modular/max-llm-book">GitHub repository</a>.</p>
-<div class="note">
-<p><strong>This API is unstable</strong>: This tutorial is built on the MAX
-Experimental API, which we expect to change over time and expand to include new
-features and functionality. As it evolves, we plan to update the tutorial
-accordingly. When this API comes out of experimental development, the tutorial
-content will also enter a more stable state. While in development, this tutorial
-will be pinned to a major release version.</p>
-</div>
+<p>Transformer models power today’s most impactful AI applications, from language
+models like ChatGPT to code generation tools like GitHub Copilot. Maybe you’ve
+been asked to adapt one of these models for your team, or you want to understand
+what’s actually happening when you call an inference API. Either way, building
+a transformer from scratch is one of the best ways to truly understand how they
+work.</p>
+<p>This guide walks you through implementing GPT-2 using the
+<a href="https://docs.modular.com/max/api/python/">MAX Python API</a>. You’ll
+build each component yourself: embeddings, attention mechanisms, and feed-forward
+layers. You’ll see how they fit together into a complete language model by
+completing the sequential coding challenges in the tutorial
+<a href="https://github.com/modular/max-llm-book">GitHub repository</a>.</p>
 <h2 id="why-gpt-2"><a class="header" href="#why-gpt-2">Why GPT-2?</a></h2>
-<p>It’s the architectural foundation for modern language models. LLaMA, Mistral, GPT-4; they’re all built on the same core components you’ll implement here:</p>
+<p>It’s the architectural foundation for modern language models. LLaMA, Mistral,
+GPT-4; they’re all built on the same core components you’ll implement here:</p>
 <ul>
 <li>multi-head attention</li>
 <li>feed-forward layers</li>
 <li>layer normalization</li>
 </ul>
-<p>Modern variants add refinements like grouped-query attention or mixture of experts, but the fundamentals remain the same. GPT-2 is complex enough to teach real transformer architecture but simple enough to implement completely and understand deeply. When you grasp how its pieces fit together, you understand how to build any transformer-based model.</p>
+<p>Modern variants add refinements like grouped-query attention or mixture of
+experts, but the fundamentals remain the same. GPT-2 is complex enough to teach
+real transformer architecture but simple enough to implement completely and
+understand deeply. When you grasp how its pieces fit together, you understand
+how to build any transformer-based model.</p>
 <blockquote>
 <p><strong>Learning by building</strong>: This tutorial follows a format popularized by Andrej
 Karpathy’s educational work and Sebastian Raschka’s hands-on approach. Rather
@@ -231,9 +232,9 @@ intuition through practice.</p>
 </blockquote>
 <h2 id="why-max"><a class="header" href="#why-max">Why MAX?</a></h2>
 <p>Traditional ML development often feels like stitching together tools that
-weren’t designed to work together. Maybe you write your model in PyTorch, optimize in
-CUDA, convert to ONNX for deployment, then use separate serving tools. Each
-handoff introduces complexity.</p>
+weren’t designed to work together. Maybe you write your model in PyTorch,
+optimize in CUDA, convert to ONNX for deployment, then use separate serving
+tools. Each handoff introduces complexity.</p>
 <p>MAX Framework takes a different approach: everything happens in one unified
 system. You write code to define your model, load weights, and run inference,
 all in MAX’s Python API. The MAX Framework handles optimization automatically and
@@ -258,19 +259,25 @@ or skip directly to topics you need. Each step is self-contained enough to be
 useful independently while building toward a complete implementation.</p>
 <h2 id="what-youll-build"><a class="header" href="#what-youll-build">What you’ll build</a></h2>
 <p>This tutorial guides you through building GPT-2 in manageable steps:</p>
-<div class="table-wrapper"><table><thead><tr><th>Step</th><th>Component</th><th>What you’ll learn</th></tr></thead><tbody>
-<tr><td>1</td><td><a href="./step_01.html">Model configuration</a></td><td>Define architecture hyperparameters matching HuggingFace GPT-2.</td></tr>
-<tr><td>2</td><td><a href="./step_02.html">Feed-forward network</a></td><td>Build the position-wise feed-forward network with GELU activation.</td></tr>
-<tr><td>3</td><td><a href="./step_03.html">Causal masking</a></td><td>Create attention masks to prevent looking at future tokens.</td></tr>
-<tr><td>4</td><td><a href="./step_04.html">Multi-head attention</a></td><td>Implement scaled dot-product attention with multiple heads.</td></tr>
-<tr><td>5</td><td><a href="./step_05.html">Layer normalization</a></td><td>Ensure activation values are within a stable range.</td></tr>
-<tr><td>6</td><td><a href="./step_06.html">Transformer block</a></td><td>Combine attention and MLP with residual connections.</td></tr>
-<tr><td>7</td><td><a href="./step_07.html">Stacking transformer blocks</a></td><td>Create the complete 12-layer GPT-2 model with embeddings.</td></tr>
-<tr><td>8</td><td><a href="./step_08.html">Language model head</a></td><td>Project hidden states to vocabulary logits.</td></tr>
-<tr><td>9</td><td><a href="./step_09.html">Encode and decode tokens</a></td><td>Convert between text and token IDs using HuggingFace tokenizer.</td></tr>
-<tr><td>10</td><td><a href="./step_10.html">Text generation</a></td><td>Generate text autoregressively with temperature sampling.</td></tr>
-<tr><td>11</td><td><a href="./step_11.html">Load weights and run model</a></td><td>Load pretrained weights and interact with your complete model.</td></tr>
-</tbody></table>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Step</th><th>Component</th><th>What you’ll learn</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td><a href="#model-configuration">Model configuration</a></td><td>Define architecture hyperparameters matching HuggingFace GPT-2.</td></tr>
+<tr><td>2</td><td><a href="#feed-forward-network-mlp">Feed-forward network</a></td><td>Build the position-wise feed-forward network with GELU activation.</td></tr>
+<tr><td>3</td><td><a href="#causal-masking">Causal masking</a></td><td>Create attention masks to prevent looking at future tokens.</td></tr>
+<tr><td>4</td><td><a href="#multi-head-attention">Multi-head attention</a></td><td>Implement scaled dot-product attention with multiple heads.</td></tr>
+<tr><td>5</td><td><a href="#layer-normalization">Layer normalization</a></td><td>Ensure activation values are within a stable range.</td></tr>
+<tr><td>6</td><td><a href="#transformer-block">Transformer block</a></td><td>Combine attention and MLP with residual connections.</td></tr>
+<tr><td>7</td><td><a href="#stacking-transformer-blocks">Stacking transformer blocks</a></td><td>Create the complete 12-layer GPT-2 model with embeddings.</td></tr>
+<tr><td>8</td><td><a href="#language-model-head">Language model head</a></td><td>Project hidden states to vocabulary logits.</td></tr>
+<tr><td>9</td><td><a href="#encode-and-decode-tokens">Encode and decode tokens</a></td><td>Convert between text and token IDs using HuggingFace tokenizer.</td></tr>
+<tr><td>10</td><td><a href="#text-generation">Text generation</a></td><td>Generate text autoregressively with temperature sampling.</td></tr>
+<tr><td>11</td><td><a href="#load-weights-and-run-model">Load weights and run model</a></td><td>Load pretrained weights and interact with your complete model.</td></tr>
+</tbody>
+</table>
 </div>
 <p>By the end, you’ll have a complete GPT-2 implementation and practical experience
 with MAX’s Python API. These are skills you can immediately apply to your own projects.</p>
@@ -283,24 +290,36 @@ learning purposes and completeness—understanding why each layer exists helps
 you reason about model behavior and adapt architectures for your own needs.</p>
 </blockquote>
 <h2 id="try-it-first"><a class="header" href="#try-it-first">Try it first</a></h2>
-<p>Before diving into the implementation, you can experience what you’ll build by running the complete reference model:</p>
+<p>Before diving into the implementation, you can experience what you’ll build by
+running the complete reference model:</p>
 <pre><code class="language-bash">pixi run main
 </code></pre>
-<p>This runs the complete GPT-2 implementation from <a href="https://github.com/modular/max-llm-book/blob/main/main.py"><code>main.py</code></a>, loading pretrained weights and starting an interactive prompt where you can enter text and see the model generate completions. It’s the same model you’ll build step-by-step through the tutorial.</p>
-<p>When you’ve completed every step of the tutorial, you can run your own implementation the exact same way:</p>
+<p>This runs the complete GPT-2 implementation from
+<a href="https://github.com/modular/max-llm-book/blob/main/main.py"><code>main.py</code></a>, loading
+pretrained weights and starting an interactive prompt where you can enter text
+and see the model generate completions. It’s the same model you’ll build
+step-by-step through the tutorial.</p>
+<p>When you’ve completed every step of the tutorial, you can run your own
+implementation the exact same way:</p>
 <pre><code class="language-bash">pixi run gpt2
 </code></pre>
-<p>This runs your completed <code>steps/step_11.py</code>, demonstrating that your implementation works identically to the reference. Both commands load the same pretrained weights, compile the model, and provide an interactive generation experience.</p>
+<p>This runs your completed <code>steps/step_11.py</code>, demonstrating that your
+implementation works identically to the reference. Both commands load the same
+pretrained weights, compile the model, and provide an interactive generation
+experience.</p>
 <h2 id="get-started"><a class="header" href="#get-started">Get started</a></h2>
 <p>To install the tutorial and begin building, follow the steps in
-<a href="./setup.html">Setup</a>.</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="project-setup"><a class="header" href="#project-setup">Project Setup</a></h1>
-<p>You’ll first need to clone <a href="https://github.com/modular/max-llm-book">the GitHub repository</a> and navigate to the repository:</p>
+<a href="#project-setup">Setup</a>.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="project-setup"><a class="header" href="#project-setup">Project Setup</a></h1>
+<p>You’ll first need to clone
+<a href="https://github.com/modular/max-llm-book">the GitHub repository</a> and navigate to
+the repository:</p>
 <pre><code class="language-sh">git clone https://github.com/modular/max-llm-book
 cd max-llm-book
 </code></pre>
 <p>Then download and install <a href="https://pixi.sh/dev/">pixi</a>:</p>
-<pre><code>curl -fsSL https://pixi.sh/install.sh | sh
+<pre><code class="language-sh">curl -fsSL https://pixi.sh/install.sh | sh
 </code></pre>
 <h2 id="how-to-use-the-book"><a class="header" href="#how-to-use-the-book">How to use the book</a></h2>
 <p>To validate a step, use the corresponding check command. For example, to check
@@ -310,7 +329,7 @@ Step 01:</p>
 <p>Each step includes automated checks that verify your implementation before moving
 forward. This immediate feedback helps you catch issues early and build
 confidence. Initially, checks will fail because the implementation isn’t complete:</p>
-<pre><code class="language-sh">✨ Pixi task (s01): python checks/check_step_01.py
+<pre><code class="language-text">✨ Pixi task (s01): python checks/check_step_01.py
 Running checks for Step 01: Model Configuration...
 
 ✅ GPT2Config can be instantiated with default values
@@ -324,7 +343,7 @@ Running checks for Step 01: Model Configuration...
 <p>Each failure tells you exactly what to implement.</p>
 <p>When your implementation is
 correct, you’ll see:</p>
-<pre><code class="language-output">✨ Pixi task (s01): python checks/check_step_01.py
+<pre><code class="language-text">✨ Pixi task (s01): python checks/check_step_01.py
 Running checks for Step 01: Model Configuration...
 
 ✅ GPT2Config is a dataclass
@@ -351,7 +370,7 @@ parameters, and patterns</li>
 <li><strong>Debugging check failures</strong>: Paste check output to understand what’s missing</li>
 <li><strong>Exploring alternatives</strong>: Ask “why this approach?” to deepen your understanding</li>
 </ul>
-<p>If you’re using Claude, see <a href="./claude.html">claude.md</a> for custom instructions
+<p>If you’re using Claude, see <a href="claude.html">claude.md</a> for custom instructions
 tailored to this tutorial.</p>
 <h2 id="prerequisites"><a class="header" href="#prerequisites">Prerequisites</a></h2>
 <p>This tutorial assumes:</p>
@@ -366,38 +385,79 @@ experience</li>
 of model architecture, this tutorial provides hands-on experience you can apply
 to current projects and learning priorities.</p>
 <p>Ready to build? Let’s get started with
-<a href="./step_01.html">Step 01: Model configuration</a>.</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="model-configuration"><a class="header" href="#model-configuration">Model configuration</a></h1>
+<a href="#model-configuration">Step 01: Model configuration</a>.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="model-configuration"><a class="header" href="#model-configuration">Model configuration</a></h1>
 <div class="note">
 <p>Learn to define the GPT-2 model architecture parameters using configuration classes.</p>
 </div>
-<p>Before you can implement GPT-2, you need to define its architecture: the dimensions, layer counts, and structural parameters that determine how the model processes information.</p>
-<p>In this step, you’ll create <code>GPT2Config</code>, a class that holds all the architectural decisions for GPT-2. This class describes things like: embedding dimensions, number of transformer layers, and number of attention heads. These parameters define the shape and capacity of your model.</p>
-<p>OpenAI trained the original GPT-2 model with specific parameters that you can see in the <a href="https://huggingface.co/openai-community/gpt2/blob/main/config.json">config.json file</a> on Hugging Face. By using the exact same values, we can access OpenAI’s pretrained weights in subsequent steps.</p>
+
+<p>Before you can implement GPT-2, you need to define its architecture: the
+dimensions, layer counts, and structural parameters that determine how the model
+processes information.</p>
+<p>In this step, you’ll create <code>GPT2Config</code>, a class that holds all the
+architectural decisions for GPT-2. This class describes things like: embedding
+dimensions, number of transformer layers, and number of attention heads. These
+parameters define the shape and capacity of your model.</p>
+<p>OpenAI trained the original GPT-2 model with specific parameters that you can
+see in the
+<a href="https://huggingface.co/openai-community/gpt2/blob/main/config.json">config.json file</a>
+on Hugging Face. By using the exact same values, we can access OpenAI’s
+pretrained weights in subsequent steps.</p>
 <h2 id="understanding-the-parameters"><a class="header" href="#understanding-the-parameters">Understanding the parameters</a></h2>
-<p>Looking at the <a href="https://huggingface.co/openai-community/gpt2/blob/main/config.json">config.json file</a> file, we can see some key information about the model. Each parameter controls a different aspect of the model’s architecture:</p>
+<p>Looking at the
+<a href="https://huggingface.co/openai-community/gpt2/blob/main/config.json">config.json file</a>
+file, we can see some key information about the model. Each parameter controls
+a different aspect of the model’s architecture:</p>
 <ul>
-<li><code>vocab_size</code>: Size of the token vocabulary (default: 50,257). This seemingly odd number is actually 50,000 Byte Pair Encoding (BPE) tokens + 256 byte-level tokens (fallback for rare characters) + 1 special token.</li>
-<li><code>n_positions</code>: Maximum sequence length, also called the context window (default: 1,024). Longer sequences require quadratic memory in attention.</li>
-<li><code>n_embd</code>: Embedding dimension, or the size of the hidden states that flow through the model (default: 768). This determines the model’s capacity to represent information.</li>
-<li><code>n_layer</code>: Number of transformer blocks stacked vertically (default: 12). More layers allow the model to learn more complex patterns.</li>
-<li><code>n_head</code>: Number of attention heads per layer (default: 12). Multiple heads let the model attend to different types of patterns simultaneously.</li>
-<li><code>n_inner</code>: Dimension of the MLP intermediate layer (default: 3,072). This is 4x the embedding dimension, a ratio found empirically in the <a href="https://arxiv.org/abs/1706.03762"><em>Attention is all you need</em></a> paper to work well.</li>
-<li><code>layer_norm_epsilon</code>: Small constant for numerical stability in layer normalization (default: <code>1e-5</code>). This prevents division by zero when variance is very small.</li>
+<li><code>vocab_size</code>: Size of the token vocabulary (default: 50,257). This seemingly
+odd number is actually 50,000 Byte Pair Encoding (BPE) tokens + 256 byte-level
+tokens (fallback for rare characters) + 1 special token.</li>
+<li><code>n_positions</code>: Maximum sequence length, also called the context window
+(default: 1,024). Longer sequences require quadratic memory in attention.</li>
+<li><code>n_embd</code>: Embedding dimension, or the size of the hidden states that flow
+through the model (default: 768). This determines the model’s capacity to
+represent information.</li>
+<li><code>n_layer</code>: Number of transformer blocks stacked vertically (default: 12). More
+layers allow the model to learn more complex patterns.</li>
+<li><code>n_head</code>: Number of attention heads per layer (default: 12). Multiple heads
+let the model attend to different types of patterns simultaneously.</li>
+<li><code>n_inner</code>: Dimension of the MLP intermediate layer (default: 3,072). This is
+4x the embedding dimension, a ratio found empirically in the
+<a href="https://arxiv.org/abs/1706.03762"><em>Attention is all you need</em></a> paper to work
+well.</li>
+<li><code>layer_norm_epsilon</code>: Small constant for numerical stability in layer
+normalization (default: <code>1e-5</code>). This prevents division by zero when variance
+is very small.</li>
 </ul>
-<p>These values define the <em>small</em> GPT-2 model. OpenAI released four sizes (small, medium, large, XL), each with different configurations that scale up these parameters. For implementation purposes we will use these parameters.</p>
+<p>These values define the <em>small</em> GPT-2 model. OpenAI released four sizes (small,
+medium, large, XL), each with different configurations that scale up these
+parameters. For implementation purposes we will use these parameters.</p>
 <h2 id="implementing-the-configuration"><a class="header" href="#implementing-the-configuration">Implementing the configuration</a></h2>
-<p>Now let’s implement this yourself. You’ll create the <code>GPT2Config</code> class using Python’s <a href="https://docs.python.org/3/library/dataclasses.html"><code>@dataclass</code></a> decorator. Dataclasses reduce boilerplate.</p>
-<p>Instead of writing <code>__init__</code> and defining each parameter manually, you just declare the fields with type hints and default values.</p>
-<p>First, you’ll need to import the dataclass decorator from the dataclasses module. Then you’ll add the <code>@dataclass</code> decorator to the <code>GPT2Config</code> class definition.</p>
+<p>Now let’s implement this yourself. You’ll create the <code>GPT2Config</code> class using
+Python’s <a href="https://docs.python.org/3/library/dataclasses.html"><code>@dataclass</code></a>
+decorator. Dataclasses reduce boilerplate.</p>
+<p>Instead of writing <code>__init__</code> and defining each parameter manually, you just
+declare the fields with type hints and default values.</p>
+<p>First, you’ll need to import the dataclass decorator from the dataclasses
+module. Then you’ll add the <code>@dataclass</code> decorator to the <code>GPT2Config</code> class
+definition.</p>
 <p>The actual parameter values come from Hugging Face. You can get them in two ways:</p>
 <ul>
-<li><strong>Option 1</strong>: Run <code>pixi run huggingface</code> to access these parameters programmatically from the Hugging Face <code>transformers</code> library.</li>
-<li><strong>Option 2</strong>: Read the values directly from the <a href="https://huggingface.co/openai-community/gpt2/blob/main/config.json">GPT-2 model card</a>.</li>
+<li><strong>Option 1</strong>: Run <code>pixi run huggingface</code> to access these parameters
+programmatically from the Hugging Face <code>transformers</code> library.</li>
+<li><strong>Option 2</strong>: Read the values directly from the
+<a href="https://huggingface.co/openai-community/gpt2/blob/main/config.json">GPT-2 model card</a>.</li>
 </ul>
-<p>Once you have the values, replace each <code>None</code> in the <code>GPT2Config</code> class properties with the correct numbers from the configuration.</p>
+<p>Once you have the values, replace each <code>None</code> in the <code>GPT2Config</code> class
+properties with the correct numbers from the configuration.</p>
 <p><strong>Implementation</strong> (<code>step_01.py</code>):</p>
-<pre><code class="language-python">"""
+<pre><code class="language-python"># ===----------------------------------------------------------------------=== #
+#
+# This file is Modular Inc proprietary.
+#
+# ===----------------------------------------------------------------------=== #
+"""
 Step 01: Model Configuration
 
 Implement the GPT-2 configuration dataclass that stores model hyperparameters.
@@ -443,8 +503,12 @@ class GPT2Config:
 <p>Run <code>pixi run s01</code> to verify your implementation matches the expected configuration.</p>
 <details>
 <summary>Show solution</summary>
-<pre><code class="language-python">"""
-Solution for Step 01: Model Configuration
+<pre><code class="language-python"># ===----------------------------------------------------------------------=== #
+#
+# This file is Modular Inc proprietary.
+#
+# ===----------------------------------------------------------------------=== #
+"""Solution for Step 01: Model Configuration
 
 This module implements the GPT-2 configuration dataclass that stores
 hyperparameters matching HuggingFace's GPT-2 model structure.
@@ -476,11 +540,16 @@ class GPT2Config:
     layer_norm_epsilon: float = 1e-5
 </code></pre>
 </details>
-<p><strong>Next</strong>: In <a href="./step_02.html">Step 02</a>, you’ll implement the feed-forward network—also known as a multilayer perceptron (MLP)—that processes information after attention in each transformer block.</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="feed-forward-network-mlp"><a class="header" href="#feed-forward-network-mlp">Feed-forward network (MLP)</a></h1>
+<p><strong>Next</strong>: In <a href="#feed-forward-network-mlp">Step 02</a>, you’ll implement the feed-forward
+network—also known as a multilayer perceptron (MLP)—that processes information
+after attention in each transformer block.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="feed-forward-network-mlp"><a class="header" href="#feed-forward-network-mlp">Feed-forward network (MLP)</a></h1>
 <div class="note">
-<p>Learn to build the feed-forward network—also known as a multilayer perceptron (MLP)—that processes information after attention in each transformer block.</p>
+<p>Learn to build the feed-forward network—also known as a multilayer perceptron
+(MLP)—that processes information after attention in each transformer block.</p>
 </div>
+
 <p>In this step, you’ll create the <code>GPT2MLP</code> class: a two-layer feed-forward
 network that appears after attention in every transformer block. The MLP expands
 the embedding dimension by 4× (768 → 3,072), applies GELU activation for
@@ -495,7 +564,9 @@ to work well in the original Transformer paper and has been validated across
 many architectures since.</p>
 <h2 id="understanding-the-components"><a class="header" href="#understanding-the-components">Understanding the components</a></h2>
 <p>The MLP has three steps applied in sequence:</p>
-<p><strong>Expansion layer (<code>c_fc</code>)</strong>: Projects from 768 to 3,072 dimensions using a linear layer. This expansion gives the network more capacity to process information.</p>
+<p><strong>Expansion layer (<code>c_fc</code>)</strong>: Projects from 768 to 3,072 dimensions using a
+linear layer. This expansion gives the network more capacity to process
+information.</p>
 <p><strong>GELU activation</strong>: Applies Gaussian Error Linear Unit, a smooth non-linear
 function. GPT-2 uses <code>approximate="tanh"</code> for the tanh-based approximation
 instead of the exact computation. This approximation was faster when GPT-2 was
@@ -509,16 +580,20 @@ Face’s GPT-2 checkpoint structure. This naming is essential for loading
 pretrained weights.</p>
 <div class="note">
 <div class="title">MAX operations</div>
+
 <p>You’ll use the following MAX operations to complete this task:</p>
 <p><strong>Linear layers</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/nn/module_v3#max.nn.module_v3.Linear"><code>Linear(in_features, out_features, bias=True)</code></a>: Applies linear transformation <code>y = xW^T + b</code></li>
+<li><a href="https://docs.modular.com/max/api/python/nn/module_v3#max.nn.Linear"><code>Linear(in_features, out_features, bias=True)</code></a>:
+Applies linear transformation <code>y = xW^T + b</code></li>
 </ul>
 <p><strong>GELU activation</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.gelu"><code>F.gelu(input, approximate="tanh")</code></a>: Applies GELU activation with tanh approximation for faster computation</li>
+<li><a href="https://docs.modular.com/max/api/python/nn/functional#max.nn.functional.gelu"><code>F.gelu(input, approximate="tanh")</code></a>:
+Applies GELU activation with tanh approximation for faster computation</li>
 </ul>
 </div>
+
 <h2 id="implementing-the-mlp"><a class="header" href="#implementing-the-mlp">Implementing the MLP</a></h2>
 <p>You’ll create the <code>GPT2MLP</code> class that chains two linear layers with GELU
 activation between them. The implementation is straightforward - three
@@ -544,7 +619,12 @@ the base class.</p>
 <p>Return the final <code>hidden_states</code>. The input and output shapes are the same:
 <code>[batch, seq_length, embed_dim]</code>.</p>
 <p><strong>Implementation</strong> (<code>step_02.py</code>):</p>
-<pre><code class="language-python">"""
+<pre><code class="language-python"># ===----------------------------------------------------------------------=== #
+#
+# This file is Modular Inc proprietary.
+#
+# ===----------------------------------------------------------------------=== #
+"""
 Step 02: Feed-forward Network (MLP)
 
 Implement the MLP used in each transformer block with GELU activation.
@@ -561,15 +641,16 @@ Run: pixi run s02
 """
 
 # 1: Import the required modules from MAX
-# TODO: Import functional module from max.experimental with the alias F
-# https://docs.modular.com/max/api/python/experimental/functional
+# TODO: Import functional module from max.nn with the alias F
+# https://docs.modular.com/max/api/python/nn/functional
 
-# TODO: Import Tensor from max.experimental.tensor
-# https://docs.modular.com/max/api/python/experimental/tensor.Tensor
+# TODO: Import Tensor from max.tensor
+# https://docs.modular.com/max/api/python/tensor.Tensor
 
-# TODO: Import Linear and Module from max.nn.module_v3
+# TODO: Import Linear and Module from max.nn
 # https://docs.modular.com/max/api/python/nn/module_v3
 
+from max.tensor import Tensor
 from step_01 import GPT2Config
 
 
@@ -581,23 +662,23 @@ class GPT2MLP(Module):
         config: GPT-2 configuration.
     """
 
-    def __init__(self, intermediate_size: int, config: GPT2Config):
+    def __init__(self, intermediate_size: int, config: GPT2Config) -&gt; None:
         super().__init__()
         embed_dim = config.n_embd
 
         # 2: Create the first linear layer (embedding to intermediate)
         # TODO: Create self.c_fc as a Linear layer from embed_dim to intermediate_size with bias=True
-        # https://docs.modular.com/max/api/python/nn/module_v3#max.nn.module_v3.Linear
+        # https://docs.modular.com/max/api/python/nn/module_v3#max.nn.Linear
         # Hint: This is the expansion layer in the MLP
         self.c_fc = None
 
         # 3: Create the second linear layer (intermediate back to embedding)
         # TODO: Create self.c_proj as a Linear layer from intermediate_size to embed_dim with bias=True
-        # https://docs.modular.com/max/api/python/nn/module_v3#max.nn.module_v3.Linear
+        # https://docs.modular.com/max/api/python/nn/module_v3#max.nn.Linear
         # Hint: This is the projection layer that brings us back to the embedding dimension
         self.c_proj = None
 
-    def __call__(self, hidden_states: Tensor) -&gt; Tensor:
+    def forward(self, hidden_states: Tensor) -&gt; Tensor:
         """Apply feed-forward network.
 
         Args:
@@ -613,7 +694,7 @@ class GPT2MLP(Module):
 
         # 5: Apply GELU activation function
         # TODO: Use F.gelu() with hidden_states and approximate="tanh"
-        # https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.gelu
+        # https://docs.modular.com/max/api/python/nn/functional#max.nn.functional.gelu
         # Hint: GELU is the non-linear activation used in GPT-2's MLP
         hidden_states = None
 
@@ -626,18 +707,22 @@ class GPT2MLP(Module):
 <p>Run <code>pixi run s02</code> to verify your implementation.</p>
 <details>
 <summary>Show solution</summary>
-<pre><code class="language-python">"""
+<pre><code class="language-python"># ===----------------------------------------------------------------------=== #
+#
+# This file is Modular Inc proprietary.
+#
+# ===----------------------------------------------------------------------=== #
+"""
 Solution for Step 02: Feed-forward Network (MLP)
 
 This module implements the feed-forward network (MLP) used in each
 transformer block with GELU activation.
 """
 
-from max.experimental import functional as F
-from max.experimental.tensor import Tensor
-from max.nn.module_v3 import Linear, Module
-
-from solution_01 import GPT2Config
+import max.functional as F
+from max.nn import Linear, Module
+from max.tensor import Tensor
+from step_01 import GPT2Config
 
 
 class GPT2MLP(Module):
@@ -648,13 +733,13 @@ class GPT2MLP(Module):
         config: GPT-2 configuration.
     """
 
-    def __init__(self, intermediate_size: int, config: GPT2Config):
+    def __init__(self, intermediate_size: int, config: GPT2Config) -&gt; None:
         super().__init__()
         embed_dim = config.n_embd
         self.c_fc = Linear(embed_dim, intermediate_size, bias=True)
         self.c_proj = Linear(intermediate_size, embed_dim, bias=True)
 
-    def __call__(self, hidden_states: Tensor) -&gt; Tensor:
+    def forward(self, hidden_states: Tensor) -&gt; Tensor:
         """Apply feed-forward network.
 
         Args:
@@ -669,77 +754,122 @@ class GPT2MLP(Module):
         return hidden_states
 </code></pre>
 </details>
-<p><strong>Next</strong>: In <a href="./step_03.html">Step 03</a>, you’ll implement causal masking to prevent tokens from attending to future positions in autoregressive generation.</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="causal-masking"><a class="header" href="#causal-masking">Causal masking</a></h1>
+<p><strong>Next</strong>: In <a href="#causal-masking">Step 03</a>, you’ll implement causal masking to prevent
+tokens from attending to future positions in autoregressive generation.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="causal-masking"><a class="header" href="#causal-masking">Causal masking</a></h1>
 <div class="note">
-<p>Learn to create attention masks to prevent the model from <em>seeing</em> future tokens during <a href="https://docs.modular.com/glossary/ai/autoregression">autoregressive</a> generation.</p>
+<p>Learn to create attention masks to prevent the model from <em>seeing</em> future tokens
+during
+<a href="https://docs.modular.com/glossary/ai/autoregression">autoregressive</a>
+generation.</p>
 </div>
-<p>In this step you’ll implement the <code>causal_mask()</code> function that’s required for self-attention (the next step). This creates a <a href="https://docs.modular.com/glossary/ai/attention-mask/">mask matrix</a> that prevents the model from <em>seeing</em> future tokens when predicting the next token. The mask sets attention scores to negative infinity (<code>-inf</code>) for future positions. After softmax, these <code>-inf</code> values become zero probability, blocking information flow from later tokens.</p>
+
+<p>In this step you’ll implement the <code>causal_mask()</code> function that’s required for
+self-attention (the next step). This creates a
+<a href="https://docs.modular.com/glossary/ai/attention-mask/">mask matrix</a> that
+prevents the model from <em>seeing</em> future tokens when predicting the next token.
+The mask sets attention scores to negative infinity (<code>-inf</code>) for future
+positions. After softmax, these <code>-inf</code> values become zero probability, blocking
+information flow from later tokens.</p>
 <figure>
-<img src="./images/causal-masking-light.png" alt="Causal mask matrix showing the lower triangular pattern where each token can only attend to previous tokens" class="light-mode-img" width="530" height="475">
-<img src="./images/causal-masking-dark.png" alt="Causal mask matrix showing the lower triangular pattern where each token can only attend to previous tokens" class="dark-mode-img" width="530" height="475">
+<img src="images/causal-masking-light.png" alt="Causal mask matrix with lower triangular pattern" class="light-mode-img" width="530" height="475">
+<img src="images/causal-masking-dark.png" alt="Causal mask matrix with lower triangular pattern" class="dark-mode-img" width="530" height="475">
 </figure>
-<p>GPT-2 generates text one token at a time, left-to-right. During training, causal masking prevents the model from “cheating” by looking ahead at tokens it should be predicting. Without this mask, the model would have access to information it won’t have during actual text generation.</p>
+<p>GPT-2 generates text one token at a time, left-to-right. During training, causal
+masking prevents the model from “cheating” by looking ahead at tokens it should
+be predicting. Without this mask, the model would have access to information it
+won’t have during actual text generation.</p>
 <h2 id="understanding-the-mask-pattern"><a class="header" href="#understanding-the-mask-pattern">Understanding the mask pattern</a></h2>
-<p>The mask creates a lower triangular pattern where each token can only attend to itself and previous tokens:</p>
+<p>The mask creates a lower triangular pattern where each token can only attend to
+itself and previous tokens:</p>
 <ul>
 <li>Position 0 attends to: position 0 only</li>
 <li>Position 1 attends to: positions 0-1</li>
 <li>Position 2 attends to: positions 0-2</li>
 <li>And so on…</li>
 </ul>
-<p>The mask shape is <code>(sequence_length, sequence_length + num_tokens)</code>. This shape is designed for <a href="https://docs.modular.com/glossary/ai/kv-cache/">KV cache</a> compatibility during generation. The KV cache stores key and value tensors from previously generated tokens, so you only need to compute attention for new tokens while attending to both new tokens (sequence_length) and cached tokens (num_tokens). This significantly speeds up generation by avoiding recomputation.</p>
+<p>The mask shape is <code>(sequence_length, sequence_length + num_tokens)</code>. This shape
+is designed for <a href="https://docs.modular.com/glossary/ai/kv-cache/">KV cache</a>
+compatibility during generation. The KV cache stores key and value tensors from
+previously generated tokens, so you only need to compute attention for new
+tokens while attending to both new tokens (sequence_length) and cached tokens
+(num_tokens). This significantly speeds up generation by avoiding recomputation.</p>
 <div class="note">
 <div class="title">MAX operations</div>
+
 <p>You’ll use the following MAX operations to complete this task:</p>
 <p><strong>Functional decorator</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/experimental/functional/#max.experimental.functional.functional"><code>@F.functional</code></a>: Converts functions to graph operations for MAX compilation</li>
+<li><a href="https://docs.modular.com/max/api/python/nn/functional/#max.nn.functional.functional"><code>@F.functional</code></a>:
+Converts functions to graph operations for MAX compilation</li>
 </ul>
 <p><strong>Tensor operations</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.constant"><code>Tensor.constant()</code></a>: Creates a scalar constant tensor</li>
-<li><a href="https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.broadcast_to"><code>F.broadcast_to()</code></a>: Expands tensor dimensions to target shape</li>
-<li><a href="https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.band_part"><code>F.band_part()</code></a>: Extracts band matrix (keeps diagonal band, zeros out rest)</li>
+<li><a href="https://docs.modular.com/max/api/python/tensor#max.tensor.Tensor.constant"><code>Tensor.constant()</code></a>:
+Creates a scalar constant tensor</li>
+<li><a href="https://docs.modular.com/max/api/python/nn/functional#max.nn.functional.broadcast_to"><code>F.broadcast_to()</code></a>:
+Expands tensor dimensions to target shape</li>
+<li><a href="https://docs.modular.com/max/api/python/nn/functional#max.nn.functional.band_part"><code>F.band_part()</code></a>:
+Extracts band matrix (keeps diagonal band, zeros out rest)</li>
 </ul>
 </div>
+
 <h2 id="implementing-the-mask"><a class="header" href="#implementing-the-mask">Implementing the mask</a></h2>
 <p>You’ll create the causal mask in several steps:</p>
 <ol>
 <li>
 <p><strong>Import required modules</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/driver"><code>Device</code></a> from <code>max.driver</code> - specifies hardware device (CPU/GPU)</li>
-<li><a href="https://docs.modular.com/max/api/python/dtype"><code>DType</code></a> from <code>max.dtype</code> - data type specification</li>
-<li><a href="https://docs.modular.com/max/api/python/experimental/functional"><code>functional</code></a> as <code>F</code> from <code>max.experimental</code> - functional operations library</li>
-<li><a href="https://docs.modular.com/max/api/python/experimental/tensor"><code>Tensor</code></a> from <code>max.experimental.tensor</code> - tensor operations</li>
-<li><a href="https://docs.modular.com/max/api/python/graph/dim/#max.graph.dim.Dim"><code>Dim</code></a> from <code>graph.dim</code> - dimension handling</li>
+<li><a href="https://docs.modular.com/max/api/python/driver"><code>Device</code></a> from
+<code>max.driver</code> - specifies hardware device (CPU/GPU)</li>
+<li><a href="https://docs.modular.com/max/api/python/dtype"><code>DType</code></a> from <code>max.dtype</code> -
+data type specification</li>
+<li><a href="https://docs.modular.com/max/api/python/nn/functional"><code>functional</code></a>
+as <code>F</code> from <code>max.nn</code> - functional operations library</li>
+<li><a href="https://docs.modular.com/max/api/python/tensor"><code>Tensor</code></a>
+from <code>max.tensor</code> - tensor operations</li>
+<li><a href="https://docs.modular.com/max/api/python/graph/dim/#max.graph.dim.Dim"><code>Dim</code></a>
+from <code>graph.dim</code> - dimension handling</li>
 </ul>
 </li>
 <li>
 <p><strong>Add @F.functional decorator</strong>: This converts the function to a MAX graph operation.</p>
 </li>
 <li>
-<p><strong>Calculate total sequence length</strong>: Combine <code>sequence_length</code> and <code>num_tokens</code> using <code>Dim()</code> to determine mask width.</p>
+<p><strong>Calculate total sequence length</strong>: Combine <code>sequence_length</code> and
+<code>num_tokens</code> using <code>Dim()</code> to determine mask width.</p>
 </li>
 <li>
-<p><strong>Create constant tensor</strong>: Use <code>Tensor.constant(float("-inf"), dtype=dtype, device=device)</code> to create a scalar that will be broadcast.</p>
+<p><strong>Create constant tensor</strong>: Use
+<code>Tensor.constant(float("-inf"), dtype=dtype, device=device)</code> to create a
+scalar that will be broadcast.</p>
 </li>
 <li>
-<p><strong>Broadcast to target shape</strong>: Use <code>F.broadcast_to(mask, shape=(sequence_length, n))</code> to expand the scalar to a 2D matrix.</p>
+<p><strong>Broadcast to target shape</strong>: Use
+<code>F.broadcast_to(mask, shape=(sequence_length, n))</code> to expand the scalar to a
+2D matrix.</p>
 </li>
 <li>
-<p><strong>Apply band part</strong>: Use <code>F.band_part(mask, num_lower=None, num_upper=0, exclude=True)</code> to create the lower triangular pattern. This keeps 0s on and below the diagonal, <code>-inf</code> above.</p>
+<p><strong>Apply band part</strong>: Use
+<code>F.band_part(mask, num_lower=None, num_upper=0, exclude=True)</code> to create the
+lower triangular pattern. This keeps 0s on and below the diagonal, <code>-inf</code>
+above.</p>
 </li>
 </ol>
 <p><strong>Implementation</strong> (<code>step_03.py</code>):</p>
-<pre><code class="language-python">"""
+<pre><code class="language-python"># ===----------------------------------------------------------------------=== #
+#
+# This file is Modular Inc proprietary.
+#
+# ===----------------------------------------------------------------------=== #
+"""
 Step 03: Causal Masking
 
 Implement causal attention masking that prevents tokens from attending to future positions.
 
 Tasks:
-1. Import functional module (as F) and Tensor from max.experimental
+1. Import functional module (as F) and Tensor from max.nn
 2. Add @F.functional decorator to the causal_mask function
 3. Create a constant tensor filled with negative infinity
 4. Broadcast the mask to the correct shape (sequence_length, n)
@@ -751,13 +881,13 @@ Run: pixi run s03
 # 1: Import the required modules from MAX
 from max.driver import Device
 from max.dtype import DType
-# TODO: Import necessary funcional module from max.experimental with the alias F
-# https://docs.modular.com/max/api/python/experimental/functional
 
-# TODO: Import Tensor object from max.experimental.tensor
-# https://docs.modular.com/max/api/python/experimental/tensor.Tensor
-
+# TODO: Import necessary funcional module from max.nn with the alias F
+# https://docs.modular.com/max/api/python/nn/functional
+# TODO: Import Tensor object from max.tensor
+# https://docs.modular.com/max/api/python/tensor.Tensor
 from max.graph import Dim, DimLike
+from max.tensor import Tensor
 
 # 2: Add the @F.functional decorator to make this a MAX functional operation
 # TODO: Add the decorator here
@@ -769,7 +899,7 @@ def causal_mask(
     *,
     dtype: DType,
     device: Device,
-):
+) -&gt; Tensor:
     """Create a causal mask for autoregressive attention.
 
     Args:
@@ -786,19 +916,19 @@ def causal_mask(
 
     # 3: Create a constant tensor filled with negative infinity
     # TODO: Use Tensor.constant() with float("-inf"), dtype, and device parameters
-    # https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.constant
+    # https://docs.modular.com/max/api/python/tensor#max.tensor.Tensor.constant
     # Hint: This creates the base mask value that will block attention to future tokens
     mask = None
 
     # 4: Broadcast the mask to the correct shape
     # TODO: Use F.broadcast_to() to expand mask to shape (sequence_length, n)
-    # https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.broadcast_to
+    # https://docs.modular.com/max/api/python/nn/functional#max.nn.functional.broadcast_to
     # Hint: This creates a 2D attention mask matrix
     mask = None
 
     # 5: Apply band_part to create the causal (lower triangular) structure and return the mask
     # TODO: Use F.band_part() with num_lower=None, num_upper=0, exclude=True
-    # https://docs.modular.com/max/api/python/experimental/functional/#max.experimental.functional.band_part
+    # https://docs.modular.com/max/api/python/nn/functional/#max.nn.functional.band_part
     # Hint: This keeps only the lower triangle, allowing attention to past tokens only
     return None
 </code></pre>
@@ -806,18 +936,23 @@ def causal_mask(
 <p>Run <code>pixi run s03</code> to verify your implementation.</p>
 <details>
 <summary>Show solution</summary>
-<pre><code class="language-python">"""
+<pre><code class="language-python"># ===----------------------------------------------------------------------=== #
+#
+# This file is Modular Inc proprietary.
+#
+# ===----------------------------------------------------------------------=== #
+"""
 Solution for Step 03: Causal Masking
 
 This module implements causal attention masking that prevents tokens from
 attending to future positions in autoregressive generation.
 """
 
+import max.functional as F
 from max.driver import Device
 from max.dtype import DType
-from max.experimental import functional as F
-from max.experimental.tensor import Tensor
 from max.graph import Dim, DimLike
+from max.tensor import Tensor
 
 
 @F.functional
@@ -827,7 +962,7 @@ def causal_mask(
     *,
     dtype: DType,
     device: Device,
-):
+) -&gt; Tensor:
     """Create a causal mask for autoregressive attention.
 
     Args:
@@ -845,13 +980,15 @@ def causal_mask(
     return F.band_part(mask, num_lower=None, num_upper=0, exclude=True)
 </code></pre>
 </details>
-<p><strong>Next</strong>: In <a href="./step_04.html">Step 04</a>, you’ll implement multi-head attention.</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="multi-head-attention"><a class="header" href="#multi-head-attention">Multi-head attention</a></h1>
+<p><strong>Next</strong>: In <a href="#multi-head-attention">Step 04</a>, you’ll implement multi-head attention.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="multi-head-attention"><a class="header" href="#multi-head-attention">Multi-head attention</a></h1>
 <div class="note">
 <p>Learn to use multi-head
 <a href="https://docs.modular.com/glossary/ai/attention/">attention</a>, enabling the model
 to attend to different representation subspaces.</p>
 </div>
+
 <p>In this step, you’ll implement the <code>GPT2MultiHeadAttention</code> class that runs 12
 attention operations in parallel. Instead of computing attention once over the
 full 768-dimensional space, you split the dimensions into 12 heads of 64
@@ -894,33 +1031,40 @@ projection) match Hugging Face’s GPT-2 implementation. This naming is essentia
 for loading pretrained weights.</p>
 <div class="note">
 <div class="title">MAX operations</div>
+
 <p>You’ll use the following MAX operations to complete this task:</p>
 <p><strong>Linear layers</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/nn/module_v3#max.nn.module_v3.Linear"><code>Linear(in_features, out_features, bias=True)</code></a>: Q/K/V and output projections</li>
+<li><a href="https://docs.modular.com/max/api/python/nn/module_v3#max.nn.Linear"><code>Linear(in_features, out_features, bias=True)</code></a>:
+Q/K/V and output projections</li>
 </ul>
 <p><strong>Tensor operations</strong>:</p>
 <ul>
 <li><code>tensor.reshape(new_shape)</code>: Splits or merges head dimension</li>
 <li><code>tensor.transpose(axis1, axis2)</code>: Rearranges dimensions for parallel attention</li>
-<li><a href="https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.split"><code>F.split(tensor, split_sizes, axis)</code></a>: Divides Q/K/V from combined projection</li>
+<li><a href="https://docs.modular.com/max/api/python/nn/functional#max.nn.functional.split"><code>F.split(tensor, split_sizes, axis)</code></a>:
+Divides Q/K/V from combined projection</li>
 </ul>
 </div>
+
 <h2 id="implementing-multi-head-attention"><a class="header" href="#implementing-multi-head-attention">Implementing multi-head attention</a></h2>
-<p>You’ll create the <code>GPT2MultiHeadAttention</code> class with helper methods for splitting and merging heads.</p>
+<p>You’ll create the <code>GPT2MultiHeadAttention</code> class with helper methods for
+splitting and merging heads.</p>
 <p>First, import the required modules. You’ll need <code>math</code> for scaling, <code>functional as F</code> for operations, <code>Tensor</code> for type hints, <code>device</code> and <code>dtype</code> utilities, and
 <code>Linear</code> and <code>Module</code> from MAX’s neural network module. You’ll also need the
 <code>causal_mask()</code> function created in step 3.</p>
 <p>In the <code>__init__</code> method, create the projection layers and store configuration:</p>
 <ul>
-<li>Combined Q/K/V projection: <code>Linear(embed_dim, 3 * embed_dim, bias=True)</code> stored as <code>self.c_attn</code></li>
+<li>Combined Q/K/V projection:
+<code>Linear(embed_dim, 3 * embed_dim, bias=True)</code> stored as <code>self.c_attn</code></li>
 <li>Output projection: <code>Linear(embed_dim, embed_dim, bias=True)</code> stored as <code>self.c_proj</code></li>
 <li>Store <code>self.num_heads</code> (12) and <code>self.head_dim</code> (64) from config</li>
 <li>Calculate <code>self.split_size</code> for splitting Q, K, V later</li>
 </ul>
 <p>Implement <code>_split_heads</code> to reshape for parallel attention:</p>
 <ul>
-<li>Calculate new shape by replacing the last dimension: <code>tensor.shape[:-1] + [num_heads, attn_head_size]</code></li>
+<li>Calculate new shape by replacing the last dimension:
+<code>tensor.shape[:-1] + [num_heads, attn_head_size]</code></li>
 <li>Reshape to add the head dimension: <code>tensor.reshape(new_shape)</code></li>
 <li>Transpose to move heads to position 1: <code>tensor.transpose(-3, -2)</code></li>
 <li>Returns shape <code>[batch, num_heads, seq_length, head_size]</code></li>
@@ -943,14 +1087,23 @@ for loading pretrained weights.</p>
 <p>In the <code>forward</code> method, orchestrate the complete multi-head attention:</p>
 <ul>
 <li>Project to Q/K/V: <code>qkv = self.c_attn(hidden_states)</code></li>
-<li>Split into separate tensors: <code>F.split(qkv, [self.split_size, self.split_size, self.split_size], axis=-1)</code></li>
-<li>Split heads for each: <code>query = self._split_heads(query, self.num_heads, self.head_dim)</code> (repeat for key, value)</li>
+<li>Split into separate tensors:
+<code>F.split(qkv, [self.split_size, self.split_size, self.split_size], axis=-1)</code></li>
+<li>Split heads for each:
+<code>query = self._split_heads(query, self.num_heads, self.head_dim)</code> (repeat for
+key, value)</li>
 <li>Compute attention: <code>attn_output = self._attn(query, key, value)</code></li>
-<li>Merge heads: <code>attn_output = self._merge_heads(attn_output, self.num_heads, self.head_dim)</code></li>
+<li>Merge heads:
+<code>attn_output = self._merge_heads(attn_output, self.num_heads, self.head_dim)</code></li>
 <li>Final projection: <code>return self.c_proj(attn_output)</code></li>
 </ul>
 <p><strong>Implementation</strong> (<code>step_04.py</code>):</p>
-<pre><code class="language-python">"""
+<pre><code class="language-python"># ===----------------------------------------------------------------------=== #
+#
+# This file is Modular Inc proprietary.
+#
+# ===----------------------------------------------------------------------=== #
+"""
 Step 04: Multi-head Attention
 
 Implement multi-head attention that splits Q/K/V into multiple heads,
@@ -969,14 +1122,13 @@ Run: pixi run s04
 
 # TODO: Import required modules
 # Hint: You'll need math for scaling
-# Hint: You'll need functional as F from max.experimental
-# Hint: You'll need Tensor, Device, DType from max.experimental.tensor and max.driver
+# Hint: You'll need functional as F from max.nn
+# Hint: You'll need Tensor, Device, DType from max.tensor and max.driver
 # Hint: You'll need Dim, DimLike from max.graph
-# Hint: You'll also need Linear and Module from max.nn.module_v3
+# Hint: You'll also need Linear and Module from max.nn
 
+from max.tensor import Tensor
 from step_01 import GPT2Config
-from step_03 import causal_mask
-
 
 # TODO: Copy causal_mask function from solution_02.py
 # This is the same function you implemented in Step 02
@@ -985,7 +1137,7 @@ from step_03 import causal_mask
 class GPT2MultiHeadAttention(Module):
     """Multi-head attention for GPT-2."""
 
-    def __init__(self, config: GPT2Config):
+    def __init__(self, config: GPT2Config) -&gt; None:
         super().__init__()
 
         self.embed_dim = config.n_embd
@@ -1001,7 +1153,9 @@ class GPT2MultiHeadAttention(Module):
         # Hint: Use Linear(self.embed_dim, self.embed_dim, bias=True)
         self.c_proj = None
 
-    def _split_heads(self, tensor, num_heads, attn_head_size):
+    def _split_heads(
+        self, tensor: Tensor, num_heads: int, attn_head_size: int
+    ) -&gt; Tensor:
         """Split the last dimension into (num_heads, head_size).
 
         Args:
@@ -1021,7 +1175,9 @@ class GPT2MultiHeadAttention(Module):
         # Hint: return tensor.transpose(-3, -2)
         return None
 
-    def _merge_heads(self, tensor, num_heads, attn_head_size):
+    def _merge_heads(
+        self, tensor: Tensor, num_heads: int, attn_head_size: int
+    ) -&gt; Tensor:
         """Merge attention heads back to original shape.
 
         Args:
@@ -1041,7 +1197,7 @@ class GPT2MultiHeadAttention(Module):
         # Hint: return tensor.reshape(new_shape)
         return None
 
-    def _attn(self, query, key, value):
+    def _attn(self, query: Tensor, key: Tensor, value: Tensor) -&gt; Tensor:
         """Compute attention for all heads in parallel.
 
         Args:
@@ -1061,7 +1217,7 @@ class GPT2MultiHeadAttention(Module):
         # Hint: Weighted sum: attn_weights @ value
         return None
 
-    def __call__(self, hidden_states):
+    def forward(self, hidden_states: Tensor) -&gt; Tensor:
         """Apply multi-head attention.
 
         Args:
@@ -1098,30 +1254,31 @@ class GPT2MultiHeadAttention(Module):
 <p>Run <code>pixi run s04</code> to verify your implementation.</p>
 <details>
 <summary>Show solution</summary>
-<pre><code class="language-python">"""
-Solution for Step 04: Multi-head Attention
+<pre><code class="language-python"># ===----------------------------------------------------------------------=== #
+#
+# This file is Modular Inc proprietary.
+#
+# ===----------------------------------------------------------------------=== #
+"""Solution for Step 04: Multi-head Attention
 
 This module implements multi-head attention, which allows the model to jointly
 attend to information from different representation subspaces at different positions.
 """
 
 import math
+from typing import cast
 
-from max.driver import Device
-from max.dtype import DType
-from max.experimental import functional as F
-from max.experimental.tensor import Tensor
-from max.graph import Dim, DimLike
-from max.nn.module_v3 import Linear, Module
-
-from solution_01 import GPT2Config
-from solution_03 import causal_mask
+import max.functional as F
+from max.nn import Linear, Module
+from max.tensor import Tensor
+from step_01 import GPT2Config
+from step_03 import causal_mask
 
 
 class GPT2MultiHeadAttention(Module):
     """Multi-head attention for GPT-2, matching HuggingFace structure."""
 
-    def __init__(self, config: GPT2Config):
+    def __init__(self, config: GPT2Config) -&gt; None:
         """Initialize multi-head attention.
 
         Args:
@@ -1139,7 +1296,9 @@ class GPT2MultiHeadAttention(Module):
         # Output projection
         self.c_proj = Linear(self.embed_dim, self.embed_dim, bias=True)
 
-    def _split_heads(self, tensor, num_heads, attn_head_size):
+    def _split_heads(
+        self, tensor: Tensor, num_heads: int, attn_head_size: int
+    ) -&gt; Tensor:
         """Split the last dimension into (num_heads, head_size).
 
         Transforms shape from [batch, seq_length, n_embd]
@@ -1154,12 +1313,14 @@ class GPT2MultiHeadAttention(Module):
             Tensor with shape [batch, num_heads, seq_length, head_size]
         """
         # Add head dimension: [batch, seq_length, n_embd] -&gt; [batch, seq_length, num_heads, head_size]
-        new_shape = tensor.shape[:-1] + [num_heads, attn_head_size]
+        new_shape = list(tensor.shape[:-1]) + [num_heads, attn_head_size]
         tensor = tensor.reshape(new_shape)
         # Move heads dimension: [batch, seq_length, num_heads, head_size] -&gt; [batch, num_heads, seq_length, head_size]
         return tensor.transpose(-3, -2)
 
-    def _merge_heads(self, tensor, num_heads, attn_head_size):
+    def _merge_heads(
+        self, tensor: Tensor, num_heads: int, attn_head_size: int
+    ) -&gt; Tensor:
         """Merge attention heads back to original shape.
 
         Transforms shape from [batch, num_heads, seq_length, head_size]
@@ -1176,10 +1337,10 @@ class GPT2MultiHeadAttention(Module):
         # Move heads dimension back: [batch, num_heads, seq_length, head_size] -&gt; [batch, seq_length, num_heads, head_size]
         tensor = tensor.transpose(-3, -2)
         # Flatten head dimensions: [batch, seq_length, num_heads, head_size] -&gt; [batch, seq_length, n_embd]
-        new_shape = tensor.shape[:-2] + [num_heads * attn_head_size]
+        new_shape = list(tensor.shape[:-2]) + [num_heads * attn_head_size]
         return tensor.reshape(new_shape)
 
-    def _attn(self, query, key, value):
+    def _attn(self, query: Tensor, key: Tensor, value: Tensor) -&gt; Tensor:
         """Compute attention for all heads in parallel.
 
         Args:
@@ -1207,7 +1368,7 @@ class GPT2MultiHeadAttention(Module):
 
         return attn_output
 
-    def __call__(self, hidden_states):
+    def forward(self, hidden_states: Tensor) -&gt; Tensor:
         """Apply multi-head attention.
 
         Args:
@@ -1218,9 +1379,12 @@ class GPT2MultiHeadAttention(Module):
         """
         # Project to Q, K, V
         qkv = self.c_attn(hidden_states)
-        query, key, value = F.split(
+        split_result = F.split(
             qkv, [self.split_size, self.split_size, self.split_size], axis=-1
         )
+        query = cast(Tensor, split_result[0])
+        key = cast(Tensor, split_result[1])
+        value = cast(Tensor, split_result[2])
 
         # Split into multiple heads
         query = self._split_heads(query, self.num_heads, self.head_dim)
@@ -1239,56 +1403,98 @@ class GPT2MultiHeadAttention(Module):
         return attn_output
 </code></pre>
 </details>
-<p><strong>Next</strong>: In <a href="./step_05.html">Step 05</a>, you’ll implement layer normalization to stabilize activations for effective training.</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="layer-normalization"><a class="header" href="#layer-normalization">Layer normalization</a></h1>
+<p><strong>Next</strong>: In <a href="#layer-normalization">Step 05</a>, you’ll implement layer normalization to
+stabilize activations for effective training.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="layer-normalization"><a class="header" href="#layer-normalization">Layer normalization</a></h1>
 <div class="note">
 <p>Learn to implement layer normalization for stabilizing neural network training.</p>
 </div>
-<p>In this step, you’ll create the <code>LayerNorm</code> class that normalizes activations across the feature dimension. For each input, you compute the mean and variance across all features, normalize by subtracting the mean and dividing by the standard deviation, then apply learned weight and bias parameters to scale and shift the result.</p>
-<p>Unlike batch normalization, <a href="https://arxiv.org/abs/1607.06450">layer normalization</a> works independently for each example. This makes it ideal for transformers - no dependence on batch size, no tracking running statistics during inference, and consistent behavior between training and generation.</p>
-<p>GPT-2 applies layer normalization before the attention and MLP blocks in each of its 12 transformer layers. This pre-normalization pattern stabilizes training in deep networks by keeping activations in a consistent range.</p>
-<p>While layer normalization is most critical during training to stabilize gradients and prevent activations from exploding or vanishing, <strong>it’s still required during inference</strong>. The pretrained GPT-2 model we’re loading was trained with layer normalization - its learned weights and biases expect normalized inputs. Skipping layer normalization during inference would cause activations to be in completely different ranges than what the model learned during training, leading to poor or nonsensical outputs.</p>
+
+<p>In this step, you’ll create the <code>LayerNorm</code> class that normalizes activations
+across the feature dimension. For each input, you compute the mean and variance
+across all features, normalize by subtracting the mean and dividing by the
+standard deviation, then apply learned weight and bias parameters to scale and
+shift the result.</p>
+<p>Unlike batch normalization, <a href="https://arxiv.org/abs/1607.06450">layer normalization</a>
+works independently for each example. This makes it ideal for transformers - no
+dependence on batch size, no tracking running statistics during inference, and
+consistent behavior between training and generation.</p>
+<p>GPT-2 applies layer normalization before the attention and MLP blocks in each of
+its 12 transformer layers. This pre-normalization pattern stabilizes training in
+deep networks by keeping activations in a consistent range.</p>
+<p>While layer normalization is most critical during training to stabilize
+gradients and prevent activations from exploding or vanishing, <strong>it’s still
+required during inference</strong>. The pretrained GPT-2 model we’re loading was
+trained with layer normalization - its learned weights and biases expect
+normalized inputs. Skipping layer normalization during inference would cause
+activations to be in completely different ranges than what the model learned
+during training, leading to poor or nonsensical outputs.</p>
 <h2 id="understanding-the-operation"><a class="header" href="#understanding-the-operation">Understanding the operation</a></h2>
-<p>Layer normalization normalizes across the feature dimension (the last dimension) independently for each example. It learns two parameters per feature: weight (gamma) for scaling and bias (beta) for shifting.</p>
+<p>Layer normalization normalizes across the feature dimension (the last dimension)
+independently for each example. It learns two parameters per feature: weight
+(gamma) for scaling and bias (beta) for shifting.</p>
 <p>The normalization follows this formula:</p>
 <pre><code class="language-math">output = weight * (x - mean) / sqrt(variance + epsilon) + bias
 </code></pre>
-<p>The mean and variance are computed across all features in each example. After normalizing to zero mean and unit variance, the learned weight scales the result and the learned bias shifts it. The epsilon value (typically 1e-5) prevents division by zero when variance is very small.</p>
+<p>The mean and variance are computed across all features in each example. After
+normalizing to zero mean and unit variance, the learned weight scales the result
+and the learned bias shifts it. The epsilon value (typically 1e-5) prevents
+division by zero when variance is very small.</p>
 <div class="note">
 <div class="title">MAX operations</div>
+
 <p>You’ll use the following MAX operations to complete this task:</p>
 <p><strong>Modules</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/nn/module_v3/"><code>Module</code></a>: The Module class used for eager tensors</li>
+<li><a href="https://docs.modular.com/max/api/python/nn/module_v3/"><code>Module</code></a>: The Module
+class used for eager tensors</li>
 </ul>
 <p><strong>Tensor initialization</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.ones"><code>Tensor.ones()</code></a>: Creates tensor filled with 1.0 values</li>
-<li><a href="https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.zeros"><code>Tensor.zeros()</code></a>: Creates tensor filled with 0.0 values</li>
+<li><a href="https://docs.modular.com/max/api/python/tensor#max.tensor.Tensor.ones"><code>Tensor.ones()</code></a>:
+Creates tensor filled with 1.0 values</li>
+<li><a href="https://docs.modular.com/max/api/python/tensor#max.tensor.Tensor.zeros"><code>Tensor.zeros()</code></a>:
+Creates tensor filled with 0.0 values</li>
 </ul>
 <p><strong>Layer normalization</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.layer_norm"><code>F.layer_norm()</code></a>: Applies layer normalization with parameters: <code>input</code>, <code>gamma</code> (weight), <code>beta</code> (bias), and <code>epsilon</code></li>
+<li><a href="https://docs.modular.com/max/api/python/nn/functional#max.nn.functional.layer_norm"><code>F.layer_norm()</code></a>:
+Applies layer normalization with parameters: <code>input</code>, <code>gamma</code> (weight), <code>beta</code>
+(bias), and <code>epsilon</code></li>
 </ul>
 </div>
+
 <h2 id="implementing-layer-normalization"><a class="header" href="#implementing-layer-normalization">Implementing layer normalization</a></h2>
-<p>You’ll create the <code>LayerNorm</code> class that wraps MAX’s layer normalization function with learnable parameters. The implementation is straightforward - two parameters and a single function call.</p>
-<p>First, import the required modules. You’ll need <code>functional as F</code> for the layer norm operation and <code>Tensor</code> for creating parameters.</p>
+<p>You’ll create the <code>LayerNorm</code> class that wraps MAX’s layer normalization function
+with learnable parameters. The implementation is straightforward - two
+parameters and a single function call.</p>
+<p>First, import the required modules. You’ll need <code>functional as F</code> for the layer
+norm operation and <code>Tensor</code> for creating parameters.</p>
 <p>In the <code>__init__</code> method, create two learnable parameters:</p>
 <ul>
-<li>Weight: <code>Tensor.ones([dim])</code> stored as <code>self.weight</code> - initialized to ones so the initial transformation is identity</li>
-<li>Bias: <code>Tensor.zeros([dim])</code> stored as <code>self.bias</code> - initialized to zeros so there’s no initial shift</li>
+<li>Weight: <code>Tensor.ones([dim])</code> stored as <code>self.weight</code> - initialized to ones so
+the initial transformation is identity</li>
+<li>Bias: <code>Tensor.zeros([dim])</code> stored as <code>self.bias</code> - initialized to zeros so
+there’s no initial shift</li>
 </ul>
 <p>Store the epsilon value as <code>self.eps</code> for numerical stability.</p>
-<p>In the <code>forward</code> method, apply layer normalization with <code>F.layer_norm(x, gamma=self.weight, beta=self.bias, epsilon=self.eps)</code>. This computes the normalization and applies the learned parameters in one operation.</p>
+<p>In the <code>forward</code> method, apply layer normalization with
+<code>F.layer_norm(x, gamma=self.weight, beta=self.bias, epsilon=self.eps)</code>. This
+computes the normalization and applies the learned parameters in one operation.</p>
 <p><strong>Implementation</strong> (<code>step_05.py</code>):</p>
-<pre><code class="language-python">"""
+<pre><code class="language-python"># ===----------------------------------------------------------------------=== #
+#
+# This file is Modular Inc proprietary.
+#
+# ===----------------------------------------------------------------------=== #
+"""
 Step 05: Layer Normalization
 
 Implement layer normalization that normalizes activations for training stability.
 
 Tasks:
-1. Import functional module (as F) and Tensor from max.experimental
+1. Import functional module (as F) and Tensor from max.nn
 2. Initialize learnable weight (gamma) and bias (beta) parameters
 3. Apply layer normalization using F.layer_norm in the forward pass
 
@@ -1296,14 +1502,15 @@ Run: pixi run s05
 """
 
 # 1: Import the required modules from MAX
-# TODO: Import functional module from max.experimental with the alias F
-# https://docs.modular.com/max/api/python/experimental/functional
+# TODO: Import functional module from max.nn with the alias F
+# https://docs.modular.com/max/api/python/nn/functional
 
-# TODO: Import Tensor from max.experimental.tensor
-# https://docs.modular.com/max/api/python/experimental/tensor.Tensor
+# TODO: Import Tensor from max.tensor
+# https://docs.modular.com/max/api/python/tensor.Tensor
 
 from max.graph import DimLike
-from max.nn.module_v3 import Module
+from max.nn import Module
+from max.tensor import Tensor
 
 
 class LayerNorm(Module):
@@ -1314,22 +1521,22 @@ class LayerNorm(Module):
         eps: Epsilon for numerical stability.
     """
 
-    def __init__(self, dim: DimLike, *, eps: float = 1e-5):
+    def __init__(self, dim: DimLike, *, eps: float = 1e-5) -&gt; None:
         super().__init__()
         self.eps = eps
 
         # 2: Initialize learnable weight and bias parameters
         # TODO: Create self.weight as a Tensor of ones with shape [dim]
-        # https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.ones
+        # https://docs.modular.com/max/api/python/tensor#max.tensor.Tensor.ones
         # Hint: This is the gamma parameter in layer normalization
         self.weight = None
 
         # TODO: Create self.bias as a Tensor of zeros with shape [dim]
-        # https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.zeros
+        # https://docs.modular.com/max/api/python/tensor#max.tensor.Tensor.zeros
         # Hint: This is the beta parameter in layer normalization
         self.bias = None
 
-    def __call__(self, x: Tensor) -&gt; Tensor:
+    def forward(self, x: Tensor) -&gt; Tensor:
         """Apply layer normalization.
 
         Args:
@@ -1340,7 +1547,7 @@ class LayerNorm(Module):
         """
         # 3: Apply layer normalization and return the result
         # TODO: Use F.layer_norm() with x, gamma=self.weight, beta=self.bias, epsilon=self.eps
-        # https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.layer_norm
+        # https://docs.modular.com/max/api/python/nn/functional#max.nn.functional.layer_norm
         # Hint: Layer normalization normalizes across the last dimension
         return None
 </code></pre>
@@ -1348,17 +1555,22 @@ class LayerNorm(Module):
 <p>Run <code>pixi run s05</code> to verify your implementation.</p>
 <details>
 <summary>Show solution</summary>
-<pre><code class="language-python">"""
+<pre><code class="language-python"># ===----------------------------------------------------------------------=== #
+#
+# This file is Modular Inc proprietary.
+#
+# ===----------------------------------------------------------------------=== #
+"""
 Solution for Step 05: Layer Normalization
 
 This module implements layer normalization that normalizes activations
 across the embedding dimension for training stability.
 """
 
-from max.experimental import functional as F
-from max.experimental.tensor import Tensor
+import max.functional as F
 from max.graph import DimLike
-from max.nn.module_v3 import Module
+from max.nn import Module
+from max.tensor import Tensor
 
 
 class LayerNorm(Module):
@@ -1369,13 +1581,13 @@ class LayerNorm(Module):
         eps: Epsilon for numerical stability.
     """
 
-    def __init__(self, dim: DimLike, *, eps: float = 1e-5):
+    def __init__(self, dim: DimLike, *, eps: float = 1e-5) -&gt; None:
         super().__init__()
         self.eps = eps
         self.weight = Tensor.ones([dim])
         self.bias = Tensor.zeros([dim])
 
-    def __call__(self, x: Tensor) -&gt; Tensor:
+    def forward(self, x: Tensor) -&gt; Tensor:
         """Apply layer normalization.
 
         Args:
@@ -1387,12 +1599,15 @@ class LayerNorm(Module):
         return F.layer_norm(x, gamma=self.weight, beta=self.bias, epsilon=self.eps)
 </code></pre>
 </details>
-<p><strong>Next</strong>: In <a href="./step_06.html">Step 06</a>, you’ll combine multi-head attention, MLP, layer norm, and residual connections into a complete transformer block.</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="transformer-block"><a class="header" href="#transformer-block">Transformer block</a></h1>
+<p><strong>Next</strong>: In <a href="#transformer-block">Step 06</a>, you’ll combine multi-head attention, MLP,
+layer norm, and residual connections into a complete transformer block.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="transformer-block"><a class="header" href="#transformer-block">Transformer block</a></h1>
 <div class="note">
 <p>Learn to combine attention, MLP, layer normalization, and residual connections
 into a complete transformer block.</p>
 </div>
+
 <p>In this step, you’ll build a GPT-2 transformer block in the <code>GPT2Block</code> class.
 The transformer block is the definitive feature of GPT-2 and any other transformer
 model. It includes a series of self-attention layers (the multi-head attention block),
@@ -1408,10 +1623,14 @@ normalizing before each sublayer instead of after, gradients flow more smoothly
 through the network’s 12 stacked blocks.</p>
 <h2 id="understanding-the-components-1"><a class="header" href="#understanding-the-components-1">Understanding the components</a></h2>
 <p>The transformer block consists of four components, applied in this order:</p>
-<p><strong>First layer norm (<code>ln_1</code>)</strong>: Normalizes the input before attention. Uses epsilon=1e-5 for numerical stability.</p>
-<p><strong>Multi-head attention (<code>attn</code>)</strong>: The self-attention mechanism from Step 04. Lets each position attend to all previous positions.</p>
-<p><strong>Second layer norm (<code>ln_2</code>)</strong>: Normalizes before the MLP. Same configuration as the first.</p>
-<p><strong>Feed-forward network (<code>mlp</code>)</strong>: The position-wise MLP from Step 02. Expands to 3,072 dimensions internally (4× the embedding size), then projects back to 768.</p>
+<p><strong>First layer norm (<code>ln_1</code>)</strong>: Normalizes the input before attention. Uses
+epsilon=1e-5 for numerical stability.</p>
+<p><strong>Multi-head attention (<code>attn</code>)</strong>: The self-attention mechanism from Step 04.
+Lets each position attend to all previous positions.</p>
+<p><strong>Second layer norm (<code>ln_2</code>)</strong>: Normalizes before the MLP. Same configuration as
+the first.</p>
+<p><strong>Feed-forward network (<code>mlp</code>)</strong>: The position-wise MLP from Step 02. Expands to
+3,072 dimensions internally (4× the embedding size), then projects back to 768.</p>
 <p>The block maintains a constant 768-dimensional representation throughout. Input
 shape <code>[batch, seq_length, 768]</code> stays the same after each sublayer, which is
 essential for stacking 12 blocks together.</p>
@@ -1442,7 +1661,8 @@ previously implemented components: <code>GPT2Config</code>, <code>GPT2MLP</code>
 <li><code>ln_2</code>: <code>LayerNorm(config.n_embd, eps=config.layer_norm_epsilon)</code></li>
 <li><code>mlp</code>: <code>GPT2MLP(4 * config.n_embd, config)</code></li>
 </ul>
-<p>The MLP uses <code>4 * config.n_embd</code> (3,072 dimensions) as its inner dimension, following the standard transformer ratio.</p>
+<p>The MLP uses <code>4 * config.n_embd</code> (3,072 dimensions) as its inner dimension,
+following the standard transformer ratio.</p>
 <p>In the <code>forward</code> method, implement the two sublayer blocks:</p>
 <p><strong>Attention block</strong>:</p>
 <ol>
@@ -1460,7 +1680,12 @@ previously implemented components: <code>GPT2Config</code>, <code>GPT2MLP</code>
 </ol>
 <p>Finally, return <code>hidden_states</code>.</p>
 <p><strong>Implementation</strong> (<code>step_06.py</code>):</p>
-<pre><code class="language-python">"""
+<pre><code class="language-python"># ===----------------------------------------------------------------------=== #
+#
+# This file is Modular Inc proprietary.
+#
+# ===----------------------------------------------------------------------=== #
+"""
 Step 06: Transformer Block
 
 Combine multi-head attention, MLP, layer normalization, and residual
@@ -1475,18 +1700,16 @@ Run: pixi run s06
 """
 
 # TODO: Import required modules
-# Hint: You'll need Module from max.nn.module_v3
+# Hint: You'll need Module from max.nn
 
+from max.tensor import Tensor
 from step_01 import GPT2Config
-from step_02 import GPT2MLP
-from step_04 import GPT2MultiHeadAttention
-from step_05 import LayerNorm
 
 
 class GPT2Block(Module):
     """Complete GPT-2 transformer block."""
 
-    def __init__(self, config: GPT2Config):
+    def __init__(self, config: GPT2Config) -&gt; None:
         """Initialize transformer block.
 
         Args:
@@ -1517,7 +1740,7 @@ class GPT2Block(Module):
         # Hint: Use GPT2MLP(inner_dim, config)
         self.mlp = None
 
-    def __call__(self, hidden_states):
+    def forward(self, hidden_states: Tensor) -&gt; Tensor:
         """Apply transformer block.
 
         Args:
@@ -1547,15 +1770,20 @@ class GPT2Block(Module):
 <p>Run <code>pixi run s06</code> to verify your implementation.</p>
 <details>
 <summary>Show solution</summary>
-<pre><code class="language-python">"""
+<pre><code class="language-python"># ===----------------------------------------------------------------------=== #
+#
+# This file is Modular Inc proprietary.
+#
+# ===----------------------------------------------------------------------=== #
+"""
 Solution for Step 06: Transformer Block
 
 This module implements a complete GPT-2 transformer block, combining
 multi-head attention, MLP, layer normalization, and residual connections.
 """
 
-from max.nn.module_v3 import Module
-
+from max.nn import Module
+from max.tensor import Tensor
 from step_01 import GPT2Config
 from step_02 import GPT2MLP
 from step_04 import GPT2MultiHeadAttention
@@ -1570,7 +1798,7 @@ class GPT2Block(Module):
     2. x = x + mlp(layer_norm(x))
     """
 
-    def __init__(self, config: GPT2Config):
+    def __init__(self, config: GPT2Config) -&gt; None:
         """Initialize transformer block.
 
         Args:
@@ -1595,7 +1823,7 @@ class GPT2Block(Module):
         # Feed-forward MLP
         self.mlp = GPT2MLP(inner_dim, config)
 
-    def __call__(self, hidden_states):
+    def forward(self, hidden_states: Tensor) -&gt; Tensor:
         """Apply transformer block.
 
         Args:
@@ -1619,59 +1847,99 @@ class GPT2Block(Module):
         return hidden_states
 </code></pre>
 </details>
-<p><strong>Next</strong>: In <a href="./step_07.html">Step 07</a>, you’ll stack 12 transformer blocks together to create the main body of the GPT-2 model.</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="stacking-transformer-blocks"><a class="header" href="#stacking-transformer-blocks">Stacking transformer blocks</a></h1>
+<p><strong>Next</strong>: In <a href="#stacking-transformer-blocks">Step 07</a>, you’ll stack 12 transformer blocks together
+to create the main body of the GPT-2 model.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="stacking-transformer-blocks"><a class="header" href="#stacking-transformer-blocks">Stacking transformer blocks</a></h1>
 <div class="note">
-<p>Learn to stack 12 transformer blocks with embeddings and final normalization to create the complete GPT-2 model.</p>
+<p>Learn to stack 12 transformer blocks with embeddings and final normalization to
+create the complete GPT-2 model.</p>
 </div>
+
 <p>In this step, you’ll create the body of the GPT-2 model (the <code>MaxGPT2Model</code> module)
 as a sequence of transformer blocks (<code>GPT2Block</code>) plus <code>LayerNorm</code>. And because
 the model body receives raw token IDs during inference, you’ll also have to first
 convert the token IDs into token embeddings that are suitable for processing by the
 transformer blocks and the rest of the neural network.</p>
-<p>The model processes input in four stages: convert token IDs to embeddings, add position information, pass through 12 transformer blocks sequentially, and normalize the final output. Each transformer block refines the representation, building up from surface patterns in early layers to semantic understanding in later layers.</p>
-<p>GPT-2 uses 12 layers because this depth allows the model to learn complex patterns while remaining trainable. Fewer layers would limit the model’s capacity. More layers would increase training difficulty without proportional gains in quality for a 117M parameter model.</p>
+<p>The model processes input in four stages: convert token IDs to embeddings, add
+position information, pass through 12 transformer blocks sequentially, and
+normalize the final output. Each transformer block refines the representation,
+building up from surface patterns in early layers to semantic understanding in
+later layers.</p>
+<p>GPT-2 uses 12 layers because this depth allows the model to learn complex
+patterns while remaining trainable. Fewer layers would limit the model’s
+capacity. More layers would increase training difficulty without proportional
+gains in quality for a 117M parameter model.</p>
 <h2 id="understanding-the-components-2"><a class="header" href="#understanding-the-components-2">Understanding the components</a></h2>
 <p>The complete model has four main components:</p>
-<p><strong>Token embeddings (<code>wte</code>)</strong>: Maps each token ID to a 768-dimensional vector using a lookup table with 50,257 entries (one per vocabulary token).</p>
-<p><strong>Position embeddings (<code>wpe</code>)</strong>: Maps each position (0 to 1,023) to a 768-dimensional vector. These are added to token embeddings so the model knows token order.</p>
-<p><strong>Transformer blocks (<code>h</code>)</strong>: 12 identical blocks stacked using MAX’s <a href="https://docs.modular.com/max/api/python/nn/module_v3#max.nn.module_v3.Sequential"><code>Sequential</code></a> module. Sequential applies blocks in order, passing each block’s output to the next.</p>
-<p><strong>Final layer norm (<code>ln_f</code>)</strong>: Normalizes the output after all blocks. This stabilizes the representation before the language model head (added in Step 11) projects to vocabulary logits.</p>
+<p><strong>Token embeddings (<code>wte</code>)</strong>: Maps each token ID to a 768-dimensional vector
+using a lookup table with 50,257 entries (one per vocabulary token).</p>
+<p><strong>Position embeddings (<code>wpe</code>)</strong>: Maps each position (0 to 1,023) to a
+768-dimensional vector. These are added to token embeddings so the model knows
+token order.</p>
+<p><strong>Transformer blocks (<code>h</code>)</strong>: 12 identical blocks stacked using MAX’s
+<a href="https://docs.modular.com/max/api/python/nn/module_v3#max.nn.Sequential"><code>Sequential</code></a>
+module. Sequential applies blocks in order, passing each block’s output to the
+next.</p>
+<p><strong>Final layer norm (<code>ln_f</code>)</strong>: Normalizes the output after all blocks. This
+stabilizes the representation before the language model head (added in Step 11)
+projects to vocabulary logits.</p>
 <h2 id="understanding-the-forward-pass"><a class="header" href="#understanding-the-forward-pass">Understanding the forward pass</a></h2>
 <p>The forward method processes token IDs through the model:</p>
-<p>First, create position indices using <a href="https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.arange"><code>Tensor.arange</code></a>. Generate positions [0, 1, 2, …, seq_length-1] matching the input’s dtype and device. This ensures compatibility when adding to embeddings.</p>
-<p>Next, look up embeddings. Get token embeddings with <code>self.wte(input_ids)</code> and position embeddings with <code>self.wpe(position_indices)</code>. Add them together element-wise, as both are shape <code>[batch, seq_length, 768]</code>.</p>
+<p>First, create position indices using
+<a href="https://docs.modular.com/max/api/python/tensor#max.tensor.Tensor.arange"><code>Tensor.arange</code></a>.
+Generate positions [0, 1, 2, …, seq_length-1] matching the input’s dtype and
+device. This ensures compatibility when adding to embeddings.</p>
+<p>Next, look up embeddings. Get token embeddings with <code>self.wte(input_ids)</code> and
+position embeddings with <code>self.wpe(position_indices)</code>. Add them together
+element-wise, as both are shape <code>[batch, seq_length, 768]</code>.</p>
 <p>Then, pass through the transformer blocks with <code>self.h(x)</code>. The
-<a href="/max/api/python/nn/module_v3#max.nn.module_v3.Sequential"><code>Sequential</code></a>
+<a href="/max/api/python/nn/module_v3#max.nn.Sequential"><code>Sequential</code></a>
 module applies all 12 transformer blocks in order, each refining the representation.</p>
-<p>Finally, normalize the output with <code>self.ln_f(x)</code> and return the result. The output shape matches the input: <code>[batch, seq_length, 768]</code>.</p>
+<p>Finally, normalize the output with <code>self.ln_f(x)</code> and return the result. The
+output shape matches the input: <code>[batch, seq_length, 768]</code>.</p>
 <div class="note">
 <div class="title">MAX operations</div>
+
 <p>You’ll use the following MAX operations to complete this task:</p>
 <p><strong>Module composition</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/nn/module_v3#max.nn.module_v3.Sequential"><code>Sequential(*modules)</code></a>: Chains transformer blocks in sequence</li>
+<li><a href="https://docs.modular.com/max/api/python/nn/module_v3#max.nn.Sequential"><code>Sequential(*modules)</code></a>:
+Chains transformer blocks in sequence</li>
 </ul>
 <p><strong>Embeddings</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/nn/module_v3#max.nn.module_v3.Embedding"><code>Embedding(num_embeddings, dim)</code></a>: Token and position embeddings</li>
+<li><a href="https://docs.modular.com/max/api/python/nn/module_v3#max.nn.Embedding"><code>Embedding(num_embeddings, dim)</code></a>:
+Token and position embeddings</li>
 </ul>
 <p><strong>Position generation</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.arange"><code>Tensor.arange(seq_length, dtype, device)</code></a>: Creates position indices</li>
+<li><a href="https://docs.modular.com/max/api/python/tensor#max.tensor.Tensor.arange"><code>Tensor.arange(seq_length, dtype, device)</code></a>:
+Creates position indices</li>
 </ul>
 </div>
+
 <h2 id="implementing-the-model"><a class="header" href="#implementing-the-model">Implementing the model</a></h2>
-<p>You’ll create the <code>MaxGPT2Model</code> class by composing embedding layers, transformer blocks, and layer normalization. The class builds on all the components from previous steps.</p>
-<p>First, import the required modules. You’ll need <code>Tensor</code> for position indices, <code>Embedding</code>, <code>Module</code>, and <code>Sequential</code> from MAX’s neural network module, plus the previously implemented <code>GPT2Config</code>, <code>LayerNorm</code>, and <code>GPT2Block</code>.</p>
+<p>You’ll create the <code>MaxGPT2Model</code> class by composing embedding layers, transformer
+blocks, and layer normalization. The class builds on all the components from
+previous steps.</p>
+<p>First, import the required modules. You’ll need <code>Tensor</code> for position indices,
+<code>Embedding</code>, <code>Module</code>, and <code>Sequential</code> from MAX’s neural network module, plus
+the previously implemented <code>GPT2Config</code>, <code>LayerNorm</code>, and <code>GPT2Block</code>.</p>
 <p>In the <code>__init__</code> method, create the four components:</p>
 <ul>
-<li>Token embeddings: <code>Embedding(config.vocab_size, dim=config.n_embd)</code> stored as <code>self.wte</code></li>
-<li>Position embeddings: <code>Embedding(config.n_positions, dim=config.n_embd)</code> stored as <code>self.wpe</code></li>
-<li>Transformer blocks: <code>Sequential(*(GPT2Block(config) for _ in range(config.n_layer)))</code> stored as <code>self.h</code></li>
-<li>Final layer norm: <code>LayerNorm(config.n_embd, eps=config.layer_norm_epsilon)</code> stored as <code>self.ln_f</code></li>
+<li>Token embeddings: <code>Embedding(config.vocab_size, dim=config.n_embd)</code> stored as
+<code>self.wte</code></li>
+<li>Position embeddings: <code>Embedding(config.n_positions, dim=config.n_embd)</code> stored
+as <code>self.wpe</code></li>
+<li>Transformer blocks:
+<code>Sequential(*(GPT2Block(config) for _ in range(config.n_layer)))</code> stored as
+<code>self.h</code></li>
+<li>Final layer norm: <code>LayerNorm(config.n_embd, eps=config.layer_norm_epsilon)</code>
+stored as <code>self.ln_f</code></li>
 </ul>
-<p>The <code>Sequential</code> module takes a generator expression that creates 12 identical <code>GPT2Block</code> instances. The <code>*</code> unpacks them as arguments to <code>Sequential</code>.</p>
+<p>The <code>Sequential</code> module takes a generator expression that creates 12 identical
+<code>GPT2Block</code> instances. The <code>*</code> unpacks them as arguments to <code>Sequential</code>.</p>
 <p>In the <code>forward</code> method, implement the four-stage processing:</p>
 <ol>
 <li>Get the sequence length from <code>input_ids.shape</code></li>
@@ -1681,9 +1949,15 @@ module applies all 12 transformer blocks in order, each refining the representat
 <li>Apply final normalization: <code>x = self.ln_f(x)</code></li>
 <li>Return <code>x</code></li>
 </ol>
-<p>The position indices must match the input’s dtype and device to ensure the tensors are compatible for addition.</p>
+<p>The position indices must match the input’s dtype and device to ensure the
+tensors are compatible for addition.</p>
 <p><strong>Implementation</strong> (<code>step_07.py</code>):</p>
-<pre><code class="language-python">"""
+<pre><code class="language-python"># ===----------------------------------------------------------------------=== #
+#
+# This file is Modular Inc proprietary.
+#
+# ===----------------------------------------------------------------------=== #
+"""
 Step 07: Stacking Transformer Blocks
 
 Stack multiple transformer blocks with embeddings to create
@@ -1700,18 +1974,17 @@ Run: pixi run s10
 """
 
 # TODO: Import required modules
-# Hint: You'll need Tensor from max.experimental.tensor
-# Hint: You'll need Embedding, Module, Sequential from max.nn.module_v3
+# Hint: You'll need Tensor from max.tensor
+# Hint: You'll need Embedding, Module, Sequential from max.nn
 
+from max.tensor import Tensor
 from step_01 import GPT2Config
-from step_05 import LayerNorm
-from step_06 import GPT2Block
 
 
 class MaxGPT2Model(Module):
     """Complete GPT-2 transformer model."""
 
-    def __init__(self, config: GPT2Config):
+    def __init__(self, config: GPT2Config) -&gt; None:
         """Initialize GPT-2 model.
 
         Args:
@@ -1736,7 +2009,7 @@ class MaxGPT2Model(Module):
         # Hint: Use LayerNorm(config.n_embd, eps=config.layer_norm_epsilon)
         self.ln_f = None
 
-    def __call__(self, input_ids):
+    def forward(self, input_ids: Tensor) -&gt; Tensor:
         """Forward pass through the transformer.
 
         Args:
@@ -1777,19 +2050,23 @@ class MaxGPT2Model(Module):
 <p>Run <code>pixi run s07</code> to verify your implementation.</p>
 <details>
 <summary>Show solution</summary>
-<pre><code class="language-python">"""
+<pre><code class="language-python"># ===----------------------------------------------------------------------=== #
+#
+# This file is Modular Inc proprietary.
+#
+# ===----------------------------------------------------------------------=== #
+"""
 Solution for Step 07: Stacking Transformer Blocks
 
 This module stacks multiple transformer blocks and adds embeddings
 to create the complete GPT-2 transformer architecture.
 """
 
-from max.experimental.tensor import Tensor
-from max.nn.module_v3 import Embedding, Module, Sequential
-
-from solution_01 import GPT2Config
-from solution_05 import LayerNorm
-from solution_06 import GPT2Block
+from max.nn import Embedding, Module, Sequential
+from max.tensor import Tensor
+from step_01 import GPT2Config
+from step_05 import LayerNorm
+from step_06 import GPT2Block
 
 
 class MaxGPT2Model(Module):
@@ -1801,7 +2078,7 @@ class MaxGPT2Model(Module):
     3. Final layer normalization
     """
 
-    def __init__(self, config: GPT2Config):
+    def __init__(self, config: GPT2Config) -&gt; None:
         """Initialize GPT-2 model.
 
         Args:
@@ -1820,7 +2097,7 @@ class MaxGPT2Model(Module):
         # Final layer normalization
         self.ln_f = LayerNorm(config.n_embd, eps=config.layer_norm_epsilon)
 
-    def __call__(self, input_ids):
+    def forward(self, input_ids: Tensor) -&gt; Tensor:
         """Forward pass through the transformer.
 
         Args:
@@ -1829,7 +2106,7 @@ class MaxGPT2Model(Module):
         Returns:
             Hidden states, shape [batch, seq_length, n_embd]
         """
-        batch_size, seq_length = input_ids.shape
+        _, seq_length = input_ids.shape
 
         # Get token embeddings
         tok_embeds = self.wte(input_ids)
@@ -1851,12 +2128,15 @@ class MaxGPT2Model(Module):
         return x
 </code></pre>
 </details>
-<p><strong>Next</strong>: In <a href="./step_08.html">Step 08</a>, you’ll add the language modeling head that projects hidden states to vocabulary logits for text generation.</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="language-model-head"><a class="header" href="#language-model-head">Language model head</a></h1>
+<p><strong>Next</strong>: In <a href="#language-model-head">Step 08</a>, you’ll add the language modeling head that
+projects hidden states to vocabulary logits for text generation.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="language-model-head"><a class="header" href="#language-model-head">Language model head</a></h1>
 <div class="note">
 <p>Learn to add the final linear projection layer that converts hidden states to
 vocabulary logits for next-token prediction.</p>
 </div>
+
 <p>In this step, you’ll create the <code>MaxGPT2LMHeadModel</code>, which combines the
 model body (<code>MaxGPT2Model</code>) with a head <code>Linear</code> layer, thus completing the
 GPT-2 model that can predict next tokens. This class wraps the transformer from step
@@ -1870,7 +2150,7 @@ in GPT-2, representing about 33% of the model’s 117M total parameters. This is
 larger than all 12 transformer blocks combined.</p>
 <h2 id="understanding-the-projection"><a class="header" href="#understanding-the-projection">Understanding the projection</a></h2>
 <p>The language model head performs a simple linear projection using MAX’s
-<a href="https://docs.modular.com/max/api/python/nn/module_v3#max.nn.module_v3.Linear"><code>Linear</code></a>
+<a href="https://docs.modular.com/max/api/python/nn/module_v3#max.nn.Linear"><code>Linear</code></a>
 layer. It maps each 768-dimensional hidden state to 50,257 scores, one per
 vocabulary token.</p>
 <p>The layer uses <code>bias=False</code>, meaning it only has weights and no bias vector.
@@ -1887,7 +2167,8 @@ techniques like temperature scaling and top-k sampling.</p>
 <ol>
 <li><strong>Input</strong>: Token IDs <code>[batch, seq_length]</code></li>
 <li><strong>Embeddings</strong>: Token + position <code>[batch, seq_length, 768]</code></li>
-<li><strong>Transformer blocks</strong>: 12 blocks process the embeddings <code>[batch, seq_length, 768]</code></li>
+<li><strong>Transformer blocks</strong>: 12 blocks process the embeddings
+<code>[batch, seq_length, 768]</code></li>
 <li><strong>Final layer norm</strong>: Normalizes the output <code>[batch, seq_length, 768]</code></li>
 <li><strong>LM head</strong>: Projects to vocabulary <code>[batch, seq_length, 50257]</code></li>
 <li><strong>Output</strong>: Logits <code>[batch, seq_length, 50257]</code></li>
@@ -1897,12 +2178,15 @@ token after position i, you look at the logits at position i. The highest
 scoring token is the model’s top prediction.</p>
 <div class="note">
 <div class="title">MAX operations</div>
+
 <p>You’ll use the following MAX operations to complete this task:</p>
 <p><strong>Linear layer</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/nn/module_v3#max.nn.module_v3.Linear"><code>Linear(in_features, out_features, bias=False)</code></a>: Projects hidden states to vocabulary logits</li>
+<li><a href="https://docs.modular.com/max/api/python/nn/module_v3#max.nn.Linear"><code>Linear(in_features, out_features, bias=False)</code></a>:
+Projects hidden states to vocabulary logits</li>
 </ul>
 </div>
+
 <h2 id="implementing-the-language-model"><a class="header" href="#implementing-the-language-model">Implementing the language model</a></h2>
 <p>You’ll create the <code>MaxGPT2LMHeadModel</code> class that wraps the transformer with a
 language modeling head. The implementation is straightforward, with just two
@@ -1922,9 +2206,15 @@ terms.</p>
 <li>Project to vocabulary logits: <code>logits = self.lm_head(hidden_states)</code></li>
 <li>Return <code>logits</code></li>
 </ol>
-<p>That’s it. The model takes token IDs and returns logits. In the next step, you’ll use these logits to generate text.</p>
+<p>That’s it. The model takes token IDs and returns logits. In the next step,
+you’ll use these logits to generate text.</p>
 <p><strong>Implementation</strong> (<code>step_08.py</code>):</p>
-<pre><code class="language-python">"""
+<pre><code class="language-python"># ===----------------------------------------------------------------------=== #
+#
+# This file is Modular Inc proprietary.
+#
+# ===----------------------------------------------------------------------=== #
+"""
 Step 08: Language Model Head
 
 Add the final projection layer that converts hidden states to vocabulary logits.
@@ -1938,15 +2228,16 @@ Run: pixi run s08
 """
 
 # TODO: Import required modules
-# Hint: You'll need Linear and Module from max.nn.module_v3
+# Hint: You'll need Linear and Module from max.nn
 
+from max.tensor import Tensor
 from step_01 import GPT2Config
-from step_07 import MaxGPT2Model
+
 
 class MaxGPT2LMHeadModel(Module):
     """Complete GPT-2 model with language modeling head."""
 
-    def __init__(self, config: GPT2Config):
+    def __init__(self, config: GPT2Config) -&gt; None:
         """Initialize GPT-2 with LM head.
 
         Args:
@@ -1965,7 +2256,7 @@ class MaxGPT2LMHeadModel(Module):
         # Projects from hidden dimension to vocabulary size
         self.lm_head = None
 
-    def __call__(self, input_ids):
+    def forward(self, input_ids: Tensor) -&gt; Tensor:
         """Forward pass through transformer and LM head.
 
         Args:
@@ -1989,17 +2280,22 @@ class MaxGPT2LMHeadModel(Module):
 <p>Run <code>pixi run s08</code> to verify your implementation.</p>
 <details>
 <summary>Show solution</summary>
-<pre><code class="language-python">"""
+<pre><code class="language-python"># ===----------------------------------------------------------------------=== #
+#
+# This file is Modular Inc proprietary.
+#
+# ===----------------------------------------------------------------------=== #
+"""
 Solution for Step 08: Language Model Head
 
 This module adds the final projection layer that converts hidden states
 to vocabulary logits for predicting the next token.
 """
 
-from max.nn.module_v3 import Linear, Module
-
-from solution_01 import GPT2Config
-from solution_07 import MaxGPT2Model
+from max.nn import Linear, Module
+from max.tensor import Tensor
+from step_01 import GPT2Config
+from step_07 import MaxGPT2Model
 
 
 class MaxGPT2LMHeadModel(Module):
@@ -2008,7 +2304,7 @@ class MaxGPT2LMHeadModel(Module):
     This is the full model that can be used for text generation.
     """
 
-    def __init__(self, config: GPT2Config):
+    def __init__(self, config: GPT2Config) -&gt; None:
         """Initialize GPT-2 with LM head.
 
         Args:
@@ -2022,7 +2318,7 @@ class MaxGPT2LMHeadModel(Module):
         # Language modeling head (hidden states -&gt; vocabulary logits)
         self.lm_head = Linear(config.n_embd, config.vocab_size, bias=False)
 
-    def __call__(self, input_ids):
+    def forward(self, input_ids: Tensor) -&gt; Tensor:
         """Forward pass through transformer and LM head.
 
         Args:
@@ -2040,63 +2336,117 @@ class MaxGPT2LMHeadModel(Module):
         return logits
 </code></pre>
 </details>
-<p><strong>Next</strong>: In <a href="./step_09.html">Step 09</a>, you’ll implement tokenization functions to convert between text and token IDs.</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="encode-and-decode-tokens"><a class="header" href="#encode-and-decode-tokens">Encode and decode tokens</a></h1>
+<p><strong>Next</strong>: In <a href="#encode-and-decode-tokens">Step 09</a>, you’ll implement tokenization functions to
+convert between text and token IDs.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="encode-and-decode-tokens"><a class="header" href="#encode-and-decode-tokens">Encode and decode tokens</a></h1>
 <div class="note">
 <p>Learn to convert between text and token IDs using tokenizers and MAX tensors.</p>
 </div>
-<p>In this step, you’ll implement utility functions to bridge the gap between text and the token IDs your model operates on. The <code>encode_text()</code> function converts an input string into a tensor of token IDs, while <code>decode_tokens()</code> converts token IDs into a string.</p>
-<p>As you saw when building the model body in step 7 (<code>MaxGPT2Model</code>), the model must receive input as token IDs (not raw text). The token IDs are integers that represent pieces of text according to a tokenizer vocabulary. GPT-2 uses a Byte Pair Encoding (BPE) tokenizer, which breaks text into subword units. For example, “Hello world” becomes <code>[15496, 995]</code> - two tokens representing the words.</p>
-<p>You’ll use the Hugging Face tokenizer to handle the text-to-token conversion, then wrap it with functions that work with MAX tensors. This separation keeps tokenization (a preprocessing step) separate from model inference (tensor operations).</p>
+
+<p>In this step, you’ll implement utility functions to bridge the gap between text
+and the token IDs your model operates on. The <code>encode_text()</code> function converts
+an input string into a tensor of token IDs, while <code>decode_tokens()</code> converts
+token IDs into a string.</p>
+<p>As you saw when building the model body in step 7 (<code>MaxGPT2Model</code>), the model
+must receive input as token IDs (not raw text). The token IDs are integers that
+represent pieces of text according to a tokenizer vocabulary. GPT-2 uses a Byte
+Pair Encoding (BPE) tokenizer, which breaks text into subword units. For
+example, “Hello world” becomes <code>[15496, 995]</code> - two tokens representing the
+words.</p>
+<p>You’ll use the Hugging Face tokenizer to handle the text-to-token conversion,
+then wrap it with functions that work with MAX tensors. This separation keeps
+tokenization (a preprocessing step) separate from model inference (tensor
+operations).</p>
 <h2 id="understanding-tokenization"><a class="header" href="#understanding-tokenization">Understanding tokenization</a></h2>
-<p>Tokenization converts text to a list of integers. The GPT-2 tokenizer uses a vocabulary of 50,257 tokens, where common words get single tokens and rare words split into subwords.</p>
-<p>The HuggingFace tokenizer provides an <code>encode</code> method that takes text and returns a Python list of token IDs. For example:</p>
+<p>Tokenization converts text to a list of integers. The GPT-2 tokenizer uses a
+vocabulary of 50,257 tokens, where common words get single tokens and rare words
+split into subwords.</p>
+<p>The HuggingFace tokenizer provides an <code>encode</code> method that takes text and
+returns a Python list of token IDs. For example:</p>
 <pre><code class="language-python">token_ids = tokenizer.encode("Hello world")  # Returns [15496, 995]
 </code></pre>
-<p>You can specify <code>max_length</code> and <code>truncation=True</code> to limit sequence length. If the text exceeds <code>max_length</code>, the tokenizer cuts it off. This prevents memory issues with very long inputs.</p>
-<p>After encoding, you need to convert the Python list to a MAX tensor. Use <code>Tensor.constant</code> to create a tensor with the token IDs, specifying <code>dtype=DType.int64</code> (GPT-2 expects 64-bit integers) and the target device.</p>
-<p>The tensor needs shape <code>[batch, seq_length]</code> for model input. Wrap the token list in another list to add the batch dimension: <code>[token_ids]</code> becomes <code>[[15496, 995]]</code> with shape <code>[1, 2]</code>.</p>
+<p>You can specify <code>max_length</code> and <code>truncation=True</code> to limit sequence length. If
+the text exceeds <code>max_length</code>, the tokenizer cuts it off. This prevents memory
+issues with very long inputs.</p>
+<p>After encoding, you need to convert the Python list to a MAX tensor. Use
+<code>Tensor.constant</code> to create a tensor with the token IDs, specifying
+<code>dtype=DType.int64</code> (GPT-2 expects 64-bit integers) and the target device.</p>
+<p>The tensor needs shape <code>[batch, seq_length]</code> for model input. Wrap the token
+list in another list to add the batch dimension: <code>[token_ids]</code> becomes
+<code>[[15496, 995]]</code> with shape <code>[1, 2]</code>.</p>
 <h2 id="understanding-decoding"><a class="header" href="#understanding-decoding">Understanding decoding</a></h2>
-<p>Decoding reverses tokenization: convert token IDs back to text. This requires moving tensors from GPU to CPU, converting to NumPy, then using the tokenizer’s <code>decode</code> method.</p>
-<p>First, transfer the tensor to CPU with <code>.to(CPU())</code>. MAX tensors can live on GPU or CPU, but Python libraries like NumPy only work with CPU data.</p>
-<p>Next, convert to NumPy using <code>np.from_dlpack</code>. DLPack is a standard that enables zero-copy tensor sharing between frameworks. The MAX tensor and NumPy array share the same underlying memory.</p>
-<p>If the tensor is 2D (batch dimension present), flatten it to 1D with <code>.flatten()</code>. The tokenizer expects a flat list of token IDs, not a batched format.</p>
-<p>Finally, convert to a Python list with <code>.tolist()</code> and decode with <code>tokenizer.decode(token_ids, skip_special_tokens=True)</code>. The <code>skip_special_tokens=True</code> parameter removes padding and end-of-sequence markers from the output.</p>
+<p>Decoding reverses tokenization: convert token IDs back to text. This requires
+moving tensors from GPU to CPU, converting to NumPy, then using the tokenizer’s
+<code>decode</code> method.</p>
+<p>First, transfer the tensor to CPU with <code>.to(CPU())</code>. MAX tensors can live on GPU
+or CPU, but Python libraries like NumPy only work with CPU data.</p>
+<p>Next, convert to NumPy using <code>np.from_dlpack</code>. DLPack is a standard that enables
+zero-copy tensor sharing between frameworks. The MAX tensor and NumPy array
+share the same underlying memory.</p>
+<p>If the tensor is 2D (batch dimension present), flatten it to 1D with
+<code>.flatten()</code>. The tokenizer expects a flat list of token IDs, not a batched
+format.</p>
+<p>Finally, convert to a Python list with <code>.tolist()</code> and decode with
+<code>tokenizer.decode(token_ids, skip_special_tokens=True)</code>. The
+<code>skip_special_tokens=True</code> parameter removes padding and end-of-sequence markers
+from the output.</p>
 <div class="note">
 <div class="title">MAX operations</div>
+
 <p>You’ll use the following MAX operations to complete this task:</p>
 <p><strong>Tensor creation</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.constant"><code>Tensor.constant(data, dtype, device)</code></a>: Creates tensor from Python data</li>
+<li><a href="https://docs.modular.com/max/api/python/tensor#max.tensor.Tensor.constant"><code>Tensor.constant(data, dtype, device)</code></a>:
+Creates tensor from Python data</li>
 </ul>
 <p><strong>Device transfer</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.to"><code>tensor.to(CPU())</code></a>: Moves tensor to CPU for NumPy conversion</li>
+<li><a href="https://docs.modular.com/max/api/python/tensor#max.tensor.Tensor.to"><code>tensor.to(CPU())</code></a>:
+Moves tensor to CPU for NumPy conversion</li>
 </ul>
 <p><strong>NumPy interop</strong>:</p>
 <ul>
 <li><code>np.from_dlpack(tensor)</code>: Converts MAX tensor to NumPy using DLPack protocol</li>
 </ul>
 </div>
+
 <h2 id="implementing-tokenization"><a class="header" href="#implementing-tokenization">Implementing tokenization</a></h2>
-<p>You’ll create two functions: <code>encode_text</code> to convert strings to tensors, and <code>decode_tokens</code> to convert tensors back to strings.</p>
-<p>First, import the required modules. You’ll need <code>numpy as np</code> for array operations, <code>CPU</code> from MAX’s driver for device specification, <code>DType</code> for specifying integer types, and <code>Tensor</code> for creating and manipulating tensors.</p>
+<p>You’ll create two functions: <code>encode_text</code> to convert strings to tensors, and
+<code>decode_tokens</code> to convert tensors back to strings.</p>
+<p>First, import the required modules. You’ll need <code>numpy as np</code> for array
+operations, <code>CPU</code> from MAX’s driver for device specification, <code>DType</code> for
+specifying integer types, and <code>Tensor</code> for creating and manipulating tensors.</p>
 <p>In <code>encode_text</code>, implement the encoding and conversion:</p>
 <ol>
-<li>Encode the text to token IDs using the tokenizer: <code>token_ids = tokenizer.encode(text, max_length=max_length, truncation=True)</code></li>
-<li>Convert to a MAX tensor with batch dimension: <code>Tensor.constant([token_ids], dtype=DType.int64, device=device)</code></li>
+<li>Encode the text to token IDs using the tokenizer:
+<code>token_ids = tokenizer.encode(text, max_length=max_length, truncation=True)</code></li>
+<li>Convert to a MAX tensor with batch dimension:
+<code>Tensor.constant([token_ids], dtype=DType.int64, device=device)</code></li>
 </ol>
-<p>Note the <code>[token_ids]</code> wrapping to create the batch dimension. This gives shape <code>[1, seq_length]</code> instead of just <code>[seq_length]</code>.</p>
-<p>In <code>decode_tokens</code>, implement the reverse process:</p>
+<p>Note the <code>[token_ids]</code> wrapping to create the batch dimension. This gives shape
+<code>[1, seq_length]</code> instead of just <code>[seq_length]</code>.</p>
+<p>In <code>decode_tokens</code>, implement the reverse process with explicit type conversions:</p>
 <ol>
-<li>Transfer to CPU and convert to NumPy: <code>token_ids = np.from_dlpack(token_ids.to(CPU()))</code></li>
-<li>Flatten if needed: <code>if token_ids.ndim &gt; 1: token_ids = token_ids.flatten()</code></li>
-<li>Convert to Python list: <code>token_ids = token_ids.tolist()</code></li>
-<li>Decode to text: <code>return tokenizer.decode(token_ids, skip_special_tokens=True)</code></li>
+<li>Transfer to CPU and convert to NumPy with explicit type annotation:
+<code>token_ids_np: np.ndarray = np.from_dlpack(token_ids.to(CPU()))</code></li>
+<li>Flatten if needed: <code>if token_ids_np.ndim &gt; 1: token_ids_np = token_ids_np.flatten()</code></li>
+<li>Convert to Python list with explicit type annotation:
+<code>token_ids_list: list = token_ids_np.tolist()</code></li>
+<li>Decode to text: <code>return tokenizer.decode(token_ids_list, skip_special_tokens=True)</code></li>
 </ol>
-<p>The flattening step handles both 1D and 2D tensors, making the function work with single sequences or batches.</p>
+<p>Note the use of separate variable names (<code>token_ids_np</code>, <code>token_ids_list</code>)
+instead of reusing the same variable. This makes the type conversions explicit
+and improves code clarity: <code>Tensor</code> → <code>np.ndarray</code> → <code>list</code> → <code>str</code>. The
+flattening step handles both 1D and 2D tensors, making the function work with
+single sequences or batches.</p>
 <p><strong>Implementation</strong> (<code>step_09.py</code>):</p>
-<pre><code class="language-python">"""
+<pre><code class="language-python"># ===----------------------------------------------------------------------=== #
+#
+# This file is Modular Inc proprietary.
+#
+# ===----------------------------------------------------------------------=== #
+"""
 Step 09: Encode and decode tokens
 
 This module provides utility functions to tokenize input text
@@ -2113,10 +2463,16 @@ Run: pixi run s09
 # Hint: You'll need numpy as np
 # Hint: You'll need CPU from max.driver
 # Hint: You'll need DType from max.dtype
-# Hint: You'll need Tensor from max.experimental.tensor
+# Hint: You'll need Tensor from max.tensor
+
+from max.driver import Device
+from max.tensor import Tensor
+from transformers import GPT2Tokenizer
 
 
-def encode_text(text: str, tokenizer, device, max_length: int = 128):
+def encode_text(
+    text: str, tokenizer: GPT2Tokenizer, device: Device, max_length: int = 128
+) -&gt; Tensor:
     """Tokenize text and convert to tensor.
 
     Args:
@@ -2138,7 +2494,7 @@ def encode_text(text: str, tokenizer, device, max_length: int = 128):
     return None
 
 
-def decode_tokens(token_ids: Tensor, tokenizer):
+def decode_tokens(token_ids: Tensor, tokenizer: GPT2Tokenizer) -&gt; str:
     """Decode token IDs back to text.
 
     Args:
@@ -2148,85 +2504,140 @@ def decode_tokens(token_ids: Tensor, tokenizer):
     Returns:
         Decoded text string
     """
-    # TODO: Convert MAX tensor to NumPy
-    # Hint: Move to CPU first with token_ids.to(CPU())
-    # Hint: Then convert with np.from_dlpack(...)
+    # TODO: Convert MAX tensor to NumPy array explicitly
+    # Hint: Create a new variable with type annotation: token_ids_np: np.ndarray
+    # Hint: token_ids_np = np.from_dlpack(token_ids.to(CPU()))
+    # Note: This makes the type conversion from Tensor to np.ndarray explicit
     pass
 
     # TODO: Flatten if needed
-    # Hint: if token_ids.ndim &gt; 1: token_ids = token_ids.flatten()
+    # Hint: if token_ids_np.ndim &gt; 1: token_ids_np = token_ids_np.flatten()
     pass
 
-    # TODO: Convert to Python list
-    # Hint: token_ids = token_ids.tolist()
+    # TODO: Convert to Python list explicitly
+    # Hint: Create a new variable: token_ids_list: list = token_ids_np.tolist()
+    # Note: This makes the conversion from np.ndarray to list explicit
     pass
 
     # TODO: Decode to text
-    # Hint: return tokenizer.decode(token_ids, skip_special_tokens=True)
+    # Hint: return tokenizer.decode(token_ids_list, skip_special_tokens=True)
     return None
 </code></pre>
 <h3 id="validation-8"><a class="header" href="#validation-8">Validation</a></h3>
-<p>Run <code>pixi run s09</code> to verify your implementation correctly converts text to tensors and back.</p>
+<p>Run <code>pixi run s09</code> to verify your implementation correctly converts text to
+tensors and back.</p>
 <details>
 <summary>Show solution</summary>
-<pre><code class="language-python">"""
+<pre><code class="language-python"># ===----------------------------------------------------------------------=== #
+#
+# This file is Modular Inc proprietary.
+#
+# ===----------------------------------------------------------------------=== #
+"""
 Solution for Step 09: Encode and decode tokens
 
 This module provides utility functions to tokenize input text
 and decode token IDs back to text using a tokenizer.
 """
+
 import numpy as np
+from max.driver import CPU, Device
 from max.dtype import DType
-from max.driver import CPU
-from max.experimental.tensor import Tensor
+from max.tensor import Tensor
+from transformers import GPT2Tokenizer
 
 
-def encode_text(text: str, tokenizer, device, max_length: int = 128):
+def encode_text(
+    text: str, tokenizer: GPT2Tokenizer, device: Device, max_length: int = 128
+) -&gt; Tensor:
     """Tokenize text and convert to tensor."""
     token_ids = tokenizer.encode(text, max_length=max_length, truncation=True)
     return Tensor.constant([token_ids], dtype=DType.int64, device=device)
 
-def decode_tokens(token_ids: Tensor, tokenizer):
+
+def decode_tokens(token_ids: Tensor, tokenizer: GPT2Tokenizer) -&gt; str:
     """Decode token IDs back to text."""
-    token_ids = np.from_dlpack(token_ids.to(CPU()))
-    if token_ids.ndim &gt; 1:
-        token_ids = token_ids.flatten()
-    token_ids = token_ids.tolist()
-    return tokenizer.decode(token_ids, skip_special_tokens=True)
+    token_ids_np: np.ndarray = np.from_dlpack(token_ids.to(CPU()))
+    if token_ids_np.ndim &gt; 1:
+        token_ids_np = token_ids_np.flatten()
+    token_ids_list: list = token_ids_np.tolist()
+    return tokenizer.decode(token_ids_list, skip_special_tokens=True)
 </code></pre>
 </details>
-<p><strong>Next</strong>: In <a href="./step_10.html">Step 10</a>, you’ll implement the text generation loop that uses these functions to produce coherent text autoregressively.</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="text-generation"><a class="header" href="#text-generation">Text generation</a></h1>
+<p><strong>Next</strong>: In <a href="#text-generation">Step 10</a>, you’ll implement the text generation loop
+that uses these functions to produce coherent text autoregressively.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="text-generation"><a class="header" href="#text-generation">Text generation</a></h1>
 <div class="note">
-<p>Learn to implement autoregressive text generation with sampling and temperature control.</p>
+<p>Learn to implement autoregressive text generation with sampling and temperature
+control.</p>
 </div>
-<p>In this final step, you’ll implement the generation loop that produces text one token at a time. The model predicts the next token, appends it to the sequence, feeds that into the model again, and repeats until reaching the desired length.</p>
-<p>Start with a prompt like “Hello world” (tokens <code>[15496, 995]</code>). The model predicts the next token, giving you <code>[15496, 995, 318]</code> (“Hello world is”). It predicts again, producing <code>[15496, 995, 318, 257]</code> (“Hello world is a”). This process continues, with each prediction feeding back as input for the next.</p>
-<p>You’ll implement two generation strategies: greedy decoding (always pick the highest-scoring token) and sampling (randomly choose according to probabilities). You’ll also add temperature control to adjust how random or focused the generation is—a higher temperature produces more variety (more hallucinations).</p>
+
+<p>In this final step, you’ll implement the generation loop that produces text one
+token at a time. The model predicts the next token, appends it to the sequence,
+feeds that into the model again, and repeats until reaching the desired length.</p>
+<p>Start with a prompt like “Hello world” (tokens <code>[15496, 995]</code>). The model
+predicts the next token, giving you <code>[15496, 995, 318]</code> (“Hello world is”). It
+predicts again, producing <code>[15496, 995, 318, 257]</code> (“Hello world is a”). This
+process continues, with each prediction feeding back as input for the next.</p>
+<p>You’ll implement two generation strategies: greedy decoding (always pick the
+highest-scoring token) and sampling (randomly choose according to
+probabilities). You’ll also add temperature control to adjust how random or
+focused the generation is—a higher temperature produces more variety (more
+hallucinations).</p>
 <h2 id="understanding-the-generation-loop"><a class="header" href="#understanding-the-generation-loop">Understanding the generation loop</a></h2>
-<p>The generation loop is simple: run the model, extract the next token prediction, append it to the sequence, repeat. Each iteration requires a full forward pass through all 12 transformer blocks.</p>
-<p>The model outputs logits with shape <code>[batch, seq_length, vocab_size]</code>. Since you only care about predicting the next token, extract the last position: <code>logits[0, -1, :]</code>. This gives you a vector of 50,257 scores, one per vocabulary token.</p>
-<p>These scores are logits (unnormalized), not probabilities. To convert them to probabilities, apply softmax. Then you can either pick the highest-probability token (greedy) or sample from the distribution (random).</p>
+<p>The generation loop is simple: run the model, extract the next token prediction,
+append it to the sequence, repeat. Each iteration requires a full forward pass
+through all 12 transformer blocks.</p>
+<p>The model outputs logits with shape <code>[batch, seq_length, vocab_size]</code>. Since you
+only care about predicting the next token, extract the last position:
+<code>logits[0, -1, :]</code>. This gives you a vector of 50,257 scores, one per vocabulary
+token.</p>
+<p>These scores are logits (unnormalized), not probabilities. To convert them to
+probabilities, apply softmax. Then you can either pick the highest-probability
+token (greedy) or sample from the distribution (random).</p>
 <h2 id="understanding-temperature-control"><a class="header" href="#understanding-temperature-control">Understanding temperature control</a></h2>
-<p>Temperature scaling adjusts how random the generation is using the formula <code>scaled_logits = logits / temperature</code>.</p>
-<p>For GPT-2, setting the temperature to 1.0 uses the original distribution. With temperature 0.7, you sharpen the distribution, and high-probability tokens become even more likely, making generation more focused and deterministic. With temperature 1.2, you flatten the distribution, and lower-probability tokens get more chances, making generation more diverse and creative. GPT-2 temperature must be between 0 and 2.0.</p>
-<p>Temperature is applied before softmax. Dividing by a value less than 1 makes large logits even larger (sharpening), while dividing by a value greater than 1 reduces the differences between logits (flattening).</p>
+<p>Temperature scaling adjusts how random the generation is using the formula
+<code>scaled_logits = logits / temperature</code>.</p>
+<p>For GPT-2, setting the temperature to 1.0 uses the original distribution. With
+temperature 0.7, you sharpen the distribution, and high-probability tokens
+become even more likely, making generation more focused and deterministic. With
+temperature 1.2, you flatten the distribution, and lower-probability tokens get
+more chances, making generation more diverse and creative. GPT-2 temperature
+must be between 0 and 2.0.</p>
+<p>Temperature is applied before softmax. Dividing by a value less than 1 makes
+large logits even larger (sharpening), while dividing by a value greater than 1
+reduces the differences between logits (flattening).</p>
 <h2 id="understanding-sampling-vs-greedy"><a class="header" href="#understanding-sampling-vs-greedy">Understanding sampling vs greedy</a></h2>
-<p>Greedy decoding always picks the highest-probability token using <a href="https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.argmax"><code>F.argmax</code></a>. It’s fast, deterministic, and simple, but often produces repetitive text because the model keeps choosing the safest option.</p>
-<p>Sampling randomly selects tokens according to their probabilities. Convert logits to probabilities with <code>F.softmax</code>, transfer to CPU, convert to NumPy with <code>np.from_dlpack</code>, then sample with <code>np.random.choice</code>. You use NumPy because MAX doesn’t have built-in sampling yet.</p>
-<p>Most practical generation uses sampling with temperature control. This balances creativity with coherence, as the model can explore different possibilities while still favoring high-quality continuations.</p>
+<p>Greedy decoding always picks the highest-probability token using
+<a href="https://docs.modular.com/max/api/python/nn/functional#max.nn.functional.argmax"><code>F.argmax</code></a>.
+It’s fast, deterministic, and simple, but often produces repetitive text because
+the model keeps choosing the safest option.</p>
+<p>Sampling randomly selects tokens according to their probabilities. Convert
+logits to probabilities with <code>F.softmax</code>, transfer to CPU, convert to NumPy with
+<code>np.from_dlpack</code>, ensure the array is 1D and has float dtype (required by
+<code>np.random.choice</code>), then sample with <code>np.random.choice</code>. You use NumPy because
+MAX doesn’t have built-in sampling yet.</p>
+<p>Most practical generation uses sampling with temperature control. This balances
+creativity with coherence, as the model can explore different possibilities
+while still favoring high-quality continuations.</p>
 <div class="note">
 <div class="title">MAX operations</div>
+
 <p>You’ll use the following MAX operations to complete this task:</p>
 <p><strong>Probability operations</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.softmax"><code>F.softmax(logits)</code></a>: Converts logits to probabilities</li>
-<li><a href="https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.argmax"><code>F.argmax(logits)</code></a>: Selects highest-probability token (greedy)</li>
+<li><a href="https://docs.modular.com/max/api/python/nn/functional#max.nn.functional.softmax"><code>F.softmax(logits)</code></a>:
+Converts logits to probabilities</li>
+<li><a href="https://docs.modular.com/max/api/python/nn/functional#max.nn.functional.argmax"><code>F.argmax(logits)</code></a>:
+Selects highest-probability token (greedy)</li>
 </ul>
 <p><strong>Sequence building</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.concat"><code>F.concat([seq, new_token], axis=1)</code></a>: Appends token to sequence</li>
-<li><a href="https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.constant"><code>Tensor.constant(value, dtype, device)</code></a>: Creates scalar tensors</li>
+<li><a href="https://docs.modular.com/max/api/python/nn/functional#max.nn.functional.concat"><code>F.concat([seq, new_token], axis=1)</code></a>:
+Appends token to sequence</li>
+<li><a href="https://docs.modular.com/max/api/python/tensor#max.tensor.Tensor.constant"><code>Tensor.constant(value, dtype, device)</code></a>:
+Creates scalar tensors</li>
 </ul>
 <p><strong>NumPy interop</strong>:</p>
 <ul>
@@ -2234,30 +2645,48 @@ def decode_tokens(token_ids: Tensor, tokenizer):
 <li><code>np.from_dlpack(probs)</code>: Converts MAX tensor to NumPy for sampling</li>
 </ul>
 </div>
+
 <h2 id="implementing-text-generation"><a class="header" href="#implementing-text-generation">Implementing text generation</a></h2>
-<p>You’ll create two functions: <code>generate_next_token</code> that predicts a single token, and <code>generate</code> that loops to produce full sequences.</p>
-<p>First, import the required modules. You’ll need <code>numpy</code> for sampling, <code>CPU</code> from MAX’s driver, <code>DType</code> for type constants, <code>functional as F</code> for operations like softmax and argmax, and <code>Tensor</code> for creating tensors.</p>
+<p>You’ll create two functions: <code>generate_next_token</code> that predicts a single token,
+and <code>generate</code> that loops to produce full sequences.</p>
+<p>First, import the required modules. You’ll need <code>numpy</code> for sampling, <code>CPU</code> from
+MAX’s driver, <code>DType</code> for type constants, <code>functional as F</code> for operations like
+softmax and argmax, and <code>Tensor</code> for creating tensors.</p>
 <p>In <code>generate_next_token</code>, implement the prediction logic:</p>
 <ol>
 <li>Run the model to get logits: <code>logits = model(input_ids)</code></li>
-<li>Extract the last position (next token prediction): <code>next_token_logits = logits[0, -1, :]</code></li>
+<li>Extract the last position (next token prediction):
+<code>next_token_logits = logits[0, -1, :]</code></li>
 <li>If using temperature, scale the logits by dividing by the temperature tensor</li>
-<li>For sampling: convert to probabilities with <code>F.softmax</code>, transfer to CPU, convert to NumPy with <code>np.from_dlpack</code>, sample with <code>np.random.choice</code>, then convert back to a MAX tensor</li>
+<li>For sampling: convert to probabilities with <code>F.softmax</code>, transfer to CPU,
+convert to NumPy with explicit type annotation (<code>probs_np: np.ndarray</code>),
+flatten if needed, convert to float64 with <code>.astype(np.float64)</code> (required by
+<code>np.random.choice</code>), sample with <code>np.random.choice</code>, then convert back to a
+MAX tensor</li>
 <li>For greedy: use <code>F.argmax</code> to select the highest-scoring token</li>
 </ol>
-<p>The temperature must be a tensor with the same dtype and device as the logits. Create it with <code>Tensor.constant(temperature, dtype=..., device=...)</code>.</p>
+<p>The temperature must be a tensor with the same dtype and device as the logits.
+Create it with <code>Tensor.constant(temperature, dtype=..., device=...)</code>.</p>
 <p>In <code>generate</code>, implement the generation loop:</p>
 <ol>
 <li>Initialize with the input: <code>generated_tokens = input_ids</code></li>
 <li>Loop <code>max_new_tokens</code> times</li>
-<li>Generate the next token: <code>next_token = generate_next_token(model, generated_tokens, ...)</code></li>
+<li>Generate the next token:
+<code>next_token = generate_next_token(model, generated_tokens, ...)</code></li>
 <li>Reshape to 2D: <code>next_token_2d = next_token.reshape([1, -1])</code></li>
-<li>Concatenate to the sequence: <code>generated_tokens = F.concat([generated_tokens, next_token_2d], axis=1)</code></li>
+<li>Concatenate to the sequence:
+<code>generated_tokens = F.concat([generated_tokens, next_token_2d], axis=1)</code></li>
 <li>Return the complete sequence</li>
 </ol>
-<p>The reshape is necessary because <code>concat</code> requires matching dimensions, and the generated token is 0D (scalar).</p>
+<p>The reshape is necessary because <code>concat</code> requires matching dimensions, and the
+generated token is 0D (scalar).</p>
 <p><strong>Implementation</strong> (<code>step_10.py</code>):</p>
-<pre><code class="language-python">"""
+<pre><code class="language-python"># ===----------------------------------------------------------------------=== #
+#
+# This file is Modular Inc proprietary.
+#
+# ===----------------------------------------------------------------------=== #
+"""
 Step 10: Text Generation
 
 Implement autoregressive text generation with sampling and temperature control.
@@ -2275,21 +2704,23 @@ Run: pixi run s10
 # Hint: You'll need numpy as np
 # Hint: You'll need CPU from max.driver
 # Hint: You'll need DType from max.dtype
-# Hint: You'll need functional as F from max.experimental
-# Hint: You'll need Tensor from max.experimental.tensor
+# Hint: You'll need functional as F from max.nn
+# Hint: You'll need Tensor from max.tensor
 
-from step_09 import tokenize_text, decode_tokens
+from max.driver import Device
+from max.nn import Module
+from transformers import GPT2Tokenizer
 
 
 def generate_text(
-    model,
-    tokenizer,
-    device,
+    model: Module,
+    tokenizer: GPT2Tokenizer,
+    device: Device,
     prompt: str,
     max_new_tokens: int = 50,
     temperature: float = 0.8,
     do_sample: bool = True,
-):
+) -&gt; str:
     """Generate text using the Max model.
 
     Args:
@@ -2305,7 +2736,7 @@ def generate_text(
         Generated text string
     """
     # TODO: Tokenize the prompt text
-    # Hint: Use tokenize_text(prompt, tokenizer, device, max_length=100)
+    # Hint: Use encode_text(prompt, tokenizer, device, max_length=100)
     generated_tokens = None
 
     print(f"Starting generation from: '{prompt}'")
@@ -2317,35 +2748,39 @@ def generate_text(
     # TODO: Implement generation loop for max_new_tokens steps
     # Hint: for step in range(max_new_tokens):
     pass
-        # TODO: Get model predictions (logits) for current sequence
-        # Hint: logits = model(generated_tokens)
 
-        # TODO: Extract logits for next token prediction
-        # Hint: next_token_logits = logits[0, -1, :]
-        # Note: Shape is [batch, seq_len, vocab_size], we want last position
+    # TODO: Get model predictions (logits) for current sequence
+    # Hint: logits = model(generated_tokens)
 
-        # TODO: Apply temperature scaling if sampling
-        # Hint: if do_sample and temperature &gt; 0:
-        #     Create a temperature tensor with Tensor.constant()
-        #     Divide next_token_logits by temperature
-        #     Apply softmax: probs = F.softmax(next_token_logits)
-        #     Convert to numpy: probs_np = np.from_dlpack(probs.to(CPU()))
-        #     Sample: next_token_id = np.random.choice(len(probs_np), p=probs_np)
-        #     Convert back to tensor: next_token_tensor = Tensor.constant(next_token_id, dtype=DType.int64, device=device)
+    # TODO: Extract logits for next token prediction
+    # Hint: next_token_logits = logits[0, -1, :]
+    # Note: Shape is [batch, seq_len, vocab_size], we want last position
 
-        # TODO: Use greedy decoding if not sampling
-        # Hint: else: next_token_tensor = F.argmax(next_token_logits)
+    # TODO: Apply temperature scaling if sampling
+    # Hint: if do_sample and temperature &gt; 0:
+    #     Create a temperature tensor with Tensor.constant()
+    #     Divide next_token_logits by temperature
+    #     Apply softmax: probs = F.softmax(next_token_logits)
+    #     Convert to numpy with explicit type annotation: probs_np: np.ndarray = np.from_dlpack(probs.to(CPU()))
+    #     Ensure it's 1D: if probs_np.ndim &gt; 1: probs_np = probs_np.flatten()
+    #     Convert to float for np.random.choice: probs_np = probs_np.astype(np.float64)
+    #     Sample: next_token_id = np.random.choice(len(probs_np), p=probs_np)
+    #     Convert back to tensor: next_token_tensor = Tensor.constant(next_token_id, dtype=DType.int64, device=generated_tokens.device)
+    # Note: np.random.choice requires p to be a 1D float array
 
-        # TODO: Reshape next token to 2D for concatenation
-        # Hint: next_token_2d = next_token_tensor.reshape([1, -1])
+    # TODO: Use greedy decoding if not sampling
+    # Hint: else: next_token_tensor = F.argmax(next_token_logits)
 
-        # TODO: Concatenate to growing sequence
-        # Hint: generated_tokens = F.concat([generated_tokens, next_token_2d], axis=1)
+    # TODO: Reshape next token to 2D for concatenation
+    # Hint: next_token_2d = next_token_tensor.reshape([1, -1])
 
-        # TODO: Print progress every 5 steps
-        # Hint: if step % 5 == 0 or step == max_new_tokens - 1:
-        #     current_text = decode_tokens(generated_tokens, tokenizer)
-        #     print(f"Step {step + 1:2d}: {current_text}")
+    # TODO: Concatenate to growing sequence
+    # Hint: generated_tokens = F.concat([generated_tokens, next_token_2d], axis=1)
+
+    # TODO: Print progress every 5 steps
+    # Hint: if step % 5 == 0 or step == max_new_tokens - 1:
+    #     current_text = decode_tokens(generated_tokens, tokenizer)
+    #     print(f"Step {step + 1:2d}: {current_text}")
 
     # TODO: Decode final generated sequence
     # Hint: final_text = decode_tokens(generated_tokens, tokenizer)
@@ -2359,33 +2794,38 @@ def generate_text(
 <p>Run <code>pixi run s10</code> to verify your implementation.</p>
 <details>
 <summary>Show solution</summary>
-<pre><code class="language-python">"""
+<pre><code class="language-python"># ===----------------------------------------------------------------------=== #
+#
+# This file is Modular Inc proprietary.
+#
+# ===----------------------------------------------------------------------=== #
+"""
 Solution for Step 10: Text Generation
 
 This module implements autoregressive text generation using the GPT-2 model.
 """
 
+import max.functional as F
 import numpy as np
-
-from max.driver import CPU
+from max.driver import CPU, Device
 from max.dtype import DType
-from max.experimental import functional as F
-from max.experimental.tensor import Tensor
-
-from solution_09 import tokenize_text, decode_tokens
+from max.nn import Module
+from max.tensor import Tensor
+from step_09 import decode_tokens, encode_text
+from transformers import GPT2Tokenizer
 
 
 def generate_text(
-    model,
-    tokenizer,
-    device,
+    model: Module,
+    tokenizer: GPT2Tokenizer,
+    device: Device,
     prompt: str,
     max_new_tokens: int = 50,
     temperature: float = 0.8,
     do_sample: bool = True,
-):
+) -&gt; str:
     """Generate text using the Max model."""
-    generated_tokens = tokenize_text(prompt, tokenizer, device, max_length=100)
+    generated_tokens = encode_text(prompt, tokenizer, device, max_length=100)
 
     print(f"Starting generation from: '{prompt}'")
     print(
@@ -2408,7 +2848,11 @@ def generate_text(
             probs = F.softmax(next_token_logits)
 
             # Convert to numpy for actual sampling
-            probs_np = np.from_dlpack(probs.to(CPU()))
+            # Explicitly convert to 1D float array for np.random.choice
+            probs_np: np.ndarray = np.from_dlpack(probs.to(CPU()))
+            if probs_np.ndim &gt; 1:
+                probs_np = probs_np.flatten()
+            probs_np = probs_np.astype(np.float64)
             next_token_id = np.random.choice(len(probs_np), p=probs_np)
             next_token_tensor = Tensor.constant(
                 next_token_id, dtype=DType.int64, device=generated_tokens.device
@@ -2429,41 +2873,73 @@ def generate_text(
     return final_text
 </code></pre>
 </details>
-<p><strong>Next</strong>: In <a href="./step_11.html">Step 11</a>, you’ll load pretrained weights and interact with your complete GPT-2 implementation!</p>
-<div style="break-before: page; page-break-before: always;"></div><h1 id="load-weights-and-run-model"><a class="header" href="#load-weights-and-run-model">Load weights and run model</a></h1>
+<p><strong>Next</strong>: In <a href="#load-weights-and-run-model">Step 11</a>, you’ll load pretrained weights and
+interact with your complete GPT-2 implementation!</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="load-weights-and-run-model"><a class="header" href="#load-weights-and-run-model">Load weights and run model</a></h1>
 <div class="note">
-<p>Learn to load pretrained weights from HuggingFace and prepare the model for text generation.</p>
+<p>Learn to load pretrained weights from HuggingFace and prepare the model for text
+generation.</p>
 </div>
-<p>With all components implemented, you’re ready to load OpenAI’s pretrained GPT-2 weights and run the model. This step brings everything together: loading weights from HuggingFace, handling weight format differences, initializing the tokenizer, and compiling the model for efficient inference.</p>
-<p>The HuggingFace <code>transformers</code> library provides OpenAI’s pretrained GPT-2 weights. You’ll load these weights into your MAX implementation, making your model immediately capable of generating coherent text without training.</p>
-<p>However, there’s a complication: HuggingFace’s GPT-2 uses Conv1D layers for its linear transformations, while your MAX implementation uses standard Linear layers. These store weights in transposed formats, so you’ll need to transpose specific weight matrices after loading.</p>
+
+<p>With all components implemented, you’re ready to load OpenAI’s pretrained GPT-2
+weights and run the model. This step brings everything together: loading weights
+from HuggingFace, handling weight format differences, initializing the
+tokenizer, and compiling the model for efficient inference.</p>
+<p>The HuggingFace <code>transformers</code> library provides OpenAI’s pretrained GPT-2
+weights. You’ll load these weights into your MAX implementation, making your
+model immediately capable of generating coherent text without training.</p>
+<p>However, there’s a complication: HuggingFace’s GPT-2 uses Conv1D layers for its
+linear transformations, while your MAX implementation uses standard Linear
+layers. These store weights in transposed formats, so you’ll need to transpose
+specific weight matrices after loading.</p>
 <h2 id="understanding-weight-loading"><a class="header" href="#understanding-weight-loading">Understanding weight loading</a></h2>
-<p>Weight loading involves three steps: loading the HuggingFace model, transferring weights to your MAX model, and transposing Conv1D weights.</p>
-<p>First, load the pretrained model with <code>GPT2LMHeadModel.from_pretrained("gpt2")</code>. This downloads the weights (about 500MB) and returns a PyTorch model with the exact architecture you’ve implemented.</p>
-<p>Next, transfer these weights to your MAX model using <code>max_model.load_state_dict(hf_model.state_dict())</code>. The <code>state_dict</code> is a dictionary mapping layer names to weight tensors. Since your MAX model has the exact same architecture and layer names, this transfer works seamlessly.</p>
-<p>Finally, transpose the weights for layers that use Conv1D in HuggingFace: <code>c_attn</code>, <code>c_proj</code>, and <code>c_fc</code>. Conv1D stores weights in shape <code>[in_features, out_features]</code>, while Linear expects <code>[out_features, in_features]</code>. Use the <code>.T</code> property to transpose: <code>child.weight = child.weight.T</code>.</p>
+<p>Weight loading involves three steps: loading the HuggingFace model, transferring
+weights to your MAX model, and transposing Conv1D weights.</p>
+<p>First, load the pretrained model with <code>GPT2LMHeadModel.from_pretrained("gpt2")</code>.
+This downloads the weights (about 500MB) and returns a PyTorch model with the
+exact architecture you’ve implemented.</p>
+<p>Next, transfer these weights to your MAX model using
+<code>max_model.load_state_dict(hf_model.state_dict())</code>. The <code>state_dict</code> is a
+dictionary mapping layer names to weight tensors. Since your MAX model has the
+exact same architecture and layer names, this transfer works seamlessly.</p>
+<p>Finally, transpose the weights for layers that use Conv1D in HuggingFace:
+<code>c_attn</code>, <code>c_proj</code>, and <code>c_fc</code>. Conv1D stores weights in shape
+<code>[in_features, out_features]</code>, while Linear expects
+<code>[out_features, in_features]</code>. Use the <code>.T</code> property to transpose:
+<code>child.weight = child.weight.T</code>.</p>
 <h2 id="understanding-model-compilation"><a class="header" href="#understanding-model-compilation">Understanding model compilation</a></h2>
-<p>Before you can run text generation, compile the model with <code>.compile(token_type)</code>. Compilation analyzes the model’s computation graph and generates optimized code for your hardware.</p>
-<p>First, you need to specify the <code>token_type</code> input using <code>TensorType</code>. This tells the MAX compiler what shape and dtype to expect:</p>
+<p>Before you can run text generation, compile the model with
+<code>.compile(token_type)</code>. Compilation analyzes the model’s computation graph and
+generates optimized code for your hardware.</p>
+<p>First, you need to specify the <code>token_type</code> input using <code>TensorType</code>. This tells
+the MAX compiler what shape and dtype to expect:</p>
 <pre><code class="language-python">token_type = TensorType(
     DType.int64,
     ("batch", "seqlen"),
     device=DeviceRef.from_device(device)
 )
 </code></pre>
-<p>The shape uses symbolic dimensions <code>("batch", "seqlen")</code> rather than concrete numbers like <code>[1, 20]</code>. This allows the compiled model to handle any batch size and sequence length, not just fixed dimensions.</p>
-<p>Compilation takes a few seconds but only happens once. After compilation, inference is much faster because MAX has optimized the entire computation graph.</p>
+<p>The shape uses symbolic dimensions <code>("batch", "seqlen")</code> rather than concrete
+numbers like <code>[1, 20]</code>. This allows the compiled model to handle any batch size
+and sequence length, not just fixed dimensions.</p>
+<p>Compilation takes a few seconds but only happens once. After compilation,
+inference is much faster because MAX has optimized the entire computation graph.</p>
 <h2 id="understanding-the-tokenizer"><a class="header" href="#understanding-the-tokenizer">Understanding the tokenizer</a></h2>
 <p>Back in step 9, you implemented functions to encode and decode tokens, but both
 functions require a <code>tokenizer</code> argument. Now you’ll load that tokenizer from
 Hugging Face, using <code>GPT2Tokenizer.from_pretrained("gpt2")</code>,
 which downloads the same tokenization rules OpenAI used during training.</p>
-<p>Set the padding token to match the end-of-sequence token: <code>tokenizer.pad_token = tokenizer.eos_token</code>. GPT-2 doesn’t have a dedicated padding token, so we reuse the EOS token for this purpose.</p>
+<p>Set the padding token to match the end-of-sequence token:
+<code>tokenizer.pad_token = tokenizer.eos_token</code>. GPT-2 doesn’t have a dedicated
+padding token, so we reuse the EOS token for this purpose.</p>
 <p>Then pass the <code>tokenizer</code> to the <code>generate_text()</code> function you created
 in step 10 (which passes it to <code>tokenize_text()</code> and <code>decode_tokens()</code>
 from step 9).</p>
 <h2 id="implementing-the-main-function"><a class="header" href="#implementing-the-main-function">Implementing the main function</a></h2>
-<p>You’ll implement the <code>main()</code> function that orchestrates the entire pipeline: loading models, transferring weights, initializing the tokenizer, compiling the model, and running an interactive prompt loop.</p>
+<p>You’ll implement the <code>main()</code> function that orchestrates the entire pipeline:
+loading models, transferring weights, initializing the tokenizer, compiling the
+model, and running an interactive prompt loop.</p>
 <p>Start by loading the pretrained HuggingFace model:</p>
 <pre><code class="language-python">hf_model = GPT2LMHeadModel.from_pretrained("gpt2")
 </code></pre>
@@ -2472,7 +2948,8 @@ from step 9).</p>
 config = GPT2Config()
 max_model = MaxGPT2LMHeadModel(config)
 </code></pre>
-<p>The <code>defaults()</code> function returns <code>(dtype, device)</code> tuples. You only need the device, so use <code>_</code> to ignore the dtype.</p>
+<p>The <code>defaults()</code> function returns <code>(dtype, device)</code> tuples. You only need the
+device, so use <code>_</code> to ignore the dtype.</p>
 <p>Load and transpose the weights:</p>
 <pre><code class="language-python">max_model.load_state_dict(hf_model.state_dict())
 max_model.to(device)
@@ -2481,7 +2958,8 @@ for name, child in max_model.descendents:
         if any(layer_name in name for layer_name in ["c_attn", "c_proj", "c_fc"]):
             child.weight = child.weight.T
 </code></pre>
-<p>The <code>descendents</code> property gives you all nested modules with their full paths. Check each child’s name for the Conv1D layers and transpose their weights.</p>
+<p>The <code>descendents</code> property gives you all nested modules with their full paths.
+Check each child’s name for the Conv1D layers and transpose their weights.</p>
 <p>Initialize the tokenizer:</p>
 <pre><code class="language-python">tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
 tokenizer.pad_token = tokenizer.eos_token
@@ -2492,7 +2970,8 @@ tokenizer.pad_token = tokenizer.eos_token
 )
 compiled_max_model = max_model.compile(token_type)
 </code></pre>
-<p>Finally, create an interactive prompt loop where users can input text and see generated results:</p>
+<p>Finally, create an interactive prompt loop where users can input text and see
+generated results:</p>
 <pre><code class="language-python">try:
     while True:
         user_input = input("Enter your prompt: ").strip()
@@ -2519,7 +2998,12 @@ except KeyboardInterrupt:
 </code></pre>
 <p>The loop continues until the user types ‘quit’, ‘exit’, ‘q’, or presses Ctrl+C.</p>
 <p><strong>Implementation</strong> (<code>step_11.py</code>):</p>
-<pre><code class="language-python">"""
+<pre><code class="language-python"># ===----------------------------------------------------------------------=== #
+#
+# This file is Modular Inc proprietary.
+#
+# ===----------------------------------------------------------------------=== #
+"""
 Step 11: Load Weights and Run Model
 
 Load pretrained GPT-2 weights from HuggingFace and run the complete model.
@@ -2534,18 +3018,8 @@ Tasks:
 Run: pixi run s11
 """
 
-from max.dtype import DType
-from max.experimental.tensor import Tensor, TensorType, defaults
-from max.graph import DeviceRef
-from max.nn.module_v3 import Linear
-from transformers import GPT2LMHeadModel, GPT2Tokenizer
 
-from step_01 import GPT2Config
-from step_08 import MaxGPT2LMHeadModel
-from step_10 import generate_text
-
-
-def run_model():
+def run_model() -&gt; None:
     """Load GPT-2 model, compile it, and run interactive text generation."""
 
     # TODO: Load HuggingFace model
@@ -2620,23 +3094,28 @@ if __name__ == "__main__":
 <p>Run <code>pixi run s11</code> to verify your implementation.</p>
 <details>
 <summary>Show solution</summary>
-<pre><code class="language-python">"""
+<pre><code class="language-python"># ===----------------------------------------------------------------------=== #
+#
+# This file is Modular Inc proprietary.
+#
+# ===----------------------------------------------------------------------=== #
+"""
 Solution for Step 11: Load weights and run model
 
 
 """
+
 from max.dtype import DType
-from max.experimental.tensor import Tensor, TensorType, defaults
 from max.graph import DeviceRef
-from max.nn.module_v3 import Linear
+from max.nn import Linear
+from max.tensor import TensorType, defaults
+from step_01 import GPT2Config
+from step_08 import MaxGPT2LMHeadModel
+from step_10 import generate_text
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
 
-from solution_01 import GPT2Config
-from solution_08 import MaxGPT2LMHeadModel
-from solution_10 import generate_text
 
-
-def run_model():
+def run_model() -&gt; None:
     # Load HuggingFace model
     hf_model = GPT2LMHeadModel.from_pretrained("gpt2")
     print(f"Loaded HuggingFace model:\n{hf_model}")
@@ -2654,7 +3133,7 @@ def run_model():
     # Load state dict and transpose weights
     max_model.load_state_dict(hf_model.state_dict())
     max_model.to(device)
-    for name, child in max_model.descendents:
+    for name, child in max_model.descendants:
         if isinstance(child, Linear):
             if any(layer_name in name for layer_name in ["c_attn", "c_proj", "c_fc"]):
                 print(f"Transposing {name}: {child.weight.shape}")
@@ -2683,7 +3162,7 @@ def run_model():
         while True:
             user_input = input("Enter your prompt: ").strip()
 
-            if user_input.lower() in ['quit', 'exit', 'q']:
+            if user_input.lower() in ["quit", "exit", "q"]:
                 print("Exiting...")
                 break
 
@@ -2699,21 +3178,23 @@ def run_model():
                 user_input,
                 max_new_tokens=50,
                 temperature=0.8,
-                do_sample=True
+                do_sample=True,
             )
             print(f"\nGenerated text:\n{generated_text}\n")
             print("-" * 50 + "\n")
 
     except KeyboardInterrupt:
         print("\n\nExiting...")
-        
+
 
 if __name__ == "__main__":
     run_model()
 </code></pre>
 </details>
-<p><strong>Congratulations!</strong> You’ve completed built a complete GPT-2 implementation from scratch.</p>
-<p>If code verification passed, you can execute your <code>step_11.py</code> code with <code>pixi run gpt2</code>.</p>
+<p><strong>Congratulations!</strong> You’ve completed built a complete GPT-2 implementation from
+scratch.</p>
+<p>If code verification passed, you can execute your <code>step_11.py</code> code with
+<code>pixi run gpt2</code>.</p>
 <h2 id="whats-next"><a class="header" href="#whats-next">What’s next?</a></h2>
 <p>You now understand the architectural foundation that powers modern language
 models. LLaMA, Mistral, and more build on these same components with incremental
@@ -2721,10 +3202,15 @@ refinements. You have everything you need to implement those refinements
 yourself.</p>
 <p>Consider extending your implementation with:</p>
 <ul>
-<li><strong>Grouped-query attention (GQA)</strong>: Reduce memory consumption by sharing key-value pairs across multiple query heads, as used in LLaMA 2.</li>
-<li><strong>Rotary position embeddings (RoPE)</strong>: Replace learned position embeddings with rotation-based encoding, improving length extrapolation in models like LLaMA and GPT-NeoX.</li>
-<li><strong>SwiGLU activation</strong>: Swap GELU for the gated linear unit variant used in LLaMA and PaLM.</li>
-<li><strong>Mixture of experts (MoE)</strong>: Add sparse expert routing to scale model capacity efficiently, as in Mixtral and GPT-4.</li>
+<li><strong>Grouped-query attention (GQA)</strong>: Reduce memory consumption by sharing
+key-value pairs across multiple query heads, as used in LLaMA 2.</li>
+<li><strong>Rotary position embeddings (RoPE)</strong>: Replace learned position embeddings
+with rotation-based encoding, improving length extrapolation in models like
+LLaMA and GPT-NeoX.</li>
+<li><strong>SwiGLU activation</strong>: Swap GELU for the gated linear unit variant used in
+LLaMA and PaLM.</li>
+<li><strong>Mixture of experts (MoE)</strong>: Add sparse expert routing to scale model
+capacity efficiently, as in Mixtral and GPT-4.</li>
 </ul>
 <p>Each refinement builds directly on what you’ve implemented. The attention
 mechanism you wrote becomes grouped-query attention with a simple modification
@@ -2759,19 +3245,19 @@ patterns are familiar because the fundamentals haven’t changed.</p>
         </script>
 
 
-        <script src="elasticlunr.min.js"></script>
-        <script src="mark.min.js"></script>
-        <script src="searcher.js"></script>
+        <script src="elasticlunr-ef4e11c1.min.js"></script>
+        <script src="mark-09e88c2c.min.js"></script>
+        <script src="searcher-c2a407aa.js"></script>
 
-        <script src="clipboard.min.js"></script>
-        <script src="highlight.js"></script>
-        <script src="book.js"></script>
+        <script src="clipboard-1626706a.min.js"></script>
+        <script src="highlight-0d94ca02.js"></script>
+        <script src="book-18d9e732.js"></script>
 
         <!-- Custom JS scripts -->
-        <script src="theme/code-highlighting.js"></script>
-        <script src="theme/sidebar.js"></script>
-        <script src="theme/init-amplitude.js"></script>
-        <script src="theme/warning.js"></script>
+        <script src="theme/code-highlighting-55fc0fa7.js"></script>
+        <script src="theme/sidebar-b3556f40.js"></script>
+        <script src="theme/init-amplitude-85677074.js"></script>
+        <script src="theme/warning-32d295ae.js"></script>
 
         <script>
         window.addEventListener('load', function() {

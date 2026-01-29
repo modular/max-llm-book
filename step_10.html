@@ -47,29 +47,29 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
 
-        <meta name="description" content="">
+        <meta name="description" content="This guide walks you through implementing GPT-2 using Modular’s MAX framework.">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
-        <link rel="icon" href="favicon.svg">
-        <link rel="shortcut icon" href="favicon.png">
-        <link rel="stylesheet" href="css/variables.css">
-        <link rel="stylesheet" href="css/general.css">
-        <link rel="stylesheet" href="css/chrome.css">
-        <link rel="stylesheet" href="css/print.css" media="print">
+        <link rel="icon" href="favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="favicon-8114d1fc.png">
+        <link rel="stylesheet" href="css/variables-8adf115d.css">
+        <link rel="stylesheet" href="css/general-2459343d.css">
+        <link rel="stylesheet" href="css/chrome-ae938929.css">
+        <link rel="stylesheet" href="css/print-9e4910d8.css" media="print">
 
         <!-- Fonts -->
-        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
-        <link rel="stylesheet" href="fonts/fonts.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+        <link rel="stylesheet" href="fonts/fonts-8490e396.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" id="highlight-css" href="highlight.css">
-        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
-        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
+        <link rel="stylesheet" id="highlight-css" href="highlight-493f70e1.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="theme/css/custom.css">
-        <link rel="stylesheet" href="theme/css/highlight.css">
+        <link rel="stylesheet" href="theme/css/custom-a345be71.css">
+        <link rel="stylesheet" href="theme/css/highlight-efe4ab2a.css">
 
         <!-- MathJax -->
         <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
@@ -81,7 +81,7 @@
             const default_dark_theme = "ayu";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc.js"></script>
+        <script src="toc-d18eda26.js"></script>
     </head>
     <body>
     <div id="body-container">
@@ -175,7 +175,7 @@
                         <i id="print-button" class="fa fa-print"></i>
                     </a>
                     <a class="menu-btn" href="https://github.com/modular/max-llm-book" title="Git repository" aria-label="Git repository">
-                        <i id="git-repository-button" class="fa fa-github"></i>
+                        <i id="git-repository-button" class="fa fa-brands fa-github"></i>
                     </a>
                 </div>
             </div>
@@ -199,35 +199,75 @@
                     <main>
                         <h1 id="text-generation"><a class="header" href="#text-generation">Text generation</a></h1>
 <div class="note">
-<p>Learn to implement autoregressive text generation with sampling and temperature control.</p>
+<p>Learn to implement autoregressive text generation with sampling and temperature
+control.</p>
 </div>
-<p>In this final step, you’ll implement the generation loop that produces text one token at a time. The model predicts the next token, appends it to the sequence, feeds that into the model again, and repeats until reaching the desired length.</p>
-<p>Start with a prompt like “Hello world” (tokens <code>[15496, 995]</code>). The model predicts the next token, giving you <code>[15496, 995, 318]</code> (“Hello world is”). It predicts again, producing <code>[15496, 995, 318, 257]</code> (“Hello world is a”). This process continues, with each prediction feeding back as input for the next.</p>
-<p>You’ll implement two generation strategies: greedy decoding (always pick the highest-scoring token) and sampling (randomly choose according to probabilities). You’ll also add temperature control to adjust how random or focused the generation is—a higher temperature produces more variety (more hallucinations).</p>
+
+<p>In this final step, you’ll implement the generation loop that produces text one
+token at a time. The model predicts the next token, appends it to the sequence,
+feeds that into the model again, and repeats until reaching the desired length.</p>
+<p>Start with a prompt like “Hello world” (tokens <code>[15496, 995]</code>). The model
+predicts the next token, giving you <code>[15496, 995, 318]</code> (“Hello world is”). It
+predicts again, producing <code>[15496, 995, 318, 257]</code> (“Hello world is a”). This
+process continues, with each prediction feeding back as input for the next.</p>
+<p>You’ll implement two generation strategies: greedy decoding (always pick the
+highest-scoring token) and sampling (randomly choose according to
+probabilities). You’ll also add temperature control to adjust how random or
+focused the generation is—a higher temperature produces more variety (more
+hallucinations).</p>
 <h2 id="understanding-the-generation-loop"><a class="header" href="#understanding-the-generation-loop">Understanding the generation loop</a></h2>
-<p>The generation loop is simple: run the model, extract the next token prediction, append it to the sequence, repeat. Each iteration requires a full forward pass through all 12 transformer blocks.</p>
-<p>The model outputs logits with shape <code>[batch, seq_length, vocab_size]</code>. Since you only care about predicting the next token, extract the last position: <code>logits[0, -1, :]</code>. This gives you a vector of 50,257 scores, one per vocabulary token.</p>
-<p>These scores are logits (unnormalized), not probabilities. To convert them to probabilities, apply softmax. Then you can either pick the highest-probability token (greedy) or sample from the distribution (random).</p>
+<p>The generation loop is simple: run the model, extract the next token prediction,
+append it to the sequence, repeat. Each iteration requires a full forward pass
+through all 12 transformer blocks.</p>
+<p>The model outputs logits with shape <code>[batch, seq_length, vocab_size]</code>. Since you
+only care about predicting the next token, extract the last position:
+<code>logits[0, -1, :]</code>. This gives you a vector of 50,257 scores, one per vocabulary
+token.</p>
+<p>These scores are logits (unnormalized), not probabilities. To convert them to
+probabilities, apply softmax. Then you can either pick the highest-probability
+token (greedy) or sample from the distribution (random).</p>
 <h2 id="understanding-temperature-control"><a class="header" href="#understanding-temperature-control">Understanding temperature control</a></h2>
-<p>Temperature scaling adjusts how random the generation is using the formula <code>scaled_logits = logits / temperature</code>.</p>
-<p>For GPT-2, setting the temperature to 1.0 uses the original distribution. With temperature 0.7, you sharpen the distribution, and high-probability tokens become even more likely, making generation more focused and deterministic. With temperature 1.2, you flatten the distribution, and lower-probability tokens get more chances, making generation more diverse and creative. GPT-2 temperature must be between 0 and 2.0.</p>
-<p>Temperature is applied before softmax. Dividing by a value less than 1 makes large logits even larger (sharpening), while dividing by a value greater than 1 reduces the differences between logits (flattening).</p>
+<p>Temperature scaling adjusts how random the generation is using the formula
+<code>scaled_logits = logits / temperature</code>.</p>
+<p>For GPT-2, setting the temperature to 1.0 uses the original distribution. With
+temperature 0.7, you sharpen the distribution, and high-probability tokens
+become even more likely, making generation more focused and deterministic. With
+temperature 1.2, you flatten the distribution, and lower-probability tokens get
+more chances, making generation more diverse and creative. GPT-2 temperature
+must be between 0 and 2.0.</p>
+<p>Temperature is applied before softmax. Dividing by a value less than 1 makes
+large logits even larger (sharpening), while dividing by a value greater than 1
+reduces the differences between logits (flattening).</p>
 <h2 id="understanding-sampling-vs-greedy"><a class="header" href="#understanding-sampling-vs-greedy">Understanding sampling vs greedy</a></h2>
-<p>Greedy decoding always picks the highest-probability token using <a href="https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.argmax"><code>F.argmax</code></a>. It’s fast, deterministic, and simple, but often produces repetitive text because the model keeps choosing the safest option.</p>
-<p>Sampling randomly selects tokens according to their probabilities. Convert logits to probabilities with <code>F.softmax</code>, transfer to CPU, convert to NumPy with <code>np.from_dlpack</code>, then sample with <code>np.random.choice</code>. You use NumPy because MAX doesn’t have built-in sampling yet.</p>
-<p>Most practical generation uses sampling with temperature control. This balances creativity with coherence, as the model can explore different possibilities while still favoring high-quality continuations.</p>
+<p>Greedy decoding always picks the highest-probability token using
+<a href="https://docs.modular.com/max/api/python/nn/functional#max.nn.functional.argmax"><code>F.argmax</code></a>.
+It’s fast, deterministic, and simple, but often produces repetitive text because
+the model keeps choosing the safest option.</p>
+<p>Sampling randomly selects tokens according to their probabilities. Convert
+logits to probabilities with <code>F.softmax</code>, transfer to CPU, convert to NumPy with
+<code>np.from_dlpack</code>, ensure the array is 1D and has float dtype (required by
+<code>np.random.choice</code>), then sample with <code>np.random.choice</code>. You use NumPy because
+MAX doesn’t have built-in sampling yet.</p>
+<p>Most practical generation uses sampling with temperature control. This balances
+creativity with coherence, as the model can explore different possibilities
+while still favoring high-quality continuations.</p>
 <div class="note">
 <div class="title">MAX operations</div>
+
 <p>You’ll use the following MAX operations to complete this task:</p>
 <p><strong>Probability operations</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.softmax"><code>F.softmax(logits)</code></a>: Converts logits to probabilities</li>
-<li><a href="https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.argmax"><code>F.argmax(logits)</code></a>: Selects highest-probability token (greedy)</li>
+<li><a href="https://docs.modular.com/max/api/python/nn/functional#max.nn.functional.softmax"><code>F.softmax(logits)</code></a>:
+Converts logits to probabilities</li>
+<li><a href="https://docs.modular.com/max/api/python/nn/functional#max.nn.functional.argmax"><code>F.argmax(logits)</code></a>:
+Selects highest-probability token (greedy)</li>
 </ul>
 <p><strong>Sequence building</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/experimental/functional#max.experimental.functional.concat"><code>F.concat([seq, new_token], axis=1)</code></a>: Appends token to sequence</li>
-<li><a href="https://docs.modular.com/max/api/python/experimental/tensor#max.experimental.tensor.Tensor.constant"><code>Tensor.constant(value, dtype, device)</code></a>: Creates scalar tensors</li>
+<li><a href="https://docs.modular.com/max/api/python/nn/functional#max.nn.functional.concat"><code>F.concat([seq, new_token], axis=1)</code></a>:
+Appends token to sequence</li>
+<li><a href="https://docs.modular.com/max/api/python/tensor#max.tensor.Tensor.constant"><code>Tensor.constant(value, dtype, device)</code></a>:
+Creates scalar tensors</li>
 </ul>
 <p><strong>NumPy interop</strong>:</p>
 <ul>
@@ -235,30 +275,48 @@
 <li><code>np.from_dlpack(probs)</code>: Converts MAX tensor to NumPy for sampling</li>
 </ul>
 </div>
+
 <h2 id="implementing-text-generation"><a class="header" href="#implementing-text-generation">Implementing text generation</a></h2>
-<p>You’ll create two functions: <code>generate_next_token</code> that predicts a single token, and <code>generate</code> that loops to produce full sequences.</p>
-<p>First, import the required modules. You’ll need <code>numpy</code> for sampling, <code>CPU</code> from MAX’s driver, <code>DType</code> for type constants, <code>functional as F</code> for operations like softmax and argmax, and <code>Tensor</code> for creating tensors.</p>
+<p>You’ll create two functions: <code>generate_next_token</code> that predicts a single token,
+and <code>generate</code> that loops to produce full sequences.</p>
+<p>First, import the required modules. You’ll need <code>numpy</code> for sampling, <code>CPU</code> from
+MAX’s driver, <code>DType</code> for type constants, <code>functional as F</code> for operations like
+softmax and argmax, and <code>Tensor</code> for creating tensors.</p>
 <p>In <code>generate_next_token</code>, implement the prediction logic:</p>
 <ol>
 <li>Run the model to get logits: <code>logits = model(input_ids)</code></li>
-<li>Extract the last position (next token prediction): <code>next_token_logits = logits[0, -1, :]</code></li>
+<li>Extract the last position (next token prediction):
+<code>next_token_logits = logits[0, -1, :]</code></li>
 <li>If using temperature, scale the logits by dividing by the temperature tensor</li>
-<li>For sampling: convert to probabilities with <code>F.softmax</code>, transfer to CPU, convert to NumPy with <code>np.from_dlpack</code>, sample with <code>np.random.choice</code>, then convert back to a MAX tensor</li>
+<li>For sampling: convert to probabilities with <code>F.softmax</code>, transfer to CPU,
+convert to NumPy with explicit type annotation (<code>probs_np: np.ndarray</code>),
+flatten if needed, convert to float64 with <code>.astype(np.float64)</code> (required by
+<code>np.random.choice</code>), sample with <code>np.random.choice</code>, then convert back to a
+MAX tensor</li>
 <li>For greedy: use <code>F.argmax</code> to select the highest-scoring token</li>
 </ol>
-<p>The temperature must be a tensor with the same dtype and device as the logits. Create it with <code>Tensor.constant(temperature, dtype=..., device=...)</code>.</p>
+<p>The temperature must be a tensor with the same dtype and device as the logits.
+Create it with <code>Tensor.constant(temperature, dtype=..., device=...)</code>.</p>
 <p>In <code>generate</code>, implement the generation loop:</p>
 <ol>
 <li>Initialize with the input: <code>generated_tokens = input_ids</code></li>
 <li>Loop <code>max_new_tokens</code> times</li>
-<li>Generate the next token: <code>next_token = generate_next_token(model, generated_tokens, ...)</code></li>
+<li>Generate the next token:
+<code>next_token = generate_next_token(model, generated_tokens, ...)</code></li>
 <li>Reshape to 2D: <code>next_token_2d = next_token.reshape([1, -1])</code></li>
-<li>Concatenate to the sequence: <code>generated_tokens = F.concat([generated_tokens, next_token_2d], axis=1)</code></li>
+<li>Concatenate to the sequence:
+<code>generated_tokens = F.concat([generated_tokens, next_token_2d], axis=1)</code></li>
 <li>Return the complete sequence</li>
 </ol>
-<p>The reshape is necessary because <code>concat</code> requires matching dimensions, and the generated token is 0D (scalar).</p>
+<p>The reshape is necessary because <code>concat</code> requires matching dimensions, and the
+generated token is 0D (scalar).</p>
 <p><strong>Implementation</strong> (<code>step_10.py</code>):</p>
-<pre><code class="language-python">"""
+<pre><code class="language-python"># ===----------------------------------------------------------------------=== #
+#
+# This file is Modular Inc proprietary.
+#
+# ===----------------------------------------------------------------------=== #
+"""
 Step 10: Text Generation
 
 Implement autoregressive text generation with sampling and temperature control.
@@ -276,21 +334,23 @@ Run: pixi run s10
 # Hint: You'll need numpy as np
 # Hint: You'll need CPU from max.driver
 # Hint: You'll need DType from max.dtype
-# Hint: You'll need functional as F from max.experimental
-# Hint: You'll need Tensor from max.experimental.tensor
+# Hint: You'll need functional as F from max.nn
+# Hint: You'll need Tensor from max.tensor
 
-from step_09 import tokenize_text, decode_tokens
+from max.driver import Device
+from max.nn import Module
+from transformers import GPT2Tokenizer
 
 
 def generate_text(
-    model,
-    tokenizer,
-    device,
+    model: Module,
+    tokenizer: GPT2Tokenizer,
+    device: Device,
     prompt: str,
     max_new_tokens: int = 50,
     temperature: float = 0.8,
     do_sample: bool = True,
-):
+) -&gt; str:
     """Generate text using the Max model.
 
     Args:
@@ -306,7 +366,7 @@ def generate_text(
         Generated text string
     """
     # TODO: Tokenize the prompt text
-    # Hint: Use tokenize_text(prompt, tokenizer, device, max_length=100)
+    # Hint: Use encode_text(prompt, tokenizer, device, max_length=100)
     generated_tokens = None
 
     print(f"Starting generation from: '{prompt}'")
@@ -318,35 +378,39 @@ def generate_text(
     # TODO: Implement generation loop for max_new_tokens steps
     # Hint: for step in range(max_new_tokens):
     pass
-        # TODO: Get model predictions (logits) for current sequence
-        # Hint: logits = model(generated_tokens)
 
-        # TODO: Extract logits for next token prediction
-        # Hint: next_token_logits = logits[0, -1, :]
-        # Note: Shape is [batch, seq_len, vocab_size], we want last position
+    # TODO: Get model predictions (logits) for current sequence
+    # Hint: logits = model(generated_tokens)
 
-        # TODO: Apply temperature scaling if sampling
-        # Hint: if do_sample and temperature &gt; 0:
-        #     Create a temperature tensor with Tensor.constant()
-        #     Divide next_token_logits by temperature
-        #     Apply softmax: probs = F.softmax(next_token_logits)
-        #     Convert to numpy: probs_np = np.from_dlpack(probs.to(CPU()))
-        #     Sample: next_token_id = np.random.choice(len(probs_np), p=probs_np)
-        #     Convert back to tensor: next_token_tensor = Tensor.constant(next_token_id, dtype=DType.int64, device=device)
+    # TODO: Extract logits for next token prediction
+    # Hint: next_token_logits = logits[0, -1, :]
+    # Note: Shape is [batch, seq_len, vocab_size], we want last position
 
-        # TODO: Use greedy decoding if not sampling
-        # Hint: else: next_token_tensor = F.argmax(next_token_logits)
+    # TODO: Apply temperature scaling if sampling
+    # Hint: if do_sample and temperature &gt; 0:
+    #     Create a temperature tensor with Tensor.constant()
+    #     Divide next_token_logits by temperature
+    #     Apply softmax: probs = F.softmax(next_token_logits)
+    #     Convert to numpy with explicit type annotation: probs_np: np.ndarray = np.from_dlpack(probs.to(CPU()))
+    #     Ensure it's 1D: if probs_np.ndim &gt; 1: probs_np = probs_np.flatten()
+    #     Convert to float for np.random.choice: probs_np = probs_np.astype(np.float64)
+    #     Sample: next_token_id = np.random.choice(len(probs_np), p=probs_np)
+    #     Convert back to tensor: next_token_tensor = Tensor.constant(next_token_id, dtype=DType.int64, device=generated_tokens.device)
+    # Note: np.random.choice requires p to be a 1D float array
 
-        # TODO: Reshape next token to 2D for concatenation
-        # Hint: next_token_2d = next_token_tensor.reshape([1, -1])
+    # TODO: Use greedy decoding if not sampling
+    # Hint: else: next_token_tensor = F.argmax(next_token_logits)
 
-        # TODO: Concatenate to growing sequence
-        # Hint: generated_tokens = F.concat([generated_tokens, next_token_2d], axis=1)
+    # TODO: Reshape next token to 2D for concatenation
+    # Hint: next_token_2d = next_token_tensor.reshape([1, -1])
 
-        # TODO: Print progress every 5 steps
-        # Hint: if step % 5 == 0 or step == max_new_tokens - 1:
-        #     current_text = decode_tokens(generated_tokens, tokenizer)
-        #     print(f"Step {step + 1:2d}: {current_text}")
+    # TODO: Concatenate to growing sequence
+    # Hint: generated_tokens = F.concat([generated_tokens, next_token_2d], axis=1)
+
+    # TODO: Print progress every 5 steps
+    # Hint: if step % 5 == 0 or step == max_new_tokens - 1:
+    #     current_text = decode_tokens(generated_tokens, tokenizer)
+    #     print(f"Step {step + 1:2d}: {current_text}")
 
     # TODO: Decode final generated sequence
     # Hint: final_text = decode_tokens(generated_tokens, tokenizer)
@@ -360,33 +424,38 @@ def generate_text(
 <p>Run <code>pixi run s10</code> to verify your implementation.</p>
 <details>
 <summary>Show solution</summary>
-<pre><code class="language-python">"""
+<pre><code class="language-python"># ===----------------------------------------------------------------------=== #
+#
+# This file is Modular Inc proprietary.
+#
+# ===----------------------------------------------------------------------=== #
+"""
 Solution for Step 10: Text Generation
 
 This module implements autoregressive text generation using the GPT-2 model.
 """
 
+import max.functional as F
 import numpy as np
-
-from max.driver import CPU
+from max.driver import CPU, Device
 from max.dtype import DType
-from max.experimental import functional as F
-from max.experimental.tensor import Tensor
-
-from solution_09 import tokenize_text, decode_tokens
+from max.nn import Module
+from max.tensor import Tensor
+from step_09 import decode_tokens, encode_text
+from transformers import GPT2Tokenizer
 
 
 def generate_text(
-    model,
-    tokenizer,
-    device,
+    model: Module,
+    tokenizer: GPT2Tokenizer,
+    device: Device,
     prompt: str,
     max_new_tokens: int = 50,
     temperature: float = 0.8,
     do_sample: bool = True,
-):
+) -&gt; str:
     """Generate text using the Max model."""
-    generated_tokens = tokenize_text(prompt, tokenizer, device, max_length=100)
+    generated_tokens = encode_text(prompt, tokenizer, device, max_length=100)
 
     print(f"Starting generation from: '{prompt}'")
     print(
@@ -409,7 +478,11 @@ def generate_text(
             probs = F.softmax(next_token_logits)
 
             # Convert to numpy for actual sampling
-            probs_np = np.from_dlpack(probs.to(CPU()))
+            # Explicitly convert to 1D float array for np.random.choice
+            probs_np: np.ndarray = np.from_dlpack(probs.to(CPU()))
+            if probs_np.ndim &gt; 1:
+                probs_np = probs_np.flatten()
+            probs_np = probs_np.astype(np.float64)
             next_token_id = np.random.choice(len(probs_np), p=probs_np)
             next_token_tensor = Tensor.constant(
                 next_token_id, dtype=DType.int64, device=generated_tokens.device
@@ -430,7 +503,8 @@ def generate_text(
     return final_text
 </code></pre>
 </details>
-<p><strong>Next</strong>: In <a href="./step_11.html">Step 11</a>, you’ll load pretrained weights and interact with your complete GPT-2 implementation!</p>
+<p><strong>Next</strong>: In <a href="./step_11.html">Step 11</a>, you’ll load pretrained weights and
+interact with your complete GPT-2 implementation!</p>
 
                     </main>
 
@@ -469,19 +543,19 @@ def generate_text(
         </script>
 
 
-        <script src="elasticlunr.min.js"></script>
-        <script src="mark.min.js"></script>
-        <script src="searcher.js"></script>
+        <script src="elasticlunr-ef4e11c1.min.js"></script>
+        <script src="mark-09e88c2c.min.js"></script>
+        <script src="searcher-c2a407aa.js"></script>
 
-        <script src="clipboard.min.js"></script>
-        <script src="highlight.js"></script>
-        <script src="book.js"></script>
+        <script src="clipboard-1626706a.min.js"></script>
+        <script src="highlight-0d94ca02.js"></script>
+        <script src="book-18d9e732.js"></script>
 
         <!-- Custom JS scripts -->
-        <script src="theme/code-highlighting.js"></script>
-        <script src="theme/sidebar.js"></script>
-        <script src="theme/init-amplitude.js"></script>
-        <script src="theme/warning.js"></script>
+        <script src="theme/code-highlighting-55fc0fa7.js"></script>
+        <script src="theme/sidebar-b3556f40.js"></script>
+        <script src="theme/init-amplitude-85677074.js"></script>
+        <script src="theme/warning-32d295ae.js"></script>
 
 
     </div>

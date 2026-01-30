@@ -51,25 +51,25 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
-        <link rel="icon" href="favicon-de23e50b.svg">
-        <link rel="shortcut icon" href="favicon-8114d1fc.png">
-        <link rel="stylesheet" href="css/variables-8adf115d.css">
-        <link rel="stylesheet" href="css/general-2459343d.css">
-        <link rel="stylesheet" href="css/chrome-ae938929.css">
-        <link rel="stylesheet" href="css/print-9e4910d8.css" media="print">
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
 
         <!-- Fonts -->
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-        <link rel="stylesheet" href="fonts/fonts-8490e396.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" id="highlight-css" href="highlight-493f70e1.css">
-        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night-4c0ae647.css">
-        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
+        <link rel="stylesheet" id="highlight-css" href="highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="theme/css/custom-a345be71.css">
-        <link rel="stylesheet" href="theme/css/highlight-efe4ab2a.css">
+        <link rel="stylesheet" href="theme/css/custom.css">
+        <link rel="stylesheet" href="theme/css/highlight.css">
 
         <!-- MathJax -->
         <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
@@ -81,7 +81,7 @@
             const default_dark_theme = "ayu";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-d18eda26.js"></script>
+        <script src="toc.js"></script>
     </head>
     <body>
     <div id="body-container">
@@ -204,7 +204,6 @@ during
 <a href="https://docs.modular.com/glossary/ai/autoregression">autoregressive</a>
 generation.</p>
 </div>
-
 <p>In this step you’ll implement the <code>causal_mask()</code> function that’s required for
 self-attention (the next step). This creates a
 <a href="https://docs.modular.com/glossary/ai/attention-mask/">mask matrix</a> that
@@ -213,8 +212,12 @@ The mask sets attention scores to negative infinity (<code>-inf</code>) for futu
 positions. After softmax, these <code>-inf</code> values become zero probability, blocking
 information flow from later tokens.</p>
 <figure>
-<img src="./images/causal-masking-light.png" alt="Causal mask matrix with lower triangular pattern" class="light-mode-img" width="530" height="475">
-<img src="./images/causal-masking-dark.png" alt="Causal mask matrix with lower triangular pattern" class="dark-mode-img" width="530" height="475">
+<img src="./images/causal-masking-light.png"
+  alt="Causal mask matrix with lower triangular pattern"
+  class="light-mode-img" width="530" height="475">
+<img src="./images/causal-masking-dark.png"
+  alt="Causal mask matrix with lower triangular pattern"
+  class="dark-mode-img" width="530" height="475">
 </figure>
 <p>GPT-2 generates text one token at a time, left-to-right. During training, causal
 masking prevents the model from “cheating” by looking ahead at tokens it should
@@ -237,7 +240,6 @@ tokens while attending to both new tokens (sequence_length) and cached tokens
 (num_tokens). This significantly speeds up generation by avoiding recomputation.</p>
 <div class="note">
 <div class="title">MAX operations</div>
-
 <p>You’ll use the following MAX operations to complete this task:</p>
 <p><strong>Functional decorator</strong>:</p>
 <ul>
@@ -254,7 +256,6 @@ Expands tensor dimensions to target shape</li>
 Extracts band matrix (keeps diagonal band, zeros out rest)</li>
 </ul>
 </div>
-
 <h2 id="implementing-the-mask"><a class="header" href="#implementing-the-mask">Implementing the mask</a></h2>
 <p>You’ll create the causal mask in several steps:</p>
 <ol>
@@ -426,13 +427,7 @@ def causal_mask(
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="step_02.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
-                                <i class="fa fa-angle-left"></i>
-                            </a>
 
-                            <a rel="next prefetch" href="step_04.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                                <i class="fa fa-angle-right"></i>
-                            </a>
 
                         <div style="clear: both"></div>
                     </nav>
@@ -440,13 +435,7 @@ def causal_mask(
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="step_02.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
-                        <i class="fa fa-angle-left"></i>
-                    </a>
 
-                    <a rel="next prefetch" href="step_04.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                        <i class="fa fa-angle-right"></i>
-                    </a>
             </nav>
 
         </div>
@@ -459,19 +448,19 @@ def causal_mask(
         </script>
 
 
-        <script src="elasticlunr-ef4e11c1.min.js"></script>
-        <script src="mark-09e88c2c.min.js"></script>
-        <script src="searcher-c2a407aa.js"></script>
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
 
-        <script src="clipboard-1626706a.min.js"></script>
-        <script src="highlight-0d94ca02.js"></script>
-        <script src="book-18d9e732.js"></script>
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
 
         <!-- Custom JS scripts -->
-        <script src="theme/code-highlighting-55fc0fa7.js"></script>
-        <script src="theme/sidebar-b3556f40.js"></script>
-        <script src="theme/init-amplitude-85677074.js"></script>
-        <script src="theme/warning-32d295ae.js"></script>
+        <script src="theme/code-highlighting.js"></script>
+        <script src="theme/sidebar.js"></script>
+        <script src="theme/init-amplitude.js"></script>
+        <script src="theme/warning.js"></script>
 
 
     </div>

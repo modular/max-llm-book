@@ -10,6 +10,7 @@ from typing import cast
 
 import max.functional as F
 import numpy as np
+import torch
 from max.driver import CPU, Device
 from max.dtype import DType
 from max.graph import DeviceRef, Dim, DimLike, TensorValue
@@ -19,7 +20,13 @@ from max.nn import (
     Module,
     Sequential,
 )
-from max.tensor import Tensor, TensorType, defaults
+from max.tensor import (
+    Tensor,
+    TensorType,
+    default_device,
+    default_dtype,
+    defaults,
+)
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
 
 
@@ -311,10 +318,13 @@ def generate_text(
 
             # Convert to numpy for actual sampling
             # Explicitly convert to 1D float array for np.random.choice
-            probs_np: np.ndarray = np.from_dlpack(probs.to(CPU()))
+            probs_np: np.ndarray = np.from_dlpack(
+                probs.cast(DType.float32).to(CPU())
+            )
             if probs_np.ndim > 1:
                 probs_np = probs_np.flatten()
-            probs_np = probs_np.astype(np.float64)
+            # Renormalize to ensure probabilities sum to 1
+            probs_np = probs_np / probs_np.sum()
             next_token_id = np.random.choice(len(probs_np), p=probs_np)
             next_token_tensor = Tensor.constant(
                 next_token_id, dtype=DType.int64, device=generated_tokens.device
@@ -340,33 +350,42 @@ def generate_text(
 
 # ANCHOR: load_weights_and_run_model
 def main() -> None:
+    dtype, device = defaults()
+    print(f"Using device: {device}, dtype: {dtype}")
+
     # Load HuggingFace model
-    hf_model = GPT2LMHeadModel.from_pretrained("gpt2")
+    torch_dtype = torch.bfloat16 if dtype == DType.bfloat16 else torch.float32
+    hf_model = GPT2LMHeadModel.from_pretrained("gpt2", torch_dtype=torch_dtype)
     print(f"Loaded HuggingFace model:\n{hf_model}")
 
     # Initialize Max model
-    _, device = defaults()
-    print(f"Using device: {device}")
     config = GPT2Config()
-    max_model = MaxGPT2LMHeadModel(config)
-
     print(
         f"Model has {config.n_layer} layers, {config.n_head} heads, {config.n_embd} embedding dim"
     )
 
-    # Load state dict and transpose weights
-    max_model.load_state_dict(hf_model.state_dict())
-    max_model.to(device)
-    for name, child in max_model.descendants:
-        if isinstance(child, Linear):
-            if any(
-                layer_name in name
-                for layer_name in ["c_attn", "c_proj", "c_fc"]
-            ):
-                print(f"Transposing {name}: {child.weight.shape}")
-                # The upstream model has conv1d layers instead of linear, which have their weights
-                # stored transposed compared to linear
-                child.weight = child.weight.T
+    # The upstream model has conv1d layers instead of linear, which have their weights
+    # stored transposed compared to linear
+    weights: dict[str, torch.Tensor] = {}
+    for name, param in hf_model.state_dict().items():
+        if any(
+            layer_name in name for layer_name in ["c_attn", "c_proj", "c_fc"]
+        ):
+            if name.endswith(".weight"):
+                print(f"Transposing {name}: {param.shape}")
+                weights[name] = param.T.contiguous()
+            else:
+                weights[name] = param
+        else:
+            weights[name] = param
+
+    # Create MAX model on the host using the transposed weights
+    with default_device(CPU()), default_dtype(dtype):
+        max_model = MaxGPT2LMHeadModel(config)
+        max_model.load_state_dict(weights)
+
+    # Move model to target device (e.g., GPU)
+    max_model = max_model.to(device)
 
     # Initialize tokenizer
     tokenizer = GPT2Tokenizer.from_pretrained("gpt2")

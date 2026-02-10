@@ -21,13 +21,13 @@ Run: pixi run s02
 
 # 1: Import the required modules from MAX
 # TODO: Import functional module from max.nn with the alias F
-# https://docs.modular.com/max/api/python/nn/functional
+# https://docs.modular.com/max/api/python/functional
 
 # TODO: Import Tensor from max.tensor
-# https://docs.modular.com/max/api/python/tensor.Tensor
+# https://docs.modular.com/max/api/python/tensor#max.tensor.Tensor
 
 # TODO: Import Linear and Module from max.nn
-# https://docs.modular.com/max/api/python/nn/module_v3
+# https://docs.modular.com/max/api/python/nn/module
 
 from max.tensor import Tensor
 from step_01 import GPT2Config
@@ -47,13 +47,13 @@ class GPT2MLP(Module):
 
         # 2: Create the first linear layer (embedding to intermediate)
         # TODO: Create self.c_fc as a Linear layer from embed_dim to intermediate_size with bias=True
-        # https://docs.modular.com/max/api/python/nn/module_v3#max.nn.Linear
+        # https://docs.modular.com/max/api/python/nn/Linear
         # Hint: This is the expansion layer in the MLP
         self.c_fc = None
 
         # 3: Create the second linear layer (intermediate back to embedding)
         # TODO: Create self.c_proj as a Linear layer from intermediate_size to embed_dim with bias=True
-        # https://docs.modular.com/max/api/python/nn/module_v3#max.nn.Linear
+        # https://docs.modular.com/max/api/python/nn/Linear
         # Hint: This is the projection layer that brings us back to the embedding dimension
         self.c_proj = None
 
@@ -73,7 +73,7 @@ class GPT2MLP(Module):
 
         # 5: Apply GELU activation function
         # TODO: Use F.gelu() with hidden_states and approximate="tanh"
-        # https://docs.modular.com/max/api/python/nn/functional#max.nn.functional.gelu
+        # https://docs.modular.com/max/api/python/functional#max.functional.gelu
         # Hint: GELU is the non-linear activation used in GPT-2's MLP
         hidden_states = None
 

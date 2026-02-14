@@ -93,6 +93,8 @@ This tutorial assumes:
 - **Interest in understanding**: Curiosity matters more than prior transformer
   experience
 
+You'll need to meet the [system requirements](https://docs.modular.com/max/packages#system-requirements).
+
 Whether you're exploring MAX for the first time or deepening your understanding
 of model architecture, this tutorial provides hands-on experience you can apply
 to current projects and learning priorities.

@@ -51,7 +51,7 @@ from max.nn import Linear
 
 # Transpose weights for linear layers that correspond to Conv1D in HuggingFace
 max_model.to(device)
-for name, child in max_model.descendents:
+for name, child in max_model.descendants:
     if isinstance(child, Linear):
         if any(layer_name in name for layer_name in ['c_attn', 'c_proj', 'c_fc']):
             print(f"Transposing {name}: {child.weight.shape}")
@@ -93,7 +93,7 @@ device = CPU()
 max_model.load_state_dict(torch_model.state_dict())
 max_model.to(device)
 
-for name, child in max_model.descendents:
+for name, child in max_model.descendants:
     if isinstance(child, Linear):
         if any(layer_name in name for layer_name in ['c_attn', 'c_proj', 'c_fc']):
             child.weight = child.weight.T

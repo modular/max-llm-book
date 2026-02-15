@@ -108,13 +108,13 @@ Load and transpose the weights:
 ```python
 max_model.load_state_dict(hf_model.state_dict())
 max_model.to(device)
-for name, child in max_model.descendents:
+for name, child in max_model.descendants:
     if isinstance(child, Linear):
         if any(layer_name in name for layer_name in ["c_attn", "c_proj", "c_fc"]):
             child.weight = child.weight.T
 ```
 
-The `descendents` property gives you all nested modules with their full paths.
+The `descendants` property gives you all nested modules with their full paths.
 Check each child's name for the Conv1D layers and transpose their weights.
 
 Initialize the tokenizer:
@@ -183,8 +183,7 @@ Run `pixi run s11` to verify your implementation.
 
 </details>
 
-**Congratulations!** You've completed built a complete GPT-2 implementation from
-scratch.
+**Congratulations!** You've built a complete GPT-2 implementation from scratch.
 
 If code verification passed, you can execute your `step_11.py` code with
 `pixi run gpt2`.

@@ -22,10 +22,10 @@ Run: pixi run s03
 from max.driver import Device
 from max.dtype import DType
 
-# TODO: Import necessary funcional module from max.nn with the alias F
-# https://docs.modular.com/max/api/python/nn/functional
-# TODO: Import Tensor object from max.tensor
-# https://docs.modular.com/max/api/python/tensor.Tensor
+# TODO: Import functional module max.functional with the alias F
+# https://docs.modular.com/max/api/python/functional/
+# TODO: Import Tensor from max.tensor
+# https://docs.modular.com/max/api/python/tensor/
 from max.graph import Dim, DimLike
 from max.tensor import Tensor
 
@@ -56,18 +56,18 @@ def causal_mask(
 
     # 3: Create a constant tensor filled with negative infinity
     # TODO: Use Tensor.constant() with float("-inf"), dtype, and device parameters
-    # https://docs.modular.com/max/api/python/tensor#max.tensor.Tensor.constant
+    # https://docs.modular.com/max/api/python/tensor/#max.tensor.Tensor.constant
     # Hint: This creates the base mask value that will block attention to future tokens
     mask = None
 
     # 4: Broadcast the mask to the correct shape
     # TODO: Use F.broadcast_to() to expand mask to shape (sequence_length, n)
-    # https://docs.modular.com/max/api/python/nn/functional#max.nn.functional.broadcast_to
+    # https://docs.modular.com/max/api/python/functional/#max.functional.broadcast_to
     # Hint: This creates a 2D attention mask matrix
     mask = None
 
     # 5: Apply band_part to create the causal (lower triangular) structure and return the mask
     # TODO: Use F.band_part() with num_lower=None, num_upper=0, exclude=True
-    # https://docs.modular.com/max/api/python/nn/functional/#max.nn.functional.band_part
+    # https://docs.modular.com/max/api/python/functional/#max.functional.band_part
     # Hint: This keeps only the lower triangle, allowing attention to past tokens only
     return None

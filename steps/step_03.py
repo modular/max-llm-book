@@ -24,10 +24,10 @@ from max.dtype import DType
 
 # TODO: Import necessary funcional module from max.nn with the alias F
 # https://docs.modular.com/max/api/python/nn/functional
-# TODO: Import Tensor object from max.tensor
+# TODO: Import Tensor object from max.experimental.tensor
 # https://docs.modular.com/max/api/python/tensor.Tensor
+from max.experimental.tensor import Tensor
 from max.graph import Dim, DimLike
-from max.tensor import Tensor
 
 # 2: Add the @F.functional decorator to make this a MAX functional operation
 # TODO: Add the decorator here
@@ -56,7 +56,7 @@ def causal_mask(
 
     # 3: Create a constant tensor filled with negative infinity
     # TODO: Use Tensor.constant() with float("-inf"), dtype, and device parameters
-    # https://docs.modular.com/max/api/python/tensor#max.tensor.Tensor.constant
+    # https://docs.modular.com/max/api/python/tensor#max.experimental.tensor.Tensor.constant
     # Hint: This creates the base mask value that will block attention to future tokens
     mask = None
 

@@ -10,9 +10,9 @@ Solution for Step 11: Load weights and run model
 """
 
 from max.dtype import DType
+from max.experimental.tensor import TensorType, defaults
 from max.graph import DeviceRef
-from max.nn import Linear
-from max.tensor import TensorType, defaults
+from max.nn.module_v3 import Linear
 from step_01 import GPT2Config
 from step_08 import MaxGPT2LMHeadModel
 from step_10 import generate_text

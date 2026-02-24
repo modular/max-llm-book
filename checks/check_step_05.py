@@ -54,7 +54,7 @@ def check_step_05() -> bool:
 
     # Check 3: Verify weight and bias shapes
     if hasattr(ln, "weight"):
-        from max.tensor import Tensor
+        from max.experimental.tensor import Tensor
 
         if not isinstance(ln.weight, Tensor):
             errors.append(f"weight should be a Tensor, got {type(ln.weight)}")
@@ -69,7 +69,7 @@ def check_step_05() -> bool:
                 print(f"✅ weight has correct shape: {actual_shape}")
 
     if hasattr(ln, "bias"):
-        from max.tensor import Tensor
+        from max.experimental.tensor import Tensor
 
         if not isinstance(ln.bias, Tensor):
             errors.append(f"bias should be a Tensor, got {type(ln.bias)}")
@@ -92,7 +92,7 @@ def check_step_05() -> bool:
     # Check 5: Try a forward pass
     try:
         from max.dtype import DType
-        from max.tensor import Tensor
+        from max.experimental.tensor import Tensor
 
         dummy_input = Tensor.ones([1, 10, 768], dtype=DType.float32)
         output = ln(dummy_input)

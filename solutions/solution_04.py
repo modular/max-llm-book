@@ -12,9 +12,9 @@ attend to information from different representation subspaces at different posit
 import math
 from typing import cast
 
-import max.functional as F
-from max.nn import Linear, Module
-from max.tensor import Tensor
+import max.experimental.functional as F
+from max.experimental.tensor import Tensor
+from max.nn.module_v3 import Linear, Module
 from step_01 import GPT2Config
 from step_03 import causal_mask
 

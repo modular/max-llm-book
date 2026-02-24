@@ -10,10 +10,10 @@ This module implements layer normalization that normalizes activations
 across the embedding dimension for training stability.
 """
 
-import max.functional as F
+import max.experimental.functional as F
+from max.experimental.tensor import Tensor
 from max.graph import DimLike
-from max.nn import Module
-from max.tensor import Tensor
+from max.nn.module_v3 import Module
 
 
 class LayerNorm(Module):

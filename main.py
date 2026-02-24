@@ -8,24 +8,24 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import cast
 
-import max.functional as F
+import max.experimental.functional as F
 import numpy as np
 import torch
 from max.driver import CPU, Device
 from max.dtype import DType
-from max.graph import DeviceRef, Dim, DimLike, TensorValue
-from max.nn import (
-    Embedding,
-    Linear,
-    Module,
-    Sequential,
-)
-from max.tensor import (
+from max.experimental.tensor import (
     Tensor,
     TensorType,
     default_device,
     default_dtype,
     defaults,
+)
+from max.graph import DeviceRef, Dim, DimLike, TensorValue
+from max.nn.module_v3 import (
+    Embedding,
+    Linear,
+    Module,
+    Sequential,
 )
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
 

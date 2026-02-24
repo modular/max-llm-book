@@ -20,10 +20,10 @@ Run: pixi run s10
 """
 
 # TODO: Import required modules
-# Hint: You'll need Tensor from max.tensor
+# Hint: You'll need Tensor from max.experimental.tensor
 # Hint: You'll need Embedding, Module, Sequential from max.nn
 
-from max.tensor import Tensor
+from max.experimental.tensor import Tensor
 from step_01 import GPT2Config
 
 

@@ -22,10 +22,10 @@ Run: pixi run s10
 # Hint: You'll need CPU from max.driver
 # Hint: You'll need DType from max.dtype
 # Hint: You'll need functional as F from max.nn
-# Hint: You'll need Tensor from max.tensor
+# Hint: You'll need Tensor from max.experimental.tensor
 
 from max.driver import Device
-from max.nn import Module
+from max.nn.module_v3 import Module
 from transformers import GPT2Tokenizer
 
 

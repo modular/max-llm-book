@@ -49,7 +49,7 @@ projects to vocabulary logits.
 The forward method processes token IDs through the model:
 
 First, create position indices using
-[`Tensor.arange`](https://docs.modular.com/max/api/python/tensor#max.tensor.Tensor.arange).
+[`Tensor.arange`](https://docs.modular.com/max/api/python/tensor#max.experimental.tensor.Tensor.arange).
 Generate positions [0, 1, 2, ..., seq_length-1] matching the input's dtype and
 device. This ensures compatibility when adding to embeddings.
 
@@ -82,7 +82,7 @@ You'll use the following MAX operations to complete this task:
 
 **Position generation**:
 
-- [`Tensor.arange(seq_length, dtype, device)`](https://docs.modular.com/max/api/python/tensor#max.tensor.Tensor.arange):
+- [`Tensor.arange(seq_length, dtype, device)`](https://docs.modular.com/max/api/python/tensor#max.experimental.tensor.Tensor.arange):
   Creates position indices
 
 </div>

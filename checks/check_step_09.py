@@ -65,7 +65,7 @@ def check_step_09() -> bool:
             "Hello, world!", tokenizer, device, max_length=128
         )
 
-        from max.tensor import Tensor
+        from max.experimental.tensor import Tensor
 
         if not isinstance(token_ids, Tensor):
             errors.append(
@@ -95,7 +95,7 @@ def check_step_09() -> bool:
     try:
         from max.driver import CPU
         from max.dtype import DType
-        from max.tensor import Tensor
+        from max.experimental.tensor import Tensor
         from transformers import GPT2Tokenizer
 
         tokenizer = GPT2Tokenizer.from_pretrained("gpt2")

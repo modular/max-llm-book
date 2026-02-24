@@ -73,7 +73,7 @@ You'll use the following MAX operations to complete this task:
 
 - `tensor.reshape(new_shape)`: Splits or merges head dimension
 - `tensor.transpose(axis1, axis2)`: Rearranges dimensions for parallel attention
-- [`F.split(tensor, split_sizes, axis)`](https://docs.modular.com/max/api/python/functional#max.functional.split):
+- [`F.split(tensor, split_sizes, axis)`](https://docs.modular.com/max/api/python/functional#max.experimental.functional.split):
   Divides Q/K/V from combined projection
 
 </div>

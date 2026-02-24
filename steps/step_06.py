@@ -20,7 +20,7 @@ Run: pixi run s06
 # TODO: Import required modules
 # Hint: You'll need Module from max.nn
 
-from max.tensor import Tensor
+from max.experimental.tensor import Tensor
 from step_01 import GPT2Config
 
 

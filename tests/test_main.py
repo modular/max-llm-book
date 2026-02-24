@@ -20,7 +20,7 @@ from main import (
 )
 from max.driver import CPU
 from max.dtype import DType
-from max.tensor import Tensor
+from max.experimental.tensor import Tensor
 
 
 class TestGPT2Config:

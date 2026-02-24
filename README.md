@@ -147,14 +147,14 @@ pixi run check-all
 **Failed check** (skeleton code):
 
 ```text
-❌ Embedding is not imported from max.nn
-   Hint: Add 'from max.nn import Embedding, Module'
+❌ Embedding is not imported from max.nn.module_v3
+   Hint: Add 'from max.nn.module_v3 import Embedding, Module'
 ```
 
 **Passed check** (completed implementation):
 
 ```text
-✅ Embedding is correctly imported from max.nn
+✅ Embedding is correctly imported from max.nn.module_v3
 ✅ GPT2Embeddings class exists
 ✅ All placeholder 'None' values have been replaced
 🎉 All checks passed! Your implementation is complete.

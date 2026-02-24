@@ -20,12 +20,12 @@ Run: pixi run s05
 # TODO: Import functional module from max.nn with the alias F
 # https://docs.modular.com/max/api/python/nn/functional
 
-# TODO: Import Tensor from max.tensor
+# TODO: Import Tensor from max.experimental.tensor
 # https://docs.modular.com/max/api/python/tensor.Tensor
 
+from max.experimental.tensor import Tensor
 from max.graph import DimLike
-from max.nn import Module
-from max.tensor import Tensor
+from max.nn.module_v3 import Module
 
 
 class LayerNorm(Module):
@@ -42,12 +42,12 @@ class LayerNorm(Module):
 
         # 2: Initialize learnable weight and bias parameters
         # TODO: Create self.weight as a Tensor of ones with shape [dim]
-        # https://docs.modular.com/max/api/python/tensor#max.tensor.Tensor.ones
+        # https://docs.modular.com/max/api/python/tensor#max.experimental.tensor.Tensor.ones
         # Hint: This is the gamma parameter in layer normalization
         self.weight = None
 
         # TODO: Create self.bias as a Tensor of zeros with shape [dim]
-        # https://docs.modular.com/max/api/python/tensor#max.tensor.Tensor.zeros
+        # https://docs.modular.com/max/api/python/tensor#max.experimental.tensor.Tensor.zeros
         # Hint: This is the beta parameter in layer normalization
         self.bias = None
 

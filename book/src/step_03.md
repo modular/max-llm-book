@@ -61,11 +61,11 @@ You'll use the following MAX operations to complete this task:
 
 **Tensor operations**:
 
-- [`Tensor.constant()`](https://docs.modular.com/max/api/python/tensor#max.tensor.Tensor.constant):
+- [`Tensor.constant()`](https://docs.modular.com/max/api/python/tensor#max.experimental.tensor.Tensor.constant):
   Creates a scalar constant tensor
-- [`F.broadcast_to()`](https://docs.modular.com/max/api/python/functional#max.functional.broadcast_to):
+- [`F.broadcast_to()`](https://docs.modular.com/max/api/python/functional#max.experimental.functional.broadcast_to):
   Expands tensor dimensions to target shape
-- [`F.band_part()`](https://docs.modular.com/max/api/python/functional#max.functional.band_part):
+- [`F.band_part()`](https://docs.modular.com/max/api/python/functional#max.experimental.functional.band_part):
   Extracts band matrix (keeps diagonal band, zeros out rest)
 
 </div>
@@ -82,7 +82,7 @@ You'll create the causal mask in several steps:
    - [`functional`](https://docs.modular.com/max/api/python/functional)
      as `F` from `max.nn` - functional operations library
    - [`Tensor`](https://docs.modular.com/max/api/python/tensor)
-     from `max.tensor` - tensor operations
+     from `max.experimental.tensor` - tensor operations
    - [`Dim`](https://docs.modular.com/max/api/python/graph/dim/#max.graph.dim.Dim)
      from `graph.dim` - dimension handling
 

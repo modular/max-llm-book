@@ -10,11 +10,11 @@ This module implements causal attention masking that prevents tokens from
 attending to future positions in autoregressive generation.
 """
 
-import max.functional as F
+import max.experimental.functional as F
 from max.driver import Device
 from max.dtype import DType
+from max.experimental.tensor import Tensor
 from max.graph import Dim, DimLike
-from max.tensor import Tensor
 
 
 @F.functional

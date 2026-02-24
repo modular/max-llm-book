@@ -56,13 +56,13 @@ def check_step_07() -> bool:
 
     # Check 3: Verify embeddings
     if hasattr(model, "wte"):
-        from max.nn import Embedding
+        from max.nn.module_v3 import Embedding
 
         if not isinstance(model.wte, Embedding):
             errors.append(f"wte should be an Embedding, got {type(model.wte)}")
 
     if hasattr(model, "wpe"):
-        from max.nn import Embedding
+        from max.nn.module_v3 import Embedding
 
         if not isinstance(model.wpe, Embedding):
             errors.append(f"wpe should be an Embedding, got {type(model.wpe)}")
@@ -76,7 +76,7 @@ def check_step_07() -> bool:
     # Check 5: Try a forward pass
     try:
         from max.dtype import DType
-        from max.tensor import Tensor
+        from max.experimental.tensor import Tensor
 
         # Create dummy token IDs [batch=1, seq_len=10]
         dummy_input = Tensor.constant(

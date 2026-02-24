@@ -23,11 +23,11 @@ Run: pixi run s04
 # TODO: Import required modules
 # Hint: You'll need math for scaling
 # Hint: You'll need functional as F from max.nn
-# Hint: You'll need Tensor, Device, DType from max.tensor and max.driver
+# Hint: You'll need Tensor, Device, DType from max.experimental.tensor and max.driver
 # Hint: You'll need Dim, DimLike from max.graph
 # Hint: You'll also need Linear and Module from max.nn
 
-from max.tensor import Tensor
+from max.experimental.tensor import Tensor
 from step_01 import GPT2Config
 
 # TODO: Copy causal_mask function from solution_02.py

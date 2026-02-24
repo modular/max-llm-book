@@ -71,7 +71,7 @@ def check_step_02() -> bool:
     # Check 4: Try a forward pass with dummy tensor
     try:
         from max.dtype import DType
-        from max.tensor import Tensor
+        from max.experimental.tensor import Tensor
 
         # Create dummy input [batch=1, seq_len=10, n_embd=768]
         dummy_input = Tensor.ones([1, 10, 768], dtype=DType.float32)

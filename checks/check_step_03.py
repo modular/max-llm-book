@@ -58,7 +58,7 @@ def check_step_03() -> bool:
         mask = causal_mask(5, 0, dtype=DType.float32, device=CPU())
 
         # Check output type
-        from max.tensor import Tensor
+        from max.experimental.tensor import Tensor
 
         if not isinstance(mask, Tensor):
             errors.append(

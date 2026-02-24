@@ -56,7 +56,7 @@ reduces the differences between logits (flattening).
 ## Understanding sampling vs greedy
 
 Greedy decoding always picks the highest-probability token using
-[`F.argmax`](https://docs.modular.com/max/api/python/functional#max.functional.argmax).
+[`F.argmax`](https://docs.modular.com/max/api/python/functional#max.experimental.functional.argmax).
 It's fast, deterministic, and simple, but often produces repetitive text because
 the model keeps choosing the safest option.
 
@@ -78,16 +78,16 @@ You'll use the following MAX operations to complete this task:
 
 **Probability operations**:
 
-- [`F.softmax(logits)`](https://docs.modular.com/max/api/python/functional#max.functional.softmax):
+- [`F.softmax(logits)`](https://docs.modular.com/max/api/python/functional#max.experimental.functional.softmax):
   Converts logits to probabilities
-- [`F.argmax(logits)`](https://docs.modular.com/max/api/python/functional#max.functional.argmax):
+- [`F.argmax(logits)`](https://docs.modular.com/max/api/python/functional#max.experimental.functional.argmax):
   Selects highest-probability token (greedy)
 
 **Sequence building**:
 
-- [`F.concat([seq, new_token], axis=1)`](https://docs.modular.com/max/api/python/functional#max.functional.concat):
+- [`F.concat([seq, new_token], axis=1)`](https://docs.modular.com/max/api/python/functional#max.experimental.functional.concat):
   Appends token to sequence
-- [`Tensor.constant(value, dtype, device)`](https://docs.modular.com/max/api/python/tensor#max.tensor.Tensor.constant):
+- [`Tensor.constant(value, dtype, device)`](https://docs.modular.com/max/api/python/tensor#max.experimental.tensor.Tensor.constant):
   Creates scalar tensors
 
 **NumPy interop**:

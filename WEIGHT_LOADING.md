@@ -47,7 +47,7 @@ Hugging Face GPT-2 uses `Conv1D` layers (which store transposed weights) instead
 of `Linear` layers. You need to transpose these weights after loading:
 
 ```python
-from max.nn import Linear
+from max.nn.module_v3 import Linear
 
 # Transpose weights for linear layers that correspond to Conv1D in HuggingFace
 max_model.to(device)
@@ -73,8 +73,8 @@ import numpy as np
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
 from max.driver import CPU
 from max.dtype import DType
-from max.tensor import Tensor
-from max.nn import Linear
+from max.experimental.tensor import Tensor
+from max.nn.module_v3 import Linear
 
 from solutions.solution_01 import GPT2Config
 from solutions.solution_13 import MaxGPT2LMHeadModel

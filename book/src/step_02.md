@@ -57,7 +57,7 @@ You'll use the following MAX operations to complete this task:
 
 **GELU activation**:
 
-- [`F.gelu(input, approximate="tanh")`](https://docs.modular.com/max/api/python/functional/#max.functional.gelu):
+- [`F.gelu(input, approximate="tanh")`](https://docs.modular.com/max/api/python/functional/#max.experimental.functional.gelu):
   Applies GELU activation with tanh approximation for faster computation
 
 </div>

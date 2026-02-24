@@ -63,7 +63,7 @@ def check_step_06() -> bool:
     # Check 4: Try a forward pass
     try:
         from max.dtype import DType
-        from max.tensor import Tensor
+        from max.experimental.tensor import Tensor
 
         dummy_input = Tensor.ones([1, 10, 768], dtype=DType.float32)
         output = block(dummy_input)

@@ -23,13 +23,13 @@ Run: pixi run s02
 # TODO: Import functional module from max.nn with the alias F
 # https://docs.modular.com/max/api/python/nn/functional
 
-# TODO: Import Tensor from max.tensor
+# TODO: Import Tensor from max.experimental.tensor
 # https://docs.modular.com/max/api/python/tensor.Tensor
 
 # TODO: Import Linear and Module from max.nn
 # https://docs.modular.com/max/api/python/nn/module_v3
 
-from max.tensor import Tensor
+from max.experimental.tensor import Tensor
 from step_01 import GPT2Config
 
 

@@ -10,9 +10,9 @@ This module implements the feed-forward network (MLP) used in each
 transformer block with GELU activation.
 """
 
-import max.functional as F
-from max.nn import Linear, Module
-from max.tensor import Tensor
+import max.experimental.functional as F
+from max.experimental.tensor import Tensor
+from max.nn.module_v3 import Linear, Module
 from step_01 import GPT2Config
 
 

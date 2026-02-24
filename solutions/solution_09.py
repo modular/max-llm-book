@@ -13,7 +13,7 @@ and decode token IDs back to text using a tokenizer.
 import numpy as np
 from max.driver import CPU, Device
 from max.dtype import DType
-from max.tensor import Tensor
+from max.experimental.tensor import Tensor
 from transformers import GPT2Tokenizer
 
 

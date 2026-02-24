@@ -75,7 +75,7 @@ def check_step_04() -> bool:
     # Check 5: Try a forward pass
     try:
         from max.dtype import DType
-        from max.tensor import Tensor
+        from max.experimental.tensor import Tensor
 
         # Create dummy input [batch=1, seq_len=10, n_embd=768]
         dummy_input = Tensor.ones([1, 10, 768], dtype=DType.float32)

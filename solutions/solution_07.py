@@ -10,8 +10,8 @@ This module stacks multiple transformer blocks and adds embeddings
 to create the complete GPT-2 transformer architecture.
 """
 
-from max.nn import Embedding, Module, Sequential
-from max.tensor import Tensor
+from max.experimental.tensor import Tensor
+from max.nn.module_v3 import Embedding, Module, Sequential
 from step_01 import GPT2Config
 from step_05 import LayerNorm
 from step_06 import GPT2Block

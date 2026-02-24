@@ -9,12 +9,12 @@ Solution for Step 10: Text Generation
 This module implements autoregressive text generation using the GPT-2 model.
 """
 
-import max.functional as F
+import max.experimental.functional as F
 import numpy as np
 from max.driver import CPU, Device
 from max.dtype import DType
-from max.nn import Module
-from max.tensor import Tensor
+from max.experimental.tensor import Tensor
+from max.nn.module_v3 import Module
 from step_09 import decode_tokens, encode_text
 from transformers import GPT2Tokenizer
 

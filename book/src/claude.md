@@ -21,7 +21,7 @@ following context in mind:
 **MAX Framework specifics:**
 - Functions use @F.functional decorator for graph definitions
 - Modules extend max.nn.Module base class
-- Tensor operations use max.nn.functional and max.tensor
+- Tensor operations use max.experimental.functional and max.experimental.tensor
 - Models use max.nn.Linear for linear layers
 - The tutorial uses MAX Framework's Python API throughout
 

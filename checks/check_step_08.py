@@ -55,7 +55,7 @@ def check_step_08() -> bool:
 
     # Check 3: Verify lm_head is Linear
     if hasattr(model, "lm_head"):
-        from max.nn import Linear
+        from max.nn.module_v3 import Linear
 
         if not isinstance(model.lm_head, Linear):
             errors.append(
@@ -71,7 +71,7 @@ def check_step_08() -> bool:
     # Check 5: Try a forward pass
     try:
         from max.dtype import DType
-        from max.tensor import Tensor
+        from max.experimental.tensor import Tensor
 
         # Create dummy token IDs [batch=1, seq_len=10]
         dummy_input = Tensor.constant(

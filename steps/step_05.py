@@ -18,10 +18,10 @@ Run: pixi run s05
 
 # 1: Import the required modules from MAX
 # TODO: Import functional module from max.nn with the alias F
-# https://docs.modular.com/max/api/python/nn/functional
+# https://docs.modular.com/max/api/python/functional
 
 # TODO: Import Tensor from max.tensor
-# https://docs.modular.com/max/api/python/tensor.Tensor
+# https://docs.modular.com/max/api/python/tensor#max.tensor.Tensor
 
 from max.graph import DimLike
 from max.nn import Module
@@ -62,6 +62,6 @@ class LayerNorm(Module):
         """
         # 3: Apply layer normalization and return the result
         # TODO: Use F.layer_norm() with x, gamma=self.weight, beta=self.bias, epsilon=self.eps
-        # https://docs.modular.com/max/api/python/nn/functional#max.nn.functional.layer_norm
+        # https://docs.modular.com/max/api/python/functional#max.functional.layer_norm
         # Hint: Layer normalization normalizes across the last dimension
         return None

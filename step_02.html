@@ -240,7 +240,7 @@ Applies linear transformation <code>y = xW^T + b</code></li>
 </ul>
 <p><strong>GELU activation</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/functional/#max.functional.gelu"><code>F.gelu(input, approximate="tanh")</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/functional/#max.experimental.functional.gelu"><code>F.gelu(input, approximate="tanh")</code></a>:
 Applies GELU activation with tanh approximation for faster computation</li>
 </ul>
 </div>
@@ -294,13 +294,13 @@ Run: pixi run s02
 # TODO: Import functional module from max.nn with the alias F
 # https://docs.modular.com/max/api/python/nn/functional
 
-# TODO: Import Tensor from max.tensor
+# TODO: Import Tensor from max.experimental.tensor
 # https://docs.modular.com/max/api/python/tensor.Tensor
 
 # TODO: Import Linear and Module from max.nn
 # https://docs.modular.com/max/api/python/nn/module_v3
 
-from max.tensor import Tensor
+from max.experimental.tensor import Tensor
 from step_01 import GPT2Config
 
 
@@ -369,9 +369,9 @@ This module implements the feed-forward network (MLP) used in each
 transformer block with GELU activation.
 """
 
-import max.functional as F
-from max.nn import Linear, Module
-from max.tensor import Tensor
+import max.experimental.functional as F
+from max.experimental.tensor import Tensor
+from max.nn.module_v3 import Linear, Module
 from step_01 import GPT2Config
 
 

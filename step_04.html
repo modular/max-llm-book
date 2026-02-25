@@ -255,7 +255,7 @@ Q/K/V and output projections</li>
 <ul>
 <li><code>tensor.reshape(new_shape)</code>: Splits or merges head dimension</li>
 <li><code>tensor.transpose(axis1, axis2)</code>: Rearranges dimensions for parallel attention</li>
-<li><a href="https://docs.modular.com/max/api/python/functional#max.functional.split"><code>F.split(tensor, split_sizes, axis)</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/functional#max.experimental.functional.split"><code>F.split(tensor, split_sizes, axis)</code></a>:
 Divides Q/K/V from combined projection</li>
 </ul>
 </div>
@@ -335,11 +335,11 @@ Run: pixi run s04
 # TODO: Import required modules
 # Hint: You'll need math for scaling
 # Hint: You'll need functional as F from max.nn
-# Hint: You'll need Tensor, Device, DType from max.tensor and max.driver
+# Hint: You'll need Tensor, Device, DType from max.experimental.tensor and max.driver
 # Hint: You'll need Dim, DimLike from max.graph
 # Hint: You'll also need Linear and Module from max.nn
 
-from max.tensor import Tensor
+from max.experimental.tensor import Tensor
 from step_01 import GPT2Config
 
 # TODO: Copy causal_mask function from solution_02.py
@@ -480,9 +480,9 @@ attend to information from different representation subspaces at different posit
 import math
 from typing import cast
 
-import max.functional as F
-from max.nn import Linear, Module
-from max.tensor import Tensor
+import max.experimental.functional as F
+from max.experimental.tensor import Tensor
+from max.nn.module_v3 import Linear, Module
 from step_01 import GPT2Config
 from step_03 import causal_mask
 

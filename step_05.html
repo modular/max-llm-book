@@ -241,14 +241,14 @@ class used for eager tensors</li>
 </ul>
 <p><strong>Tensor initialization</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/tensor#max.tensor.Tensor.ones"><code>Tensor.ones()</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/tensor#max.experimental.tensor.Tensor.ones"><code>Tensor.ones()</code></a>:
 Creates tensor filled with 1.0 values</li>
-<li><a href="https://docs.modular.com/max/api/python/tensor#max.tensor.Tensor.zeros"><code>Tensor.zeros()</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/tensor#max.experimental.tensor.Tensor.zeros"><code>Tensor.zeros()</code></a>:
 Creates tensor filled with 0.0 values</li>
 </ul>
 <p><strong>Layer normalization</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/functional#max.functional.layer_norm"><code>F.layer_norm()</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/functional#max.experimental.functional.layer_norm"><code>F.layer_norm()</code></a>:
 Applies layer normalization with parameters: <code>input</code>, <code>gamma</code> (weight), <code>beta</code>
 (bias), and <code>epsilon</code></li>
 </ul>
@@ -293,12 +293,12 @@ Run: pixi run s05
 # TODO: Import functional module from max.nn with the alias F
 # https://docs.modular.com/max/api/python/nn/functional
 
-# TODO: Import Tensor from max.tensor
+# TODO: Import Tensor from max.experimental.tensor
 # https://docs.modular.com/max/api/python/tensor.Tensor
 
+from max.experimental.tensor import Tensor
 from max.graph import DimLike
-from max.nn import Module
-from max.tensor import Tensor
+from max.nn.module_v3 import Module
 
 
 class LayerNorm(Module):
@@ -315,12 +315,12 @@ class LayerNorm(Module):
 
         # 2: Initialize learnable weight and bias parameters
         # TODO: Create self.weight as a Tensor of ones with shape [dim]
-        # https://docs.modular.com/max/api/python/tensor#max.tensor.Tensor.ones
+        # https://docs.modular.com/max/api/python/tensor#max.experimental.tensor.Tensor.ones
         # Hint: This is the gamma parameter in layer normalization
         self.weight = None
 
         # TODO: Create self.bias as a Tensor of zeros with shape [dim]
-        # https://docs.modular.com/max/api/python/tensor#max.tensor.Tensor.zeros
+        # https://docs.modular.com/max/api/python/tensor#max.experimental.tensor.Tensor.zeros
         # Hint: This is the beta parameter in layer normalization
         self.bias = None
 
@@ -355,10 +355,10 @@ This module implements layer normalization that normalizes activations
 across the embedding dimension for training stability.
 """
 
-import max.functional as F
+import max.experimental.functional as F
+from max.experimental.tensor import Tensor
 from max.graph import DimLike
-from max.nn import Module
-from max.tensor import Tensor
+from max.nn.module_v3 import Module
 
 
 class LayerNorm(Module):

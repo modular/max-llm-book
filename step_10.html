@@ -239,7 +239,7 @@ large logits even larger (sharpening), while dividing by a value greater than 1
 reduces the differences between logits (flattening).</p>
 <h2 id="understanding-sampling-vs-greedy"><a class="header" href="#understanding-sampling-vs-greedy">Understanding sampling vs greedy</a></h2>
 <p>Greedy decoding always picks the highest-probability token using
-<a href="https://docs.modular.com/max/api/python/functional#max.functional.argmax"><code>F.argmax</code></a>.
+<a href="https://docs.modular.com/max/api/python/functional#max.experimental.functional.argmax"><code>F.argmax</code></a>.
 It’s fast, deterministic, and simple, but often produces repetitive text because
 the model keeps choosing the safest option.</p>
 <p>Sampling randomly selects tokens according to their probabilities. Convert
@@ -255,16 +255,16 @@ while still favoring high-quality continuations.</p>
 <p>You’ll use the following MAX operations to complete this task:</p>
 <p><strong>Probability operations</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/functional#max.functional.softmax"><code>F.softmax(logits)</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/functional#max.experimental.functional.softmax"><code>F.softmax(logits)</code></a>:
 Converts logits to probabilities</li>
-<li><a href="https://docs.modular.com/max/api/python/functional#max.functional.argmax"><code>F.argmax(logits)</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/functional#max.experimental.functional.argmax"><code>F.argmax(logits)</code></a>:
 Selects highest-probability token (greedy)</li>
 </ul>
 <p><strong>Sequence building</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/functional#max.functional.concat"><code>F.concat([seq, new_token], axis=1)</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/functional#max.experimental.functional.concat"><code>F.concat([seq, new_token], axis=1)</code></a>:
 Appends token to sequence</li>
-<li><a href="https://docs.modular.com/max/api/python/tensor#max.tensor.Tensor.constant"><code>Tensor.constant(value, dtype, device)</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/tensor#max.experimental.tensor.Tensor.constant"><code>Tensor.constant(value, dtype, device)</code></a>:
 Creates scalar tensors</li>
 </ul>
 <p><strong>NumPy interop</strong>:</p>
@@ -332,10 +332,10 @@ Run: pixi run s10
 # Hint: You'll need CPU from max.driver
 # Hint: You'll need DType from max.dtype
 # Hint: You'll need functional as F from max.nn
-# Hint: You'll need Tensor from max.tensor
+# Hint: You'll need Tensor from max.experimental.tensor
 
 from max.driver import Device
-from max.nn import Module
+from max.nn.module_v3 import Module
 from transformers import GPT2Tokenizer
 
 
@@ -432,12 +432,12 @@ Solution for Step 10: Text Generation
 This module implements autoregressive text generation using the GPT-2 model.
 """
 
-import max.functional as F
+import max.experimental.functional as F
 import numpy as np
 from max.driver import CPU, Device
 from max.dtype import DType
-from max.nn import Module
-from max.tensor import Tensor
+from max.experimental.tensor import Tensor
+from max.nn.module_v3 import Module
 from step_09 import decode_tokens, encode_text
 from transformers import GPT2Tokenizer
 

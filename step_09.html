@@ -253,12 +253,12 @@ from the output.</p>
 <p>You’ll use the following MAX operations to complete this task:</p>
 <p><strong>Tensor creation</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/tensor#max.tensor.Tensor.constant"><code>Tensor.constant(data, dtype, device)</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/tensor#max.experimental.tensor.Tensor.constant"><code>Tensor.constant(data, dtype, device)</code></a>:
 Creates tensor from Python data</li>
 </ul>
 <p><strong>Device transfer</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/tensor#max.tensor.Tensor.to"><code>tensor.to(CPU())</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/tensor#max.experimental.tensor.Tensor.to"><code>tensor.to(CPU())</code></a>:
 Moves tensor to CPU for NumPy conversion</li>
 </ul>
 <p><strong>NumPy interop</strong>:</p>
@@ -318,10 +318,10 @@ Run: pixi run s09
 # Hint: You'll need numpy as np
 # Hint: You'll need CPU from max.driver
 # Hint: You'll need DType from max.dtype
-# Hint: You'll need Tensor from max.tensor
+# Hint: You'll need Tensor from max.experimental.tensor
 
 from max.driver import Device
-from max.tensor import Tensor
+from max.experimental.tensor import Tensor
 from transformers import GPT2Tokenizer
 
 
@@ -398,7 +398,7 @@ and decode token IDs back to text using a tokenizer.
 import numpy as np
 from max.driver import CPU, Device
 from max.dtype import DType
-from max.tensor import Tensor
+from max.experimental.tensor import Tensor
 from transformers import GPT2Tokenizer
 
 

@@ -296,7 +296,7 @@ Run: pixi run s06
 # TODO: Import required modules
 # Hint: You'll need Module from max.nn
 
-from max.tensor import Tensor
+from max.experimental.tensor import Tensor
 from step_01 import GPT2Config
 
 
@@ -376,8 +376,8 @@ This module implements a complete GPT-2 transformer block, combining
 multi-head attention, MLP, layer normalization, and residual connections.
 """
 
-from max.nn import Module
-from max.tensor import Tensor
+from max.experimental.tensor import Tensor
+from max.nn.module_v3 import Module
 from step_01 import GPT2Config
 from step_02 import GPT2MLP
 from step_04 import GPT2MultiHeadAttention

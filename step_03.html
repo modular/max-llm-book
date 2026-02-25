@@ -248,11 +248,11 @@ Converts functions to graph operations for MAX compilation</li>
 </ul>
 <p><strong>Tensor operations</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/tensor#max.tensor.Tensor.constant"><code>Tensor.constant()</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/tensor#max.experimental.tensor.Tensor.constant"><code>Tensor.constant()</code></a>:
 Creates a scalar constant tensor</li>
-<li><a href="https://docs.modular.com/max/api/python/functional#max.functional.broadcast_to"><code>F.broadcast_to()</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/functional#max.experimental.functional.broadcast_to"><code>F.broadcast_to()</code></a>:
 Expands tensor dimensions to target shape</li>
-<li><a href="https://docs.modular.com/max/api/python/functional#max.functional.band_part"><code>F.band_part()</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/functional#max.experimental.functional.band_part"><code>F.band_part()</code></a>:
 Extracts band matrix (keeps diagonal band, zeros out rest)</li>
 </ul>
 </div>
@@ -269,7 +269,7 @@ data type specification</li>
 <li><a href="https://docs.modular.com/max/api/python/functional"><code>functional</code></a>
 as <code>F</code> from <code>max.nn</code> - functional operations library</li>
 <li><a href="https://docs.modular.com/max/api/python/tensor"><code>Tensor</code></a>
-from <code>max.tensor</code> - tensor operations</li>
+from <code>max.experimental.tensor</code> - tensor operations</li>
 <li><a href="https://docs.modular.com/max/api/python/graph/dim/#max.graph.dim.Dim"><code>Dim</code></a>
 from <code>graph.dim</code> - dimension handling</li>
 </ul>
@@ -325,10 +325,10 @@ from max.dtype import DType
 
 # TODO: Import necessary funcional module from max.nn with the alias F
 # https://docs.modular.com/max/api/python/nn/functional
-# TODO: Import Tensor object from max.tensor
+# TODO: Import Tensor object from max.experimental.tensor
 # https://docs.modular.com/max/api/python/tensor.Tensor
+from max.experimental.tensor import Tensor
 from max.graph import Dim, DimLike
-from max.tensor import Tensor
 
 # 2: Add the @F.functional decorator to make this a MAX functional operation
 # TODO: Add the decorator here
@@ -357,7 +357,7 @@ def causal_mask(
 
     # 3: Create a constant tensor filled with negative infinity
     # TODO: Use Tensor.constant() with float("-inf"), dtype, and device parameters
-    # https://docs.modular.com/max/api/python/tensor#max.tensor.Tensor.constant
+    # https://docs.modular.com/max/api/python/tensor#max.experimental.tensor.Tensor.constant
     # Hint: This creates the base mask value that will block attention to future tokens
     mask = None
 
@@ -389,11 +389,11 @@ This module implements causal attention masking that prevents tokens from
 attending to future positions in autoregressive generation.
 """
 
-import max.functional as F
+import max.experimental.functional as F
 from max.driver import Device
 from max.dtype import DType
+from max.experimental.tensor import Tensor
 from max.graph import Dim, DimLike
-from max.tensor import Tensor
 
 
 @F.functional

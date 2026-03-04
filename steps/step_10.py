@@ -25,7 +25,7 @@ Run: pixi run s10
 # Hint: You'll need Tensor from max.experimental.tensor
 
 from max.driver import Device
-from max.nn.module_v3 import Module
+from max.experimental.nn import Module
 from transformers import GPT2Tokenizer
 
 

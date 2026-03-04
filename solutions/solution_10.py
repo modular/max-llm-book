@@ -13,8 +13,8 @@ import max.experimental.functional as F
 import numpy as np
 from max.driver import CPU, Device
 from max.dtype import DType
+from max.experimental.nn import Module
 from max.experimental.tensor import Tensor
-from max.nn.module_v3 import Module
 from step_09 import decode_tokens, encode_text
 from transformers import GPT2Tokenizer
 

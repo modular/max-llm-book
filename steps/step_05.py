@@ -23,9 +23,9 @@ Run: pixi run s05
 # TODO: Import Tensor from max.experimental.tensor
 # https://docs.modular.com/max/api/python/tensor.Tensor
 
+from max.experimental.nn import Module
 from max.experimental.tensor import Tensor
 from max.graph import DimLike
-from max.nn.module_v3 import Module
 
 
 class LayerNorm(Module):

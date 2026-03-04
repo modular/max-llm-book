@@ -10,8 +10,8 @@ This module implements a complete GPT-2 transformer block, combining
 multi-head attention, MLP, layer normalization, and residual connections.
 """
 
+from max.experimental.nn import Module
 from max.experimental.tensor import Tensor
-from max.nn.module_v3 import Module
 from step_01 import GPT2Config
 from step_02 import GPT2MLP
 from step_04 import GPT2MultiHeadAttention

@@ -7,7 +7,7 @@ from basic embeddings to text generation.
 ## What you'll learn
 
 - **Transformer architecture**: Understand every component of GPT-2
-- **MAX Python API**: Learn MAX's `nn.module_v3` for building neural networks
+- **MAX Python API**: Learn MAX's `experimental.nn` for building neural networks
 - **Test-driven learning**: Validate your implementation at each step
 - **Production patterns**: HuggingFace-compatible architecture design
 
@@ -147,14 +147,14 @@ pixi run check-all
 **Failed check** (skeleton code):
 
 ```text
-❌ Embedding is not imported from max.nn.module_v3
-   Hint: Add 'from max.nn.module_v3 import Embedding, Module'
+❌ Embedding is not imported from max.experimental.nn
+   Hint: Add 'from max.experimental.nn import Embedding, Module'
 ```
 
 **Passed check** (completed implementation):
 
 ```text
-✅ Embedding is correctly imported from max.nn.module_v3
+✅ Embedding is correctly imported from max.experimental.nn
 ✅ GPT2Embeddings class exists
 ✅ All placeholder 'None' values have been replaced
 🎉 All checks passed! Your implementation is complete.

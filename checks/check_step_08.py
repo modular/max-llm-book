@@ -55,7 +55,7 @@ def check_step_08() -> bool:
 
     # Check 3: Verify lm_head is Linear
     if hasattr(model, "lm_head"):
-        from max.nn.module_v3 import Linear
+        from max.experimental.nn import Linear
 
         if not isinstance(model.lm_head, Linear):
             errors.append(

@@ -56,13 +56,13 @@ def check_step_07() -> bool:
 
     # Check 3: Verify embeddings
     if hasattr(model, "wte"):
-        from max.nn.module_v3 import Embedding
+        from max.experimental.nn import Embedding
 
         if not isinstance(model.wte, Embedding):
             errors.append(f"wte should be an Embedding, got {type(model.wte)}")
 
     if hasattr(model, "wpe"):
-        from max.nn.module_v3 import Embedding
+        from max.experimental.nn import Embedding
 
         if not isinstance(model.wpe, Embedding):
             errors.append(f"wpe should be an Embedding, got {type(model.wpe)}")

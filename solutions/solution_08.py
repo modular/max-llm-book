@@ -10,8 +10,8 @@ This module adds the final projection layer that converts hidden states
 to vocabulary logits for predicting the next token.
 """
 
+from max.experimental.nn import Linear, Module
 from max.experimental.tensor import Tensor
-from max.nn.module_v3 import Linear, Module
 from step_01 import GPT2Config
 from step_07 import MaxGPT2Model
 

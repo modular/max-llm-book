@@ -709,8 +709,8 @@ transformer block with GELU activation.
 """
 
 import max.experimental.functional as F
+from max.experimental.nn import Linear, Module
 from max.experimental.tensor import Tensor
-from max.nn.module_v3 import Linear, Module
 from step_01 import GPT2Config
 
 
@@ -1254,8 +1254,8 @@ import math
 from typing import cast
 
 import max.experimental.functional as F
+from max.experimental.nn import Linear, Module
 from max.experimental.tensor import Tensor
-from max.nn.module_v3 import Linear, Module
 from step_01 import GPT2Config
 from step_03 import causal_mask
 
@@ -1489,9 +1489,9 @@ Run: pixi run s05
 # TODO: Import Tensor from max.experimental.tensor
 # https://docs.modular.com/max/api/python/tensor.Tensor
 
+from max.experimental.nn import Module
 from max.experimental.tensor import Tensor
 from max.graph import DimLike
-from max.nn.module_v3 import Module
 
 
 class LayerNorm(Module):
@@ -1549,9 +1549,9 @@ across the embedding dimension for training stability.
 """
 
 import max.experimental.functional as F
+from max.experimental.nn import Module
 from max.experimental.tensor import Tensor
 from max.graph import DimLike
-from max.nn.module_v3 import Module
 
 
 class LayerNorm(Module):
@@ -1761,8 +1761,8 @@ This module implements a complete GPT-2 transformer block, combining
 multi-head attention, MLP, layer normalization, and residual connections.
 """
 
+from max.experimental.nn import Module
 from max.experimental.tensor import Tensor
-from max.nn.module_v3 import Module
 from step_01 import GPT2Config
 from step_02 import GPT2MLP
 from step_04 import GPT2MultiHeadAttention
@@ -2037,8 +2037,8 @@ This module stacks multiple transformer blocks and adds embeddings
 to create the complete GPT-2 transformer architecture.
 """
 
+from max.experimental.nn import Embedding, Module, Sequential
 from max.experimental.tensor import Tensor
-from max.nn.module_v3 import Embedding, Module, Sequential
 from step_01 import GPT2Config
 from step_05 import LayerNorm
 from step_06 import GPT2Block
@@ -2263,8 +2263,8 @@ This module adds the final projection layer that converts hidden states
 to vocabulary logits for predicting the next token.
 """
 
+from max.experimental.nn import Linear, Module
 from max.experimental.tensor import Tensor
-from max.nn.module_v3 import Linear, Module
 from step_01 import GPT2Config
 from step_07 import MaxGPT2Model
 
@@ -2671,7 +2671,7 @@ Run: pixi run s10
 # Hint: You'll need Tensor from max.experimental.tensor
 
 from max.driver import Device
-from max.nn.module_v3 import Module
+from max.experimental.nn import Module
 from transformers import GPT2Tokenizer
 
 
@@ -2772,8 +2772,8 @@ import max.experimental.functional as F
 import numpy as np
 from max.driver import CPU, Device
 from max.dtype import DType
+from max.experimental.nn import Module
 from max.experimental.tensor import Tensor
-from max.nn.module_v3 import Module
 from step_09 import decode_tokens, encode_text
 from transformers import GPT2Tokenizer
 
@@ -3067,9 +3067,9 @@ Solution for Step 11: Load weights and run model
 """
 
 from max.dtype import DType
+from max.experimental.nn import Linear
 from max.experimental.tensor import TensorType, defaults
 from max.graph import DeviceRef
-from max.nn.module_v3 import Linear
 from step_01 import GPT2Config
 from step_08 import MaxGPT2LMHeadModel
 from step_10 import generate_text

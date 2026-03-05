@@ -16,7 +16,7 @@ from max.experimental.tensor import Tensor
 from step_01 import GPT2Config
 
 
-class GPT2MLP(Module):
+class GPT2MLP(Module):  # type: ignore[type-arg]
     """Feed-forward network matching HuggingFace GPT-2 structure.
 
     Args:

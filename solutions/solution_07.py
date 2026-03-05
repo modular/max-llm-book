@@ -17,7 +17,7 @@ from step_05 import LayerNorm
 from step_06 import GPT2Block
 
 
-class MaxGPT2Model(Module):
+class MaxGPT2Model(Module):  # type: ignore[type-arg]
     """Complete GPT-2 transformer model matching HuggingFace structure.
 
     Architecture:

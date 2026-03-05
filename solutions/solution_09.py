@@ -30,5 +30,5 @@ def decode_tokens(token_ids: Tensor, tokenizer: GPT2Tokenizer) -> str:
     token_ids_np: np.ndarray = np.from_dlpack(token_ids.to(CPU()))
     if token_ids_np.ndim > 1:
         token_ids_np = token_ids_np.flatten()
-    token_ids_list: list = token_ids_np.tolist()
+    token_ids_list: list = token_ids_np.tolist()  # type: ignore[type-arg]
     return tokenizer.decode(token_ids_list, skip_special_tokens=True)

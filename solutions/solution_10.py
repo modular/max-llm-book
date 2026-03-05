@@ -20,7 +20,7 @@ from transformers import GPT2Tokenizer
 
 
 def generate_text(
-    model: Module,
+    model: Module,  # type: ignore[type-arg]
     tokenizer: GPT2Tokenizer,
     device: Device,
     prompt: str,

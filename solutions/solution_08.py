@@ -16,7 +16,7 @@ from step_01 import GPT2Config
 from step_07 import MaxGPT2Model
 
 
-class MaxGPT2LMHeadModel(Module):
+class MaxGPT2LMHeadModel(Module):  # type: ignore[type-arg]
     """Complete GPT-2 model with language modeling head.
 
     This is the full model that can be used for text generation.

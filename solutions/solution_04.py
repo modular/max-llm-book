@@ -19,7 +19,7 @@ from step_01 import GPT2Config
 from step_03 import causal_mask
 
 
-class GPT2MultiHeadAttention(Module):
+class GPT2MultiHeadAttention(Module):  # type: ignore[type-arg]
     """Multi-head attention for GPT-2, matching HuggingFace structure."""
 
     def __init__(self, config: GPT2Config) -> None:

@@ -16,7 +16,7 @@ from max.experimental.tensor import Tensor
 from max.graph import DimLike
 
 
-class LayerNorm(Module):
+class LayerNorm(Module):  # type: ignore[type-arg]
     """Layer normalization module.
 
     Args:

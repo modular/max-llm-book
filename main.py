@@ -48,7 +48,7 @@ class GPT2Config:
 
 
 # ANCHOR: feed_forward_network
-class GPT2MLP(Module):
+class GPT2MLP(Module):  # type: ignore[type-arg]
     """Exact HuggingFace GPT-2 MLP structure"""
 
     def __init__(self, intermediate_size: int, config: GPT2Config) -> None:
@@ -86,7 +86,7 @@ def causal_mask(
 
 
 # ANCHOR: multi_head_attention
-class GPT2MultiHeadAttention(Module):
+class GPT2MultiHeadAttention(Module):  # type: ignore[type-arg]
     """Exact HuggingFace GPT-2 attention structure"""
 
     def __init__(self, config: GPT2Config) -> None:
@@ -165,7 +165,7 @@ class GPT2MultiHeadAttention(Module):
 
 
 # ANCHOR: layer_normalization
-class LayerNorm(Module):
+class LayerNorm(Module):  # type: ignore[type-arg]
     def __init__(self, dim: DimLike, *, eps: float = 1e-5) -> None:
         self.eps = eps
         self.weight = Tensor.ones([dim])
@@ -181,7 +181,7 @@ class LayerNorm(Module):
 
 
 # ANCHOR: transformer_block
-class GPT2Block(Module):
+class GPT2Block(Module):  # type: ignore[type-arg]
     """Exact HuggingFace GPT-2 transformer block structure"""
 
     def __init__(self, config: GPT2Config) -> None:
@@ -216,7 +216,7 @@ class GPT2Block(Module):
 
 
 # ANCHOR: stacking_transformer_blocks
-class MaxGPT2Model(Module):
+class MaxGPT2Model(Module):  # type: ignore[type-arg]
     def __init__(
         self,
         config: GPT2Config,
@@ -244,7 +244,7 @@ class MaxGPT2Model(Module):
 
 
 # ANCHOR: language_model_head
-class MaxGPT2LMHeadModel(Module):
+class MaxGPT2LMHeadModel(Module):  # type: ignore[type-arg]
     """Exact HuggingFace GPT-2 model structure"""
 
     def __init__(self, config: GPT2Config) -> None:
@@ -276,7 +276,7 @@ def decode_tokens(token_ids: Tensor, tokenizer: GPT2Tokenizer) -> str:
     token_ids_np: np.ndarray = np.from_dlpack(token_ids.to(CPU()))
     if token_ids_np.ndim > 1:
         token_ids_np = token_ids_np.flatten()
-    token_ids_list: list = token_ids_np.tolist()
+    token_ids_list: list = token_ids_np.tolist()  # type: ignore[type-arg]
     return tokenizer.decode(token_ids_list, skip_special_tokens=True)
 
 
@@ -285,7 +285,7 @@ def decode_tokens(token_ids: Tensor, tokenizer: GPT2Tokenizer) -> str:
 
 # ANCHOR: text_generation
 def generate_text(
-    model: Module | Callable[[Tensor], Tensor],
+    model: Module | Callable[[Tensor], Tensor],  # type: ignore[type-arg]
     tokenizer: GPT2Tokenizer,
     device: Device,
     prompt: str,

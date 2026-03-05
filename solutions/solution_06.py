@@ -18,7 +18,7 @@ from step_04 import GPT2MultiHeadAttention
 from step_05 import LayerNorm
 
 
-class GPT2Block(Module):
+class GPT2Block(Module):  # type: ignore[type-arg]
     """Complete GPT-2 transformer block matching HuggingFace structure.
 
     Architecture (pre-norm):

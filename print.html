@@ -714,7 +714,7 @@ from max.experimental.tensor import Tensor
 from step_01 import GPT2Config
 
 
-class GPT2MLP(Module):
+class GPT2MLP(Module):  # type: ignore[type-arg]
     """Feed-forward network matching HuggingFace GPT-2 structure.
 
     Args:
@@ -1260,7 +1260,7 @@ from step_01 import GPT2Config
 from step_03 import causal_mask
 
 
-class GPT2MultiHeadAttention(Module):
+class GPT2MultiHeadAttention(Module):  # type: ignore[type-arg]
     """Multi-head attention for GPT-2, matching HuggingFace structure."""
 
     def __init__(self, config: GPT2Config) -&gt; None:
@@ -1554,7 +1554,7 @@ from max.experimental.tensor import Tensor
 from max.graph import DimLike
 
 
-class LayerNorm(Module):
+class LayerNorm(Module):  # type: ignore[type-arg]
     """Layer normalization module.
 
     Args:
@@ -1769,7 +1769,7 @@ from step_04 import GPT2MultiHeadAttention
 from step_05 import LayerNorm
 
 
-class GPT2Block(Module):
+class GPT2Block(Module):  # type: ignore[type-arg]
     """Complete GPT-2 transformer block matching HuggingFace structure.
 
     Architecture (pre-norm):
@@ -2044,7 +2044,7 @@ from step_05 import LayerNorm
 from step_06 import GPT2Block
 
 
-class MaxGPT2Model(Module):
+class MaxGPT2Model(Module):  # type: ignore[type-arg]
     """Complete GPT-2 transformer model matching HuggingFace structure.
 
     Architecture:
@@ -2269,7 +2269,7 @@ from step_01 import GPT2Config
 from step_07 import MaxGPT2Model
 
 
-class MaxGPT2LMHeadModel(Module):
+class MaxGPT2LMHeadModel(Module):  # type: ignore[type-arg]
     """Complete GPT-2 model with language modeling head.
 
     This is the full model that can be used for text generation.
@@ -2527,7 +2527,7 @@ def decode_tokens(token_ids: Tensor, tokenizer: GPT2Tokenizer) -&gt; str:
     token_ids_np: np.ndarray = np.from_dlpack(token_ids.to(CPU()))
     if token_ids_np.ndim &gt; 1:
         token_ids_np = token_ids_np.flatten()
-    token_ids_list: list = token_ids_np.tolist()
+    token_ids_list: list = token_ids_np.tolist()  # type: ignore[type-arg]
     return tokenizer.decode(token_ids_list, skip_special_tokens=True)
 </code></pre>
 </details>
@@ -2779,7 +2779,7 @@ from transformers import GPT2Tokenizer
 
 
 def generate_text(
-    model: Module,
+    model: Module,  # type: ignore[type-arg]
     tokenizer: GPT2Tokenizer,
     device: Device,
     prompt: str,

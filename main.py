@@ -8,7 +8,7 @@ import math
 import os
 import statistics
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Generator
 from dataclasses import dataclass
 from typing import cast
 
@@ -388,6 +388,224 @@ def generate_text(
 # ANCHOR_END: text_generation
 
 
+# ANCHOR: chat
+# Turn-boundary markers that signal GPT-2 has started a new speaker turn.
+_CHAT_STOPS: list[str] = ["\nHuman:", "\nAI:"]
+
+
+def _stop_prefix_len(text: str) -> int:
+    """Return the length of the longest suffix of *text* that is a prefix of any stop sequence.
+
+    Characters that could be the start of a stop sequence must be held back
+    until the next token confirms whether the full sequence arrives. Returns 0
+    when no stop-sequence prefix matches the tail of *text*.
+
+    Args:
+        text: Fully-decoded generated suffix decoded so far.
+
+    Returns:
+        Number of trailing characters to withhold before yielding.
+    """
+    return max(
+        (
+            n
+            for stop in _CHAT_STOPS
+            for n in range(len(stop), 0, -1)
+            if text.endswith(stop[:n])
+        ),
+        default=0,
+    )
+
+
+def _stream_chat_tokens(
+    sampler: Callable[[Tensor, Tensor], Tensor],
+    tokenizer: GPT2Tokenizer,
+    device: Device,
+    dtype: DType,
+    prompt: str,
+    max_new_tokens: int = 100,
+    temperature: float = 0.8,
+    seed: int = 0,
+) -> Generator[str, None, None]:
+    """Yield decoded text deltas one token at a time for a single AI turn.
+
+    The full generated suffix is decoded on every step rather than the last
+    token alone, which avoids BPE boundary artifacts (a single GPT-2 token
+    decoded in isolation may produce replacement characters for multi-byte
+    sequences). The new text is diffed against the previously-yielded prefix
+    to produce each incremental delta. Any trailing characters that could be
+    the start of a stop sequence are held back until the next token resolves
+    the ambiguity. Generation stops at EOS or the first completed stop.
+
+    Args:
+        sampler: Compiled GPT2SamplingHead — returns a log-probs vector.
+        tokenizer: HuggingFace GPT-2 tokenizer.
+        device: Target device for input tensor construction.
+        dtype: Float dtype for the temperature scalar.
+        prompt: Formatted conversation history ending with ``"AI:"``.
+        max_new_tokens: Maximum tokens to generate for this turn.
+        temperature: Sampling temperature.
+        seed: Per-turn RNG seed for reproducible sampling.
+
+    Yields:
+        Incremental, display-ready text fragments.
+    """
+    token_ids: list[int] = tokenizer.encode(
+        prompt, max_length=900, truncation=True
+    )
+    start_len = len(token_ids)
+    temp_tensor = Tensor(temperature, dtype=dtype, device=device)
+    rng = np.random.default_rng(seed)
+    prev_text = ""
+
+    for _ in range(max_new_tokens):
+        token_id = int(
+            _gumbel_sample(
+                sampler(_make_token_tensor(token_ids, device), temp_tensor), rng
+            )
+        )
+        token_ids.append(token_id)
+
+        if token_id == tokenizer.eos_token_id:
+            return
+
+        # Decode the full new suffix to avoid BPE boundary artefacts.
+        new_text = tokenizer.decode(
+            token_ids[start_len:], skip_special_tokens=True
+        )
+
+        for stop in _CHAT_STOPS:
+            if stop in new_text:
+                delta = new_text.split(stop)[0][len(prev_text) :]
+                if delta:
+                    yield delta
+                return
+
+        # Only yield up to the safe prefix; hold back any stop-sequence start.
+        hold = _stop_prefix_len(new_text)
+        safe = new_text[: len(new_text) - hold] if hold else new_text
+        delta = safe[len(prev_text) :]
+        if delta:
+            yield delta
+        prev_text = safe
+
+
+def _build_prompt(history: list[tuple[str, str]], user_input: str) -> str:
+    """Format conversation history as a plain-text GPT-2 completion prompt.
+
+    Args:
+        history: Accumulated ``(human, ai)`` turn pairs.
+        user_input: The current user message.
+
+    Returns:
+        A string ending with ``"AI:"`` for GPT-2 to complete.
+    """
+    parts = [f"Human: {h}\nAI: {a}" for h, a in history]
+    parts.append(f"Human: {user_input}\nAI:")
+    return "\n".join(parts)
+
+
+def chat_loop(
+    sampler: Callable[[Tensor, Tensor], Tensor],
+    tokenizer: GPT2Tokenizer,
+    device: Device,
+    dtype: DType,
+    max_new_tokens: int = 100,
+    temperature: float = 0.8,
+) -> None:
+    """Run an interactive terminal chat session with GPT-2.
+
+    History is kept as ``(human, ai)`` pairs and formatted as plain
+    ``Human: / AI:`` text for GPT-2 to continue. Oldest turns are evicted
+    when the encoded prompt exceeds 900 tokens (GPT-2's limit is 1 024).
+    Each AI response streams token by token via ``rich.live.Live``.
+
+    Note: GPT-2 is a completion model — responses are statistical
+    continuations, not reasoned or instruction-following answers.
+
+    Args:
+        sampler: Compiled GPT2SamplingHead callable.
+        tokenizer: HuggingFace GPT-2 tokenizer.
+        device: Target device.
+        dtype: Float dtype for the temperature scalar.
+        max_new_tokens: Maximum tokens per AI response.
+        temperature: Sampling temperature.
+    """
+    from rich.console import Console
+    from rich.live import Live
+    from rich.panel import Panel
+    from rich.prompt import Prompt
+    from rich.text import Text
+
+    console = Console()
+    history: list[tuple[str, str]] = []
+
+    console.print(
+        Panel(
+            "[bold]GPT-2 Chat[/bold]\n\n"
+            "[dim]GPT-2 is a completion model — responses are continuations, "
+            "not instruction-following answers.[/dim]\n\n"
+            "Type [bold]quit[/bold] or [bold]exit[/bold] to end.",
+            title="[bold blue]MAX LLM Book[/bold blue]",
+            border_style="blue",
+        )
+    )
+
+    for turn in range(10_000):
+        try:
+            user_input = Prompt.ask("\n[bold cyan]You[/bold cyan]").strip()
+        except (KeyboardInterrupt, EOFError):
+            console.print("\n[dim]Exiting...[/dim]")
+            break
+
+        if not user_input:
+            continue
+        if user_input.lower() in {"quit", "exit", "q"}:
+            console.print("[dim]Exiting...[/dim]")
+            break
+
+        prompt = _build_prompt(history, user_input)
+        while len(tokenizer.encode(prompt)) > 900 and history:
+            history.pop(0)
+            prompt = _build_prompt(history, user_input)
+
+        # response_text is mutated in-place each delta — avoids O(n²) joins.
+        response_text = Text()
+        with Live(
+            Panel(
+                Text("…", style="dim"),
+                title="[bold green]GPT-2[/bold green]",
+                border_style="green",
+            ),
+            console=console,
+            refresh_per_second=20,
+            vertical_overflow="visible",
+        ) as live:
+            for delta in _stream_chat_tokens(
+                sampler,
+                tokenizer,
+                device,
+                dtype,
+                prompt,
+                max_new_tokens=max_new_tokens,
+                temperature=temperature,
+                seed=turn,
+            ):
+                response_text.append(delta)
+                live.update(
+                    Panel(
+                        response_text,
+                        title="[bold green]GPT-2[/bold green]",
+                        border_style="green",
+                    )
+                )
+
+        history.append((user_input, response_text.plain.strip()))
+
+
+# ANCHOR_END: chat
+
+
 # ANCHOR: benchmark
 _BENCH_PROMPT = "The quick brown fox jumps over"
 _BENCH_N_TOKENS = 50
@@ -565,6 +783,17 @@ def main() -> None:
         default=None,
         help="Run single generation with this prompt and exit (non-interactive)",
     )
+    parser.add_argument(
+        "--chat",
+        action="store_true",
+        help="Open a rich terminal chat session (Human vs GPT-2)",
+    )
+    parser.add_argument(
+        "--chat-temperature",
+        type=float,
+        default=0.8,
+        help="Sampling temperature for --chat mode (default: 0.8; lower = more focused)",
+    )
     args = parser.parse_args()
 
     dtype, device = defaults()
@@ -652,6 +881,16 @@ def main() -> None:
             max_new_tokens=20,
             temperature=0.8,
             do_sample=True,
+        )
+        return
+
+    if args.chat:
+        chat_loop(
+            compiled_sampler,
+            tokenizer,
+            device,
+            dtype,
+            temperature=args.chat_temperature,
         )
         return
 

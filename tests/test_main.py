@@ -10,7 +10,9 @@ from main import (
     GPT2MLP,
     GPT2Block,
     GPT2Config,
+    GPT2GreedyHead,
     GPT2MultiHeadAttention,
+    GPT2SamplingHead,
     LayerNorm,
     MaxGPT2LMHeadModel,
     MaxGPT2Model,
@@ -280,58 +282,48 @@ class TestTokenizationFunctions:
 
     @patch("main.GPT2Tokenizer")
     def test_encode_text(self, mock_tokenizer_class: Mock) -> None:
-        """Test encode_text function."""
-        # Setup mock
+        """Test encode_text returns list[int] from tokenizer."""
         mock_tokenizer = Mock()
         mock_tokenizer.encode.return_value = [15496, 995]  # "Hello world"
 
-        result = encode_text(
-            "Hello world", mock_tokenizer, CPU(), max_length=128
-        )
+        result = encode_text("Hello world", mock_tokenizer, max_length=128)
 
-        # Check that tokenizer.encode was called correctly
         mock_tokenizer.encode.assert_called_once_with(
             "Hello world", max_length=128, truncation=True
         )
-
-        # Check result shape and type
-        assert isinstance(result, Tensor)
-        assert result.shape[0] == 1  # batch size
-        assert result.shape[1] == 2  # number of tokens
+        assert isinstance(result, list)
+        assert result == [15496, 995]
 
     @patch("main.GPT2Tokenizer")
     def test_decode_tokens(self, mock_tokenizer_class: Mock) -> None:
-        """Test decode_tokens function."""
-        # Setup mock
+        """Test decode_tokens accepts list[int] and returns decoded string."""
         mock_tokenizer = Mock()
         mock_tokenizer.decode.return_value = "Hello world"
 
-        # Create token tensor
-        token_ids = Tensor.constant(
-            [15496, 995], dtype=DType.int64, device=CPU()
-        )
-        result = decode_tokens(token_ids, mock_tokenizer)
+        result = decode_tokens([15496, 995], mock_tokenizer)
 
-        # Check that tokenizer.decode was called
-        assert mock_tokenizer.decode.called
+        mock_tokenizer.decode.assert_called_once_with(
+            [15496, 995], skip_special_tokens=True
+        )
         assert result == "Hello world"
 
-    @patch("main.GPT2Tokenizer")
-    def test_decode_tokens_2d_tensor(self, mock_tokenizer_class: Mock) -> None:
-        """Test decode_tokens with 2D tensor input."""
-        # Setup mock
-        mock_tokenizer = Mock()
-        mock_tokenizer.decode.return_value = "Hello world"
 
-        # Create 2D token tensor (batch x seq)
-        token_ids = Tensor.constant(
-            [[15496, 995]], dtype=DType.int64, device=CPU()
-        )
-        result = decode_tokens(token_ids, mock_tokenizer)
+class TestSamplingHeads:
+    """Test GPT2SamplingHead and GPT2GreedyHead module structure."""
 
-        # Should flatten and decode
-        assert mock_tokenizer.decode.called
-        assert result == "Hello world"
+    def test_sampling_head_initialization(self) -> None:
+        """Test that GPT2SamplingHead initializes correctly."""
+        config = GPT2Config()
+        lm_head = MaxGPT2LMHeadModel(config)
+        head = GPT2SamplingHead(lm_head)
+        assert head.lm_head is lm_head
+
+    def test_greedy_head_initialization(self) -> None:
+        """Test that GPT2GreedyHead initializes correctly."""
+        config = GPT2Config()
+        lm_head = MaxGPT2LMHeadModel(config)
+        head = GPT2GreedyHead(lm_head)
+        assert head.lm_head is lm_head
 
 
 class TestModelDimensions:

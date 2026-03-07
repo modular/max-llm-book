@@ -17,7 +17,6 @@ import numpy as np
 import torch
 from max.driver import (
     CPU,
-    Buffer,
     Device,
     accelerator_architecture_name,
     accelerator_count,
@@ -614,31 +613,24 @@ _BENCH_WARMUP_CPU = 1
 
 
 def _make_token_tensor(ids: list[int], device: Device) -> Tensor:
-    """Build an int64 [1, seq_len] input tensor via driver.Buffer — no eager compilation.
+    """Build an int64 [1, seq_len] input tensor on ``device``.
 
-    ``Tensor([ids], dtype=DType.int64, device=device)`` goes through
-    ``F.constant`` (eager compiled graph) and re-compiles for every new
-    sequence length. Using ``driver.Buffer.from_numpy`` + ``.to(device)``
-    keeps the hot loop free of compilation overhead.
+    Uses :meth:`Tensor.from_dlpack` (zero-copy from numpy, no graph
+    compilation) followed by :meth:`Tensor.to` (direct driver-level
+    transfer for realized tensors).
     """
     np_ids = np.array([ids], dtype=np.int64)
-    cpu_buf = Buffer.from_numpy(np_ids)
-    gpu_buf = cpu_buf.to(device)
-    return Tensor(storage=gpu_buf)
+    return Tensor.from_dlpack(np_ids).to(device)
 
 
 def _gumbel_sample(log_probs: Tensor, rng: np.random.Generator) -> int:
-    """Gumbel-max sampling via one GPU→CPU driver transfer + fast numpy ops.
+    """Gumbel-max sampling via one GPU→CPU transfer + fast numpy ops.
 
-    Uses ``driver_tensor.to(CPU())`` — a direct driver-level memory copy that
-    bypasses the eager-graph compilation framework entirely. No MAX eager ops
-    are created in the hot loop, so there is no JIT overhead per token.
-
-    log_probs is float32 (cast inside the compiled graph), so numpy DLPack works
-    without any additional conversion.
+    ``log_probs.to(CPU())`` is a direct driver-level device→host copy
+    for realized tensors — no graph compilation. The result is
+    DLPack-compatible, so numpy can consume it zero-copy.
     """
-    # driver_tensor.to(CPU()) is a direct device→host copy, not an eager compiled op.
-    lp_np: np.ndarray = np.from_dlpack(log_probs.driver_tensor.to(CPU()))
+    lp_np: np.ndarray = np.from_dlpack(log_probs.to(CPU()))
     vocab_size = int(lp_np.shape[0])
     u: np.ndarray = np.asarray(
         rng.uniform(1e-20, 1.0, size=vocab_size), dtype=np.float32

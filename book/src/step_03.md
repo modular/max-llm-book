@@ -56,16 +56,16 @@ You'll use the following MAX operations to complete this task:
 
 **Functional decorator**:
 
-- [`@F.functional`](https://docs.modular.com/max/api/python/functional):
+- [`@F.functional`](https://docs.modular.com/max/api/python/experimental.functional):
   Converts functions to graph operations for MAX compilation
 
 **Tensor operations**:
 
-- [`Tensor.constant()`](https://docs.modular.com/max/api/python/tensor#max.experimental.tensor.Tensor.constant):
+- [`Tensor.constant()`](https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor#max.experimental.tensor.Tensor.constant):
   Creates a scalar constant tensor
-- [`F.broadcast_to()`](https://docs.modular.com/max/api/python/functional#max.experimental.functional.broadcast_to):
+- [`F.broadcast_to()`](https://docs.modular.com/max/api/python/experimental.functional#max.experimental.functional.broadcast_to):
   Expands tensor dimensions to target shape
-- [`F.band_part()`](https://docs.modular.com/max/api/python/functional#max.experimental.functional.band_part):
+- [`F.band_part()`](https://docs.modular.com/max/api/python/experimental.functional#max.experimental.functional.band_part):
   Extracts band matrix (keeps diagonal band, zeros out rest)
 
 </div>
@@ -79,11 +79,11 @@ You'll create the causal mask in several steps:
      `max.driver` - specifies hardware device (CPU/GPU)
    - [`DType`](https://docs.modular.com/max/api/python/dtype) from `max.dtype` -
      data type specification
-   - [`functional`](https://docs.modular.com/max/api/python/functional)
+   - [`functional`](https://docs.modular.com/max/api/python/experimental.functional)
      as `F` from `max.nn` - functional operations library
-   - [`Tensor`](https://docs.modular.com/max/api/python/tensor)
+   - [`Tensor`](https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor)
      from `max.experimental.tensor` - tensor operations
-   - [`Dim`](https://docs.modular.com/max/api/python/graph/dim/#max.graph.dim.Dim)
+   - [`Dim`](https://docs.modular.com/max/api/python/generated/max.graph.Dim)
      from `graph.dim` - dimension handling
 
 2. **Add @F.functional decorator**: This converts the function to a MAX graph operation.

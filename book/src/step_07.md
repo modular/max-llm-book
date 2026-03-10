@@ -36,7 +36,7 @@ using a lookup table with 50,257 entries (one per vocabulary token).
 token order.
 
 **Transformer blocks (`h`)**: 12 identical blocks stacked using MAX's
-[`Sequential`](https://docs.modular.com/max/api/python/nn/sequential/)
+[`Sequential`](https://docs.modular.com/max/api/python/generated/max.nn.Sequential)
 module. Sequential applies blocks in order, passing each block's output to the
 next.
 
@@ -49,7 +49,7 @@ projects to vocabulary logits.
 The forward method processes token IDs through the model:
 
 First, create position indices using
-[`Tensor.arange`](https://docs.modular.com/max/api/python/tensor#max.experimental.tensor.Tensor.arange).
+[`Tensor.arange`](https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor#max.experimental.tensor.Tensor.arange).
 Generate positions [0, 1, 2, ..., seq_length-1] matching the input's dtype and
 device. This ensures compatibility when adding to embeddings.
 
@@ -58,7 +58,7 @@ position embeddings with `self.wpe(position_indices)`. Add them together
 element-wise, as both are shape `[batch, seq_length, 768]`.
 
 Then, pass through the transformer blocks with `self.h(x)`. The
-[`Sequential`](https://docs.modular.com/max/api/python/nn/sequential/)
+[`Sequential`](https://docs.modular.com/max/api/python/generated/max.nn.Sequential)
 module applies all 12 transformer blocks in order, each refining the representation.
 
 Finally, normalize the output with `self.ln_f(x)` and return the result. The
@@ -72,17 +72,17 @@ You'll use the following MAX operations to complete this task:
 
 **Module composition**:
 
-- [`Sequential(*modules)`](https://docs.modular.com/max/api/python/nn/sequential/):
+- [`Sequential(*modules)`](https://docs.modular.com/max/api/python/generated/max.nn.Sequential):
   Chains transformer blocks in sequence
 
 **Embeddings**:
 
-- [`Embedding(num_embeddings, dim)`](https://docs.modular.com/max/api/python/nn/embedding/):
+- [`Embedding(num_embeddings, dim)`](https://docs.modular.com/max/api/python/generated/max.nn.Embedding):
   Token and position embeddings
 
 **Position generation**:
 
-- [`Tensor.arange(seq_length, dtype, device)`](https://docs.modular.com/max/api/python/tensor#max.experimental.tensor.Tensor.arange):
+- [`Tensor.arange(seq_length, dtype, device)`](https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor#max.experimental.tensor.Tensor.arange):
   Creates position indices
 
 </div>

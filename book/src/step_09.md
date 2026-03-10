@@ -78,12 +78,12 @@ You'll use the following MAX operations to complete this task:
 
 **Tensor creation**:
 
-- [`Tensor.constant(data, dtype, device)`](https://docs.modular.com/max/api/python/tensor#max.experimental.tensor.Tensor.constant):
+- [`Tensor.constant(data, dtype, device)`](https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor#max.experimental.tensor.Tensor.constant):
   Creates tensor from Python data
 
 **Device transfer**:
 
-- [`tensor.to(CPU())`](https://docs.modular.com/max/api/python/tensor#max.experimental.tensor.Tensor.to):
+- [`tensor.to(CPU())`](https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor#max.experimental.tensor.Tensor.to):
   Moves tensor to CPU for NumPy conversion
 
 **NumPy interop**:

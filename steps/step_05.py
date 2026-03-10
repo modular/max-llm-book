@@ -18,10 +18,10 @@ Run: pixi run s05
 
 # 1: Import the required modules from MAX
 # TODO: Import functional module from max.nn with the alias F
-# https://docs.modular.com/max/api/python/nn/functional
+# https://docs.modular.com/max/api/python/experimental.functional
 
 # TODO: Import Tensor from max.experimental.tensor
-# https://docs.modular.com/max/api/python/tensor.Tensor
+# https://docs.modular.com/max/api/python/experimental.tensor
 
 from max.experimental.nn import Module
 from max.experimental.tensor import Tensor
@@ -42,12 +42,12 @@ class LayerNorm(Module):
 
         # 2: Initialize learnable weight and bias parameters
         # TODO: Create self.weight as a Tensor of ones with shape [dim]
-        # https://docs.modular.com/max/api/python/tensor#max.experimental.tensor.Tensor.ones
+        # https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor#max.experimental.tensor.Tensor.ones
         # Hint: This is the gamma parameter in layer normalization
         self.weight = None
 
         # TODO: Create self.bias as a Tensor of zeros with shape [dim]
-        # https://docs.modular.com/max/api/python/tensor#max.experimental.tensor.Tensor.zeros
+        # https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor#max.experimental.tensor.Tensor.zeros
         # Hint: This is the beta parameter in layer normalization
         self.bias = None
 
@@ -62,6 +62,6 @@ class LayerNorm(Module):
         """
         # 3: Apply layer normalization and return the result
         # TODO: Use F.layer_norm() with x, gamma=self.weight, beta=self.bias, epsilon=self.eps
-        # https://docs.modular.com/max/api/python/nn/functional#max.nn.functional.layer_norm
+        # https://docs.modular.com/max/api/python/experimental.functional#max.experimental.functional.layer_norm
         # Hint: Layer normalization normalizes across the last dimension
         return None

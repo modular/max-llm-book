@@ -54,19 +54,19 @@ You'll use the following MAX operations to complete this task:
 
 **Modules**:
 
-- [`Module`](https://docs.modular.com/max/api/python/nn/module/): The Module
-  class used for eager tensors
+- [`Module`](https://docs.modular.com/max/api/python/generated/max.nn.Module):
+  The Module class used for eager tensors
 
 **Tensor initialization**:
 
-- [`Tensor.ones()`](https://docs.modular.com/max/api/python/tensor#max.experimental.tensor.Tensor.ones):
+- [`Tensor.ones()`](https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor#max.experimental.tensor.Tensor.ones):
   Creates tensor filled with 1.0 values
-- [`Tensor.zeros()`](https://docs.modular.com/max/api/python/tensor#max.experimental.tensor.Tensor.zeros):
+- [`Tensor.zeros()`](https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor#max.experimental.tensor.Tensor.zeros):
   Creates tensor filled with 0.0 values
 
 **Layer normalization**:
 
-- [`F.layer_norm()`](https://docs.modular.com/max/api/python/functional#max.experimental.functional.layer_norm):
+- [`F.layer_norm()`](https://docs.modular.com/max/api/python/experimental.functional#max.experimental.functional.layer_norm):
   Applies layer normalization with parameters: `input`, `gamma` (weight), `beta`
   (bias), and `epsilon`
 

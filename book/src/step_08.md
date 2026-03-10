@@ -24,7 +24,7 @@ larger than all 12 transformer blocks combined.
 ## Understanding the projection
 
 The language model head performs a simple linear projection using MAX's
-[`Linear`](https://docs.modular.com/max/api/python/nn/linear/)
+[`Linear`](https://docs.modular.com/max/api/python/generated/max.nn.Linear)
 layer. It maps each 768-dimensional hidden state to 50,257 scores, one per
 vocabulary token.
 
@@ -63,7 +63,7 @@ You'll use the following MAX operations to complete this task:
 
 **Linear layer**:
 
-- [`Linear(in_features, out_features, bias=False)`](https://docs.modular.com/max/api/python/nn/linear/):
+- [`Linear(in_features, out_features, bias=False)`](https://docs.modular.com/max/api/python/generated/max.nn.Linear):
   Projects hidden states to vocabulary logits
 
 </div>

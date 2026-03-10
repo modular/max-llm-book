@@ -52,12 +52,12 @@ You'll use the following MAX operations to complete this task:
 
 **Linear layers**:
 
-- [`Linear(in_features, out_features, bias=True)`](https://docs.modular.com/max/api/python/nn/Linear/):
+- [`Linear(in_features, out_features, bias=True)`](https://docs.modular.com/max/api/python/generated/max.nn.Linear):
   Applies linear transformation `y = xW^T + b`
 
 **GELU activation**:
 
-- [`F.gelu(input, approximate="tanh")`](https://docs.modular.com/max/api/python/functional/#max.experimental.functional.gelu):
+- [`F.gelu(input, approximate="tanh")`](https://docs.modular.com/max/api/python/experimental.functional#max.experimental.functional.gelu):
   Applies GELU activation with tanh approximation for faster computation
 
 </div>

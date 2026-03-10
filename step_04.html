@@ -248,14 +248,14 @@ for loading pretrained weights.</p>
 <p>You’ll use the following MAX operations to complete this task:</p>
 <p><strong>Linear layers</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/nn/linear/"><code>Linear(in_features, out_features, bias=True)</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/generated/max.nn.Linear"><code>Linear(in_features, out_features, bias=True)</code></a>:
 Q/K/V and output projections</li>
 </ul>
 <p><strong>Tensor operations</strong>:</p>
 <ul>
 <li><code>tensor.reshape(new_shape)</code>: Splits or merges head dimension</li>
 <li><code>tensor.transpose(axis1, axis2)</code>: Rearranges dimensions for parallel attention</li>
-<li><a href="https://docs.modular.com/max/api/python/functional#max.experimental.functional.split"><code>F.split(tensor, split_sizes, axis)</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/experimental.functional#max.experimental.functional.split"><code>F.split(tensor, split_sizes, axis)</code></a>:
 Divides Q/K/V from combined projection</li>
 </ul>
 </div>

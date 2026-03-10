@@ -224,7 +224,7 @@ using a lookup table with 50,257 entries (one per vocabulary token).</p>
 768-dimensional vector. These are added to token embeddings so the model knows
 token order.</p>
 <p><strong>Transformer blocks (<code>h</code>)</strong>: 12 identical blocks stacked using MAX’s
-<a href="https://docs.modular.com/max/api/python/nn/sequential/"><code>Sequential</code></a>
+<a href="https://docs.modular.com/max/api/python/generated/max.nn.Sequential"><code>Sequential</code></a>
 module. Sequential applies blocks in order, passing each block’s output to the
 next.</p>
 <p><strong>Final layer norm (<code>ln_f</code>)</strong>: Normalizes the output after all blocks. This
@@ -233,14 +233,14 @@ projects to vocabulary logits.</p>
 <h2 id="understanding-the-forward-pass"><a class="header" href="#understanding-the-forward-pass">Understanding the forward pass</a></h2>
 <p>The forward method processes token IDs through the model:</p>
 <p>First, create position indices using
-<a href="https://docs.modular.com/max/api/python/tensor#max.experimental.tensor.Tensor.arange"><code>Tensor.arange</code></a>.
+<a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor#max.experimental.tensor.Tensor.arange"><code>Tensor.arange</code></a>.
 Generate positions [0, 1, 2, …, seq_length-1] matching the input’s dtype and
 device. This ensures compatibility when adding to embeddings.</p>
 <p>Next, look up embeddings. Get token embeddings with <code>self.wte(input_ids)</code> and
 position embeddings with <code>self.wpe(position_indices)</code>. Add them together
 element-wise, as both are shape <code>[batch, seq_length, 768]</code>.</p>
 <p>Then, pass through the transformer blocks with <code>self.h(x)</code>. The
-<a href="https://docs.modular.com/max/api/python/nn/sequential/"><code>Sequential</code></a>
+<a href="https://docs.modular.com/max/api/python/generated/max.nn.Sequential"><code>Sequential</code></a>
 module applies all 12 transformer blocks in order, each refining the representation.</p>
 <p>Finally, normalize the output with <code>self.ln_f(x)</code> and return the result. The
 output shape matches the input: <code>[batch, seq_length, 768]</code>.</p>
@@ -249,17 +249,17 @@ output shape matches the input: <code>[batch, seq_length, 768]</code>.</p>
 <p>You’ll use the following MAX operations to complete this task:</p>
 <p><strong>Module composition</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/nn/sequential/"><code>Sequential(*modules)</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/generated/max.nn.Sequential"><code>Sequential(*modules)</code></a>:
 Chains transformer blocks in sequence</li>
 </ul>
 <p><strong>Embeddings</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/nn/embedding/"><code>Embedding(num_embeddings, dim)</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/generated/max.nn.Embedding"><code>Embedding(num_embeddings, dim)</code></a>:
 Token and position embeddings</li>
 </ul>
 <p><strong>Position generation</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/tensor#max.experimental.tensor.Tensor.arange"><code>Tensor.arange(seq_length, dtype, device)</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor#max.experimental.tensor.Tensor.arange"><code>Tensor.arange(seq_length, dtype, device)</code></a>:
 Creates position indices</li>
 </ul>
 </div>

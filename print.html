@@ -574,12 +574,12 @@ pretrained weights.</p>
 <p>You’ll use the following MAX operations to complete this task:</p>
 <p><strong>Linear layers</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/nn/Linear/"><code>Linear(in_features, out_features, bias=True)</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/generated/max.nn.Linear"><code>Linear(in_features, out_features, bias=True)</code></a>:
 Applies linear transformation <code>y = xW^T + b</code></li>
 </ul>
 <p><strong>GELU activation</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/functional/#max.experimental.functional.gelu"><code>F.gelu(input, approximate="tanh")</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/experimental.functional#max.experimental.functional.gelu"><code>F.gelu(input, approximate="tanh")</code></a>:
 Applies GELU activation with tanh approximation for faster computation</li>
 </ul>
 </div>
@@ -631,13 +631,13 @@ Run: pixi run s02
 
 # 1: Import the required modules from MAX
 # TODO: Import functional module from max.nn with the alias F
-# https://docs.modular.com/max/api/python/nn/functional
+# https://docs.modular.com/max/api/python/experimental.functional
 
 # TODO: Import Tensor from max.experimental.tensor
-# https://docs.modular.com/max/api/python/tensor.Tensor
+# https://docs.modular.com/max/api/python/experimental.tensor
 
 # TODO: Import Linear and Module from max.nn
-# https://docs.modular.com/max/api/python/nn/module_v3
+# https://docs.modular.com/max/api/python/nn
 
 from max.experimental.tensor import Tensor
 from step_01 import GPT2Config
@@ -657,13 +657,13 @@ class GPT2MLP(Module):
 
         # 2: Create the first linear layer (embedding to intermediate)
         # TODO: Create self.c_fc as a Linear layer from embed_dim to intermediate_size with bias=True
-        # https://docs.modular.com/max/api/python/nn/module_v3#max.nn.Linear
+        # https://docs.modular.com/max/api/python/generated/max.nn.Linear
         # Hint: This is the expansion layer in the MLP
         self.c_fc = None
 
         # 3: Create the second linear layer (intermediate back to embedding)
         # TODO: Create self.c_proj as a Linear layer from intermediate_size to embed_dim with bias=True
-        # https://docs.modular.com/max/api/python/nn/module_v3#max.nn.Linear
+        # https://docs.modular.com/max/api/python/generated/max.nn.Linear
         # Hint: This is the projection layer that brings us back to the embedding dimension
         self.c_proj = None
 
@@ -683,7 +683,7 @@ class GPT2MLP(Module):
 
         # 5: Apply GELU activation function
         # TODO: Use F.gelu() with hidden_states and approximate="tanh"
-        # https://docs.modular.com/max/api/python/nn/functional#max.nn.functional.gelu
+        # https://docs.modular.com/max/api/python/experimental.functional#max.experimental.functional.gelu
         # Hint: GELU is the non-linear activation used in GPT-2's MLP
         hidden_states = None
 
@@ -791,16 +791,16 @@ tokens while attending to both new tokens (sequence_length) and cached tokens
 <p>You’ll use the following MAX operations to complete this task:</p>
 <p><strong>Functional decorator</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/functional"><code>@F.functional</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/experimental.functional"><code>@F.functional</code></a>:
 Converts functions to graph operations for MAX compilation</li>
 </ul>
 <p><strong>Tensor operations</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/tensor#max.experimental.tensor.Tensor.constant"><code>Tensor.constant()</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor#max.experimental.tensor.Tensor.constant"><code>Tensor.constant()</code></a>:
 Creates a scalar constant tensor</li>
-<li><a href="https://docs.modular.com/max/api/python/functional#max.experimental.functional.broadcast_to"><code>F.broadcast_to()</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/experimental.functional#max.experimental.functional.broadcast_to"><code>F.broadcast_to()</code></a>:
 Expands tensor dimensions to target shape</li>
-<li><a href="https://docs.modular.com/max/api/python/functional#max.experimental.functional.band_part"><code>F.band_part()</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/experimental.functional#max.experimental.functional.band_part"><code>F.band_part()</code></a>:
 Extracts band matrix (keeps diagonal band, zeros out rest)</li>
 </ul>
 </div>
@@ -814,11 +814,11 @@ Extracts band matrix (keeps diagonal band, zeros out rest)</li>
 <code>max.driver</code> - specifies hardware device (CPU/GPU)</li>
 <li><a href="https://docs.modular.com/max/api/python/dtype"><code>DType</code></a> from <code>max.dtype</code> -
 data type specification</li>
-<li><a href="https://docs.modular.com/max/api/python/functional"><code>functional</code></a>
+<li><a href="https://docs.modular.com/max/api/python/experimental.functional"><code>functional</code></a>
 as <code>F</code> from <code>max.nn</code> - functional operations library</li>
-<li><a href="https://docs.modular.com/max/api/python/tensor"><code>Tensor</code></a>
+<li><a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor"><code>Tensor</code></a>
 from <code>max.experimental.tensor</code> - tensor operations</li>
-<li><a href="https://docs.modular.com/max/api/python/graph/dim/#max.graph.dim.Dim"><code>Dim</code></a>
+<li><a href="https://docs.modular.com/max/api/python/generated/max.graph.Dim"><code>Dim</code></a>
 from <code>graph.dim</code> - dimension handling</li>
 </ul>
 </li>
@@ -872,9 +872,9 @@ from max.driver import Device
 from max.dtype import DType
 
 # TODO: Import necessary funcional module from max.nn with the alias F
-# https://docs.modular.com/max/api/python/nn/functional
+# https://docs.modular.com/max/api/python/experimental.functional
 # TODO: Import Tensor object from max.experimental.tensor
-# https://docs.modular.com/max/api/python/tensor.Tensor
+# https://docs.modular.com/max/api/python/experimental.tensor
 from max.experimental.tensor import Tensor
 from max.graph import Dim, DimLike
 
@@ -905,19 +905,19 @@ def causal_mask(
 
     # 3: Create a constant tensor filled with negative infinity
     # TODO: Use Tensor.constant() with float("-inf"), dtype, and device parameters
-    # https://docs.modular.com/max/api/python/tensor#max.experimental.tensor.Tensor.constant
+    # https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor#max.experimental.tensor.Tensor.constant
     # Hint: This creates the base mask value that will block attention to future tokens
     mask = None
 
     # 4: Broadcast the mask to the correct shape
     # TODO: Use F.broadcast_to() to expand mask to shape (sequence_length, n)
-    # https://docs.modular.com/max/api/python/nn/functional#max.nn.functional.broadcast_to
+    # https://docs.modular.com/max/api/python/experimental.functional#max.experimental.functional.broadcast_to
     # Hint: This creates a 2D attention mask matrix
     mask = None
 
     # 5: Apply band_part to create the causal (lower triangular) structure and return the mask
     # TODO: Use F.band_part() with num_lower=None, num_upper=0, exclude=True
-    # https://docs.modular.com/max/api/python/nn/functional/#max.nn.functional.band_part
+    # https://docs.modular.com/max/api/python/experimental.functional#max.experimental.functional.band_part
     # Hint: This keeps only the lower triangle, allowing attention to past tokens only
     return None
 </code></pre>
@@ -1021,14 +1021,14 @@ for loading pretrained weights.</p>
 <p>You’ll use the following MAX operations to complete this task:</p>
 <p><strong>Linear layers</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/nn/linear/"><code>Linear(in_features, out_features, bias=True)</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/generated/max.nn.Linear"><code>Linear(in_features, out_features, bias=True)</code></a>:
 Q/K/V and output projections</li>
 </ul>
 <p><strong>Tensor operations</strong>:</p>
 <ul>
 <li><code>tensor.reshape(new_shape)</code>: Splits or merges head dimension</li>
 <li><code>tensor.transpose(axis1, axis2)</code>: Rearranges dimensions for parallel attention</li>
-<li><a href="https://docs.modular.com/max/api/python/functional#max.experimental.functional.split"><code>F.split(tensor, split_sizes, axis)</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/experimental.functional#max.experimental.functional.split"><code>F.split(tensor, split_sizes, axis)</code></a>:
 Divides Q/K/V from combined projection</li>
 </ul>
 </div>
@@ -1429,19 +1429,19 @@ division by zero when variance is very small.</p>
 <p>You’ll use the following MAX operations to complete this task:</p>
 <p><strong>Modules</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/nn/module/"><code>Module</code></a>: The Module
-class used for eager tensors</li>
+<li><a href="https://docs.modular.com/max/api/python/generated/max.nn.Module"><code>Module</code></a>:
+The Module class used for eager tensors</li>
 </ul>
 <p><strong>Tensor initialization</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/tensor#max.experimental.tensor.Tensor.ones"><code>Tensor.ones()</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor#max.experimental.tensor.Tensor.ones"><code>Tensor.ones()</code></a>:
 Creates tensor filled with 1.0 values</li>
-<li><a href="https://docs.modular.com/max/api/python/tensor#max.experimental.tensor.Tensor.zeros"><code>Tensor.zeros()</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor#max.experimental.tensor.Tensor.zeros"><code>Tensor.zeros()</code></a>:
 Creates tensor filled with 0.0 values</li>
 </ul>
 <p><strong>Layer normalization</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/functional#max.experimental.functional.layer_norm"><code>F.layer_norm()</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/experimental.functional#max.experimental.functional.layer_norm"><code>F.layer_norm()</code></a>:
 Applies layer normalization with parameters: <code>input</code>, <code>gamma</code> (weight), <code>beta</code>
 (bias), and <code>epsilon</code></li>
 </ul>
@@ -1484,10 +1484,10 @@ Run: pixi run s05
 
 # 1: Import the required modules from MAX
 # TODO: Import functional module from max.nn with the alias F
-# https://docs.modular.com/max/api/python/nn/functional
+# https://docs.modular.com/max/api/python/experimental.functional
 
 # TODO: Import Tensor from max.experimental.tensor
-# https://docs.modular.com/max/api/python/tensor.Tensor
+# https://docs.modular.com/max/api/python/experimental.tensor
 
 from max.experimental.nn import Module
 from max.experimental.tensor import Tensor
@@ -1508,12 +1508,12 @@ class LayerNorm(Module):
 
         # 2: Initialize learnable weight and bias parameters
         # TODO: Create self.weight as a Tensor of ones with shape [dim]
-        # https://docs.modular.com/max/api/python/tensor#max.experimental.tensor.Tensor.ones
+        # https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor#max.experimental.tensor.Tensor.ones
         # Hint: This is the gamma parameter in layer normalization
         self.weight = None
 
         # TODO: Create self.bias as a Tensor of zeros with shape [dim]
-        # https://docs.modular.com/max/api/python/tensor#max.experimental.tensor.Tensor.zeros
+        # https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor#max.experimental.tensor.Tensor.zeros
         # Hint: This is the beta parameter in layer normalization
         self.bias = None
 
@@ -1528,7 +1528,7 @@ class LayerNorm(Module):
         """
         # 3: Apply layer normalization and return the result
         # TODO: Use F.layer_norm() with x, gamma=self.weight, beta=self.bias, epsilon=self.eps
-        # https://docs.modular.com/max/api/python/nn/functional#max.nn.functional.layer_norm
+        # https://docs.modular.com/max/api/python/experimental.functional#max.experimental.functional.layer_norm
         # Hint: Layer normalization normalizes across the last dimension
         return None
 </code></pre>
@@ -1855,7 +1855,7 @@ using a lookup table with 50,257 entries (one per vocabulary token).</p>
 768-dimensional vector. These are added to token embeddings so the model knows
 token order.</p>
 <p><strong>Transformer blocks (<code>h</code>)</strong>: 12 identical blocks stacked using MAX’s
-<a href="https://docs.modular.com/max/api/python/nn/sequential/"><code>Sequential</code></a>
+<a href="https://docs.modular.com/max/api/python/generated/max.nn.Sequential"><code>Sequential</code></a>
 module. Sequential applies blocks in order, passing each block’s output to the
 next.</p>
 <p><strong>Final layer norm (<code>ln_f</code>)</strong>: Normalizes the output after all blocks. This
@@ -1864,14 +1864,14 @@ projects to vocabulary logits.</p>
 <h2 id="understanding-the-forward-pass"><a class="header" href="#understanding-the-forward-pass">Understanding the forward pass</a></h2>
 <p>The forward method processes token IDs through the model:</p>
 <p>First, create position indices using
-<a href="https://docs.modular.com/max/api/python/tensor#max.experimental.tensor.Tensor.arange"><code>Tensor.arange</code></a>.
+<a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor#max.experimental.tensor.Tensor.arange"><code>Tensor.arange</code></a>.
 Generate positions [0, 1, 2, …, seq_length-1] matching the input’s dtype and
 device. This ensures compatibility when adding to embeddings.</p>
 <p>Next, look up embeddings. Get token embeddings with <code>self.wte(input_ids)</code> and
 position embeddings with <code>self.wpe(position_indices)</code>. Add them together
 element-wise, as both are shape <code>[batch, seq_length, 768]</code>.</p>
 <p>Then, pass through the transformer blocks with <code>self.h(x)</code>. The
-<a href="https://docs.modular.com/max/api/python/nn/sequential/"><code>Sequential</code></a>
+<a href="https://docs.modular.com/max/api/python/generated/max.nn.Sequential"><code>Sequential</code></a>
 module applies all 12 transformer blocks in order, each refining the representation.</p>
 <p>Finally, normalize the output with <code>self.ln_f(x)</code> and return the result. The
 output shape matches the input: <code>[batch, seq_length, 768]</code>.</p>
@@ -1880,17 +1880,17 @@ output shape matches the input: <code>[batch, seq_length, 768]</code>.</p>
 <p>You’ll use the following MAX operations to complete this task:</p>
 <p><strong>Module composition</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/nn/sequential/"><code>Sequential(*modules)</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/generated/max.nn.Sequential"><code>Sequential(*modules)</code></a>:
 Chains transformer blocks in sequence</li>
 </ul>
 <p><strong>Embeddings</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/nn/embedding/"><code>Embedding(num_embeddings, dim)</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/generated/max.nn.Embedding"><code>Embedding(num_embeddings, dim)</code></a>:
 Token and position embeddings</li>
 </ul>
 <p><strong>Position generation</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/tensor#max.experimental.tensor.Tensor.arange"><code>Tensor.arange(seq_length, dtype, device)</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor#max.experimental.tensor.Tensor.arange"><code>Tensor.arange(seq_length, dtype, device)</code></a>:
 Creates position indices</li>
 </ul>
 </div>
@@ -2123,7 +2123,7 @@ in GPT-2, representing about 33% of the model’s 117M total parameters. This is
 larger than all 12 transformer blocks combined.</p>
 <h2 id="understanding-the-projection"><a class="header" href="#understanding-the-projection">Understanding the projection</a></h2>
 <p>The language model head performs a simple linear projection using MAX’s
-<a href="https://docs.modular.com/max/api/python/nn/linear/"><code>Linear</code></a>
+<a href="https://docs.modular.com/max/api/python/generated/max.nn.Linear"><code>Linear</code></a>
 layer. It maps each 768-dimensional hidden state to 50,257 scores, one per
 vocabulary token.</p>
 <p>The layer uses <code>bias=False</code>, meaning it only has weights and no bias vector.
@@ -2154,7 +2154,7 @@ scoring token is the model’s top prediction.</p>
 <p>You’ll use the following MAX operations to complete this task:</p>
 <p><strong>Linear layer</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/nn/linear/"><code>Linear(in_features, out_features, bias=False)</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/generated/max.nn.Linear"><code>Linear(in_features, out_features, bias=False)</code></a>:
 Projects hidden states to vocabulary logits</li>
 </ul>
 </div>
@@ -2365,12 +2365,12 @@ from the output.</p>
 <p>You’ll use the following MAX operations to complete this task:</p>
 <p><strong>Tensor creation</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/tensor#max.experimental.tensor.Tensor.constant"><code>Tensor.constant(data, dtype, device)</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor#max.experimental.tensor.Tensor.constant"><code>Tensor.constant(data, dtype, device)</code></a>:
 Creates tensor from Python data</li>
 </ul>
 <p><strong>Device transfer</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/tensor#max.experimental.tensor.Tensor.to"><code>tensor.to(CPU())</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor#max.experimental.tensor.Tensor.to"><code>tensor.to(CPU())</code></a>:
 Moves tensor to CPU for NumPy conversion</li>
 </ul>
 <p><strong>NumPy interop</strong>:</p>
@@ -2575,7 +2575,7 @@ large logits even larger (sharpening), while dividing by a value greater than 1
 reduces the differences between logits (flattening).</p>
 <h2 id="understanding-sampling-vs-greedy"><a class="header" href="#understanding-sampling-vs-greedy">Understanding sampling vs greedy</a></h2>
 <p>Greedy decoding always picks the highest-probability token using
-<a href="https://docs.modular.com/max/api/python/functional#max.experimental.functional.argmax"><code>F.argmax</code></a>.
+<a href="https://docs.modular.com/max/api/python/experimental.functional#max.experimental.functional.argmax"><code>F.argmax</code></a>.
 It’s fast, deterministic, and simple, but often produces repetitive text because
 the model keeps choosing the safest option.</p>
 <p>Sampling randomly selects tokens according to their probabilities. Convert
@@ -2591,16 +2591,16 @@ while still favoring high-quality continuations.</p>
 <p>You’ll use the following MAX operations to complete this task:</p>
 <p><strong>Probability operations</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/functional#max.experimental.functional.softmax"><code>F.softmax(logits)</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/experimental.functional#max.experimental.functional.softmax"><code>F.softmax(logits)</code></a>:
 Converts logits to probabilities</li>
-<li><a href="https://docs.modular.com/max/api/python/functional#max.experimental.functional.argmax"><code>F.argmax(logits)</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/experimental.functional#max.experimental.functional.argmax"><code>F.argmax(logits)</code></a>:
 Selects highest-probability token (greedy)</li>
 </ul>
 <p><strong>Sequence building</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/functional#max.experimental.functional.concat"><code>F.concat([seq, new_token], axis=1)</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/experimental.functional#max.experimental.functional.concat"><code>F.concat([seq, new_token], axis=1)</code></a>:
 Appends token to sequence</li>
-<li><a href="https://docs.modular.com/max/api/python/tensor#max.experimental.tensor.Tensor.constant"><code>Tensor.constant(value, dtype, device)</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor#max.experimental.tensor.Tensor.constant"><code>Tensor.constant(value, dtype, device)</code></a>:
 Creates scalar tensors</li>
 </ul>
 <p><strong>NumPy interop</strong>:</p>

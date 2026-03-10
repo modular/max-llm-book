@@ -243,16 +243,16 @@ tokens while attending to both new tokens (sequence_length) and cached tokens
 <p>You’ll use the following MAX operations to complete this task:</p>
 <p><strong>Functional decorator</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/functional"><code>@F.functional</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/experimental.functional"><code>@F.functional</code></a>:
 Converts functions to graph operations for MAX compilation</li>
 </ul>
 <p><strong>Tensor operations</strong>:</p>
 <ul>
-<li><a href="https://docs.modular.com/max/api/python/tensor#max.experimental.tensor.Tensor.constant"><code>Tensor.constant()</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor#max.experimental.tensor.Tensor.constant"><code>Tensor.constant()</code></a>:
 Creates a scalar constant tensor</li>
-<li><a href="https://docs.modular.com/max/api/python/functional#max.experimental.functional.broadcast_to"><code>F.broadcast_to()</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/experimental.functional#max.experimental.functional.broadcast_to"><code>F.broadcast_to()</code></a>:
 Expands tensor dimensions to target shape</li>
-<li><a href="https://docs.modular.com/max/api/python/functional#max.experimental.functional.band_part"><code>F.band_part()</code></a>:
+<li><a href="https://docs.modular.com/max/api/python/experimental.functional#max.experimental.functional.band_part"><code>F.band_part()</code></a>:
 Extracts band matrix (keeps diagonal band, zeros out rest)</li>
 </ul>
 </div>
@@ -266,11 +266,11 @@ Extracts band matrix (keeps diagonal band, zeros out rest)</li>
 <code>max.driver</code> - specifies hardware device (CPU/GPU)</li>
 <li><a href="https://docs.modular.com/max/api/python/dtype"><code>DType</code></a> from <code>max.dtype</code> -
 data type specification</li>
-<li><a href="https://docs.modular.com/max/api/python/functional"><code>functional</code></a>
+<li><a href="https://docs.modular.com/max/api/python/experimental.functional"><code>functional</code></a>
 as <code>F</code> from <code>max.nn</code> - functional operations library</li>
-<li><a href="https://docs.modular.com/max/api/python/tensor"><code>Tensor</code></a>
+<li><a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor"><code>Tensor</code></a>
 from <code>max.experimental.tensor</code> - tensor operations</li>
-<li><a href="https://docs.modular.com/max/api/python/graph/dim/#max.graph.dim.Dim"><code>Dim</code></a>
+<li><a href="https://docs.modular.com/max/api/python/generated/max.graph.Dim"><code>Dim</code></a>
 from <code>graph.dim</code> - dimension handling</li>
 </ul>
 </li>
@@ -324,9 +324,9 @@ from max.driver import Device
 from max.dtype import DType
 
 # TODO: Import necessary funcional module from max.nn with the alias F
-# https://docs.modular.com/max/api/python/nn/functional
+# https://docs.modular.com/max/api/python/experimental.functional
 # TODO: Import Tensor object from max.experimental.tensor
-# https://docs.modular.com/max/api/python/tensor.Tensor
+# https://docs.modular.com/max/api/python/experimental.tensor
 from max.experimental.tensor import Tensor
 from max.graph import Dim, DimLike
 
@@ -357,19 +357,19 @@ def causal_mask(
 
     # 3: Create a constant tensor filled with negative infinity
     # TODO: Use Tensor.constant() with float("-inf"), dtype, and device parameters
-    # https://docs.modular.com/max/api/python/tensor#max.experimental.tensor.Tensor.constant
+    # https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor#max.experimental.tensor.Tensor.constant
     # Hint: This creates the base mask value that will block attention to future tokens
     mask = None
 
     # 4: Broadcast the mask to the correct shape
     # TODO: Use F.broadcast_to() to expand mask to shape (sequence_length, n)
-    # https://docs.modular.com/max/api/python/nn/functional#max.nn.functional.broadcast_to
+    # https://docs.modular.com/max/api/python/experimental.functional#max.experimental.functional.broadcast_to
     # Hint: This creates a 2D attention mask matrix
     mask = None
 
     # 5: Apply band_part to create the causal (lower triangular) structure and return the mask
     # TODO: Use F.band_part() with num_lower=None, num_upper=0, exclude=True
-    # https://docs.modular.com/max/api/python/nn/functional/#max.nn.functional.band_part
+    # https://docs.modular.com/max/api/python/experimental.functional#max.experimental.functional.band_part
     # Hint: This keeps only the lower triangle, allowing attention to past tokens only
     return None
 </code></pre>

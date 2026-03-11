@@ -17,6 +17,11 @@ Tasks:
 
 Run: pixi run s11
 """
+# TODO: Import required modules and components from prior steps
+# Hint: You'll need defaults() from max.tensor
+
+# TODO: Import GPT2LMHeadModel and GPT2Tokenizer HuggingFace transformers library
+# Hint: from transformers import GPT2LMHeadModel, GPT2Tokenizer
 
 
 def run_model() -> None:
@@ -46,7 +51,7 @@ def run_model() -> None:
 
     # TODO: Transpose weights for Linear layers
     # Hint: HuggingFace uses Conv1D which stores weights transposed
-    # Hint: for name, child in max_model.descendents:
+    # Hint: for name, child in max_model.descendants:
     #     if isinstance(child, Linear):
     #         if any(layer_name in name for layer_name in ["c_attn", "c_proj", "c_fc"]):
     #             print(f"Transposing {name}: {child.weight.shape}")

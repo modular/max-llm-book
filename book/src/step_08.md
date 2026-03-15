@@ -2,116 +2,56 @@
 
 <div class="note">
 
-Learn to add the final linear projection layer that converts hidden states to
-vocabulary logits for next-token prediction.
+Add the final linear projection layer that converts hidden states to vocabulary
+logits for next-token prediction.
 
 </div>
 
-In this step, you'll create the `MaxGPT2LMHeadModel`, which combines the
-model body (`MaxGPT2Model`) with a head `Linear` layer, thus completing the
-GPT-2 model that can predict next tokens. This class wraps the transformer from step
-7 and adds a final linear layer that projects 768-dimensional hidden states to
-50,257-dimensional vocabulary logits.
+`MaxGPT2LMHeadModel` wraps the transformer body with a single linear layer that
+projects 768-dimensional hidden states to 50,257-dimensional vocabulary logits.
+This completes the GPT-2 architecture.
 
-The language model head is a single linear layer without bias. For each position
-in the sequence, it outputs a score for every possible next token. Higher scores
-indicate the model thinks that token is more likely to come next.
+## The projection
 
-At 768 × 50,257 = 38.6M parameters, the LM head is the single largest component
-in GPT-2, representing about 33% of the model's 117M total parameters. This is
-larger than all 12 transformer blocks combined.
+For each position in the sequence, the language model head outputs a score for
+every possible next token. Higher scores mean the model thinks that token is
+more likely to come next. These scores are called _logits_—raw values before
+softmax, which can be any real number.
 
-## Understanding the projection
+The layer uses `bias=False`, omitting the bias vector. Layer normalization
+before the head already centers the activations, so a constant bias adds
+nothing to the relative scores after softmax. Omitting it saves 50,257
+parameters.
 
-The language model head performs a simple linear projection using MAX's
-[`Linear`](https://docs.modular.com/max/api/python/generated/max.nn.Linear)
-layer. It maps each 768-dimensional hidden state to 50,257 scores, one per
-vocabulary token.
+At 768 × 50,257 = 38.6M parameters, the LM head is the largest single
+component in GPT-2—about 33% of the model's 117M total parameters, more than
+all 12 transformer blocks combined.
 
-The layer uses `bias=False`, meaning it only has weights and no bias vector.
-This saves 50,257 parameters (about 0.4% of model size). The bias provides
-little benefit because the layer normalization before the LM head already
-centers the activations. Adding a constant bias to all logits wouldn't change
-the relative probabilities after softmax.
+## The complete model pipeline
 
-The output is called "logits," which are raw scores before applying softmax.
-Logits can be any real number. During text generation (Step 10), you'll convert
-logits to probabilities with softmax. Working with logits directly enables
-techniques like temperature scaling and top-k sampling.
+With the LM head, the full data flow is:
 
-## Understanding the complete model
-
-With the LM head added, you now have the complete GPT-2 architecture:
-
-1. **Input**: Token IDs `[batch, seq_length]`
-2. **Embeddings**: Token + position `[batch, seq_length, 768]`
-3. **Transformer blocks**: 12 blocks process the embeddings
-   `[batch, seq_length, 768]`
-4. **Final layer norm**: Normalizes the output `[batch, seq_length, 768]`
-5. **LM head**: Projects to vocabulary `[batch, seq_length, 50257]`
-6. **Output**: Logits `[batch, seq_length, 50257]`
+| Stage                       | Shape                        |
+|-----------------------------|------------------------------|
+| Input token IDs             | `[batch, seq_length]`        |
+| Token + position embeddings | `[batch, seq_length, 768]`   |
+| 12 transformer blocks       | `[batch, seq_length, 768]`   |
+| Final layer norm            | `[batch, seq_length, 768]`   |
+| LM head                     | `[batch, seq_length, 50257]` |
 
 Each position gets independent logits over the vocabulary. To predict the next
-token after position i, you look at the logits at position i. The highest
-scoring token is the model's top prediction.
+token after position _i_, look at the logits at position _i_. The
+highest-scoring token is the model's top prediction.
 
-<div class="note">
-
-<div class="title">MAX operations</div>
-
-You'll use the following MAX operations to complete this task:
-
-**Linear layer**:
-
-- [`Linear(in_features, out_features, bias=False)`](https://docs.modular.com/max/api/python/generated/max.nn.Linear):
-  Projects hidden states to vocabulary logits
-
-</div>
-
-## Implementing the language model
-
-You'll create the `MaxGPT2LMHeadModel` class that wraps the transformer with a
-language modeling head. The implementation is straightforward, with just two
-components and a simple forward pass.
-
-First, import the required modules. You'll need `Linear` and `Module` from MAX,
-plus the previously implemented `GPT2Config` and `MaxGPT2Model`.
-
-In the `__init__` method, create two components:
-
-- Transformer: `MaxGPT2Model(config)` stored as `self.transformer`
-- LM head: `Linear(config.n_embd, config.vocab_size, bias=False)` stored as `self.lm_head`
-
-Note the `bias=False` parameter, which creates a linear layer without bias
-terms.
-
-In the `forward` method, implement a simple two-step process:
-
-1. Get hidden states from the transformer: `hidden_states = self.transformer(input_ids)`
-2. Project to vocabulary logits: `logits = self.lm_head(hidden_states)`
-3. Return `logits`
-
-That's it. The model takes token IDs and returns logits. In the next step,
-you'll use these logits to generate text.
-
-**Implementation** (`step_08.py`):
+## The code
 
 ```python
-{{#include ../../steps/step_08.py}}
+{{#include ../../gpt2.py:language_model_head}}
 ```
 
-### Validation
+The `forward` method reuses the parameter name `input_ids` for the transformer
+output—by the time the LM head runs, it holds hidden states rather than IDs,
+but the name reflects its origin.
 
-Run `pixi run s08` to verify your implementation.
-
-<details>
-<summary>Show solution</summary>
-
-```python
-{{#include ../../solutions/solution_08.py}}
-```
-
-</details>
-
-**Next**: In [Step 09](./step_09.md), you'll implement tokenization functions to
-convert between text and token IDs.
+**Next**: [Section 9](./step_09.md) covers tokenization: converting between
+text strings and the token ID sequences the model operates on.

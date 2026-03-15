@@ -2,119 +2,53 @@
 
 <div class="note">
 
-Learn to combine attention, MLP, layer normalization, and residual connections
-into a complete transformer block.
+Combine attention, MLP, layer normalization, and residual connections into a
+complete transformer block.
 
 </div>
 
-In this step, you'll build a GPT-2 transformer block in the `GPT2Block` class.
-The transformer block is the definitive feature of GPT-2 and any other transformer
-model. It includes a series of self-attention layers (the multi-head attention block),
-a simple feed-forward network (the MLP block), and layer normalization—all of which
-you’ve already built in the previous steps.
+`GPT2Block` is the repeating unit of GPT-2. It wires together all the
+components from the previous sections: layer normalization, multi-head
+attention, and the feed-forward network, connected by residual connections.
 
-The block processes input through two sequential operations. First, it applies
-layer norm, runs multi-head attention, then adds the result back to the input
-(residual connection). Second, it applies another layer norm, runs the MLP, and
-adds that result back. This pattern is `x = x + sublayer(layer_norm(x))`, called
-pre-normalization.
+GPT-2 stacks 12 identical copies of this block. Each refines the representation
+produced by the previous block, building from surface-level patterns in early
+layers to abstract semantic understanding in later layers.
 
-GPT-2 uses pre-norm because it stabilizes training in deep networks. By
-normalizing before each sublayer instead of after, gradients flow more smoothly
-through the network's 12 stacked blocks.
+## The pre-norm pattern
 
-## Understanding the components
+Each sublayer follows the same structure: normalize first, apply the sublayer,
+then add the original input back:
 
-The transformer block consists of four components, applied in this order:
+```text
+x = x + sublayer(layer_norm(x))
+```
 
-**First layer norm (`ln_1`)**: Normalizes the input before attention. Uses
-epsilon=1e-5 for numerical stability.
+This is called pre-normalization. GPT-2 uses it because normalizing before each
+sublayer (rather than after) gives more stable gradients in deep networks—the
+residual connection provides a direct path for gradients to flow backward
+through all 12 blocks without passing through the normalization.
 
-**Multi-head attention (`attn`)**: The self-attention mechanism from Step 04.
-Lets each position attend to all previous positions.
+The pattern happens twice per block:
 
-**Second layer norm (`ln_2`)**: Normalizes before the MLP. Same configuration as
-the first.
-
-**Feed-forward network (`mlp`)**: The position-wise MLP from Step 02. Expands to
-3,072 dimensions internally (4× the embedding size), then projects back to 768.
+1. **Attention**: `hidden_states = attn_output + residual` (where `residual`
+   is the pre-norm input)
+2. **MLP**: `hidden_states = residual + feed_forward_hidden_states`
 
 The block maintains a constant 768-dimensional representation throughout. Input
-shape `[batch, seq_length, 768]` stays the same after each sublayer, which is
+shape `[batch, seq_length, 768]` is unchanged after each sublayer, which is
 essential for stacking 12 blocks together.
 
-## Understanding the flow
+## Component names
 
-Each sublayer follows the pre-norm pattern:
+`ln_1`, `attn`, `ln_2`, and `mlp` match Hugging Face's GPT-2 implementation
+exactly. This naming is required for loading pretrained weights.
 
-1. Save the input as `residual`
-2. Apply layer normalization to the input
-3. Process through the sublayer (attention or MLP)
-4. Add the original `residual` back to the output
-
-This happens twice per block, once for attention and once for the MLP. The
-residual connections let gradients flow directly through the network, preventing
-vanishing gradients in deep models.
-
-Component names (`ln_1`, `attn`, `ln_2`, `mlp`) match Hugging Face's GPT-2
-implementation. This matters for loading pretrained weights in later steps.
-
-## Implementing the block
-
-You'll create the `GPT2Block` class by composing the components from earlier
-steps. The block takes `GPT2Config` and creates four sublayers, then applies
-them in sequence with residual connections.
-
-First, import the required modules. You'll need `Module` from MAX, plus the
-previously implemented components: `GPT2Config`, `GPT2MLP`,
-`GPT2MultiHeadAttention`, and `LayerNorm`.
-
-In the `__init__` method, create the four sublayers:
-
-- `ln_1`: `LayerNorm(config.n_embd, eps=config.layer_norm_epsilon)`
-- `attn`: `GPT2MultiHeadAttention(config)`
-- `ln_2`: `LayerNorm(config.n_embd, eps=config.layer_norm_epsilon)`
-- `mlp`: `GPT2MLP(4 * config.n_embd, config)`
-
-The MLP uses `4 * config.n_embd` (3,072 dimensions) as its inner dimension,
-following the standard transformer ratio.
-
-In the `forward` method, implement the two sublayer blocks:
-
-**Attention block**:
-
-1. Save `residual = hidden_states`
-2. Normalize: `hidden_states = self.ln_1(hidden_states)`
-3. Apply attention: `attn_output = self.attn(hidden_states)`
-4. Add back: `hidden_states = attn_output + residual`
-
-**MLP block**:
-
-1. Save `residual = hidden_states`
-2. Normalize: `hidden_states = self.ln_2(hidden_states)`
-3. Apply MLP: `feed_forward_hidden_states = self.mlp(hidden_states)`
-4. Add back: `hidden_states = residual + feed_forward_hidden_states`
-
-Finally, return `hidden_states`.
-
-**Implementation** (`step_06.py`):
+## The code
 
 ```python
-{{#include ../../steps/step_06.py}}
+{{#include ../../gpt2.py:transformer_block}}
 ```
 
-### Validation
-
-Run `pixi run s06` to verify your implementation.
-
-<details>
-<summary>Show solution</summary>
-
-```python
-{{#include ../../solutions/solution_06.py}}
-```
-
-</details>
-
-**Next**: In [Step 07](./step_07.md), you'll stack 12 transformer blocks together
+**Next**: [Section 7](./step_07.md) stacks 12 of these blocks with embeddings
 to create the main body of the GPT-2 model.

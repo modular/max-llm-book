@@ -2,7 +2,7 @@
 channels = ["https://conda.modular.com/max-nightly", "conda-forge"]
 name = "max-llm-book"
 platforms = ["linux-64", "osx-arm64"]
-version = "0.1.0"
+version = "0.1.1"
 
 [tasks]
 build-book = "cd book && mdbook build"
@@ -10,25 +10,8 @@ book = { cmd = "cd book && mdbook serve --open", depends-on = ["build-book"] }
 
 huggingface = "python scripts/hugging-face-model.py"
 
-# Check tasks for each step
-s01 = "python checks/check_step_01.py"
-s02 = "python checks/check_step_02.py"
-s03 = "python checks/check_step_03.py"
-s04 = "python checks/check_step_04.py"
-s05 = "python checks/check_step_05.py"
-s06 = "python checks/check_step_06.py"
-s07 = "python checks/check_step_07.py"
-s08 = "python checks/check_step_08.py"
-s09 = "python checks/check_step_09.py"
-s10 = "python checks/check_step_10.py"
-s11 = "python checks/check_step_11.py"
-
-# Run all checks
-check-all = "python checks/check_step_01.py && python checks/check_step_02.py && python checks/check_step_03.py && python checks/check_step_04.py && python checks/check_step_05.py && python checks/check_step_06.py && python checks/check_step_07.py && python checks/check_step_08.py && python checks/check_step_09.py && python checks/check_step_10.py && python checks/check_step_11.py"
-
-# Run your completed model interactively
-main = "python main.py"
-gpt2 = "python steps/step_11.py"
+# Run the completed model interactively
+gpt2 = "python gpt2.py"
 
 # Format python
 fmt = "ruff format ."

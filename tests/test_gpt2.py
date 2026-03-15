@@ -6,7 +6,7 @@
 from unittest.mock import Mock, patch
 
 import numpy as np
-from main import (
+from gpt2 import (
     GPT2MLP,
     GPT2Block,
     GPT2Config,

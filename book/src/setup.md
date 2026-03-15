@@ -1,8 +1,7 @@
 # Project Setup
 
-You'll first need to clone
-[the GitHub repository](https://github.com/modular/max-llm-book) and navigate to
-the repository:
+Clone [the GitHub repository](https://github.com/modular/max-llm-book) and
+navigate to it:
 
 ```sh
 git clone https://github.com/modular/max-llm-book
@@ -15,51 +14,37 @@ Then download and install [pixi](https://pixi.sh/dev/):
 curl -fsSL https://pixi.sh/install.sh | sh
 ```
 
-## How to use the book
+## Run the model
 
-To validate a step, use the corresponding check command. For example, to check
-Step 01:
+To run the complete GPT-2 implementation interactively:
 
 ```bash
-pixi run s01
+pixi run gpt2
 ```
 
-Each step includes automated checks that verify your implementation before moving
-forward. This immediate feedback helps you catch issues early and build
-confidence. Initially, checks will fail because the implementation isn't complete:
+This loads the pretrained GPT-2 weights from Hugging Face and starts an
+interactive prompt. Enter any text and the model will generate a continuation.
 
-```text
-✨ Pixi task (s01): python checks/check_step_01.py
-Running checks for Step 01: Model Configuration...
+You can also run the model with a single prompt and exit:
 
-✅ GPT2Config can be instantiated with default values
-
-❌ ERRORS:
-  - GPT2Config must be a dataclass (use @dataclass decorator)
-  - Field 'vocab_size' has incorrect value: expected 50257, got None
-  - Field 'n_positions' has incorrect value: expected 1024, got None
-# ...
+```bash
+pixi run gpt2 -- --prompt "The quick brown fox"
 ```
 
-Each failure tells you exactly what to implement.
+Or open the streaming chat interface:
 
-When your implementation is
-correct, you'll see:
-
-```text
-✨ Pixi task (s01): python checks/check_step_01.py
-Running checks for Step 01: Model Configuration...
-
-✅ GPT2Config is a dataclass
-✅ GPT2Config can be instantiated with default values
-✅ vocab_size = 50257
-✅ n_positions = 1024
-# ...
+```bash
+pixi run gpt2 -- --chat
 ```
 
-The check output tells you exactly what needs to be fixed, making it easy to
-iterate until your implementation is correct. Once all checks pass, you're ready
-to move on to the next step.
+## How to read this book
+
+The tutorial walks through `gpt2.py`, the complete GPT-2 implementation. Each
+section explains one component of the model, shows the relevant code snippet,
+and explains how it works and why it's designed that way.
+
+You don't need to write any code. Read each section, follow along in the source
+file if you like, and run the model to see the output.
 
 ## A note on compile times
 
@@ -73,11 +58,11 @@ or similar tools can help you navigate this tutorial. They're particularly
 useful for:
 
 - **Explaining concepts**: Ask about transformer architecture, attention
-  mechanisms, or any step in the tutorial
+  mechanisms, or any component in the tutorial
 - **Understanding the MAX API**: Get clarification on MAX Framework methods,
   parameters, and patterns
-- **Debugging check failures**: Paste check output to understand what's missing
-- **Exploring alternatives**: Ask "why this approach?" to deepen your understanding
+- **Exploring alternatives**: Ask "why this approach?" to deepen your
+  understanding
 
 If you're using Claude, see
 [claude.md](https://github.com/modular/max-llm-book/blob/main/book/src/claude.md)
@@ -95,9 +80,4 @@ This tutorial assumes:
 
 You'll need to meet the [system requirements](https://docs.modular.com/max/packages#system-requirements).
 
-Whether you're exploring MAX for the first time or deepening your understanding
-of model architecture, this tutorial provides hands-on experience you can apply
-to current projects and learning priorities.
-
-Ready to build? Let's get started with
-[Step 01: Model configuration](./step_01.md).
+Ready? Start with [Section 1: Model configuration](./step_01.md).

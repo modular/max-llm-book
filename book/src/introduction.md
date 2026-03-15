@@ -7,17 +7,16 @@ what's actually happening when you call an inference API. Either way, building
 a transformer from scratch is one of the best ways to truly understand how they
 work.
 
-This guide walks you through implementing GPT-2 using the
-[MAX Python API](https://docs.modular.com/max/api/python/). You'll
-build each component yourself: embeddings, attention mechanisms, and feed-forward
-layers. You'll see how they fit together into a complete language model by
-completing the sequential coding challenges in the tutorial
+This guide walks you through a complete GPT-2 implementation using the
+[MAX Python API](https://docs.modular.com/max/api/python/). Each section
+explains a component of the model—embeddings, attention mechanisms, feed-forward
+layers—and shows exactly how it's implemented in the
 [GitHub repository](https://github.com/modular/max-llm-book).
 
 ## Why GPT-2?
 
 It's the architectural foundation for modern language models. LLaMA, Mistral,
-GPT-4; they're all built on the same core components you'll implement here:
+GPT-4; they're all built on the same core components you'll find here:
 
 - multi-head attention
 - feed-forward layers
@@ -29,10 +28,9 @@ real transformer architecture but simple enough to implement completely and
 understand deeply. When you grasp how its pieces fit together, you understand
 how to build any transformer-based model.
 
-> **Learning by building**: This tutorial follows a format popularized by Andrej
-> Karpathy's educational work and Sebastian Raschka's hands-on approach. Rather
-> than abstract theory, you'll implement each component yourself, building
-> intuition through practice.
+> **Learning by example**: Rather than abstract theory, this tutorial walks
+> through a complete, working implementation and explains how each component
+> works and why it's designed that way.
 
 ## Why MAX?
 
@@ -46,84 +44,52 @@ system. You write code to define your model, load weights, and run inference,
 all in MAX's Python API. The MAX Framework handles optimization automatically and
 you can even use MAX Serve to manage your deployment.
 
-When you build GPT-2 in this guide, you'll load pretrained weights from
-Hugging Face, implement the architecture, and run text generation, all in the same
+The GPT-2 implementation in this guide loads pretrained weights from Hugging
+Face, implements the architecture, and runs text generation, all in the same
 environment.
 
-## Why coding challenges?
+## What you'll explore
 
-This tutorial emphasizes **active problem-solving over passive reading**. Each
-step presents a focused implementation task with:
+Each section explains a component of the model through the working code in
+`gpt2.py`:
 
-1. **Clear context**: What you're building and why it matters
-2. **Guided implementation**: Code structure with specific tasks to complete
-3. **Immediate validation**: Tests that verify correctness before moving forward
-4. **Conceptual grounding**: Explanations that connect code to architecture
+| Section | Component                                    | What you'll learn                                                  |
+|---------|----------------------------------------------|--------------------------------------------------------------------|
+| 1       | [Model configuration](./step_01.md)          | Define architecture hyperparameters matching HuggingFace GPT-2.    |
+| 2       | [Feed-forward network](./step_02.md)         | Build the position-wise feed-forward network with GELU activation. |
+| 3       | [Causal masking](./step_03.md)               | Create attention masks to prevent looking at future tokens.        |
+| 4       | [Multi-head attention](./step_04.md)         | Implement scaled dot-product attention with multiple heads.        |
+| 5       | [Layer normalization](./step_05.md)          | Ensure activation values are within a stable range.                |
+| 6       | [Transformer block](./step_06.md)            | Combine attention and MLP with residual connections.               |
+| 7       | [Stacking transformer blocks](./step_07.md)  | Create the complete 12-layer GPT-2 model with embeddings.          |
+| 8       | [Language model head](./step_08.md)          | Project hidden states to vocabulary logits.                        |
+| 9       | [Encode and decode tokens](./step_09.md)     | Convert between text and token IDs using HuggingFace tokenizer.    |
+| 10      | [Text generation](./step_10.md)              | Generate text autoregressively with temperature sampling.          |
+| 11      | [Load weights and run model](./step_11.md)   | Load pretrained weights and interact with your complete model.     |
+| 12      | [Streaming chat](./step_12.md)               | Build a streaming multi-turn chat interface using stop sequences.  |
 
-Rather than presenting complete solutions, this approach helps you develop
-intuition for **when** and **why** to use specific patterns. The skills you
-build extend beyond GPT-2 to model development more broadly.
+By the end, you'll understand every line of a complete GPT-2 implementation and
+have practical experience with MAX's Python API—skills you can apply directly to
+your own projects.
 
-You can work through the tutorial sequentially for comprehensive understanding,
-or skip directly to topics you need. Each step is self-contained enough to be
-useful independently while building toward a complete implementation.
+> **Note on training vs. inference**: This tutorial focuses on inference using
+> pretrained weights from Hugging Face. Training is not in scope, but we
+> include architectural details like layer normalization for completeness—
+> understanding why each layer exists helps you reason about model behavior and
+> adapt architectures for your own needs.
 
-## What you'll build
+## Try it now
 
-This tutorial guides you through building GPT-2 in manageable steps:
-
-| Step | Component                                    | What you'll learn                                                  |
-|------|----------------------------------------------|--------------------------------------------------------------------|
-| 1    | [Model configuration](./step_01.md)          | Define architecture hyperparameters matching HuggingFace GPT-2.    |
-| 2    | [Feed-forward network](./step_02.md)         | Build the position-wise feed-forward network with GELU activation. |
-| 3    | [Causal masking](./step_03.md)               | Create attention masks to prevent looking at future tokens.        |
-| 4    | [Multi-head attention](./step_04.md)         | Implement scaled dot-product attention with multiple heads.        |
-| 5    | [Layer normalization](./step_05.md)          | Ensure activation values are within a stable range.                      |
-| 6    | [Transformer block](./step_06.md)            | Combine attention and MLP with residual connections.               |
-| 7    | [Stacking transformer blocks](./step_07.md)  | Create the complete 12-layer GPT-2 model with embeddings.          |
-| 8    | [Language model head](./step_08.md)          | Project hidden states to vocabulary logits.                        |
-| 9    | [Encode and decode tokens](./step_09.md)     | Convert between text and token IDs using HuggingFace tokenizer.    |
-| 10   | [Text generation](./step_10.md)              | Generate text autoregressively with temperature sampling.          |
-| 11   | [Load weights and run model](./step_11.md)   | Load pretrained weights and interact with your complete model.     |
-
-By the end, you'll have a complete GPT-2 implementation and practical experience
-with MAX's Python API. These are skills you can immediately apply to your own projects.
-
-> **Note on training vs. inference**: While some steps reference concepts from
-> training (like layer normalization for "stabilizing activations"), this
-> tutorial focuses on inference using pretrained weights from Hugging Face.
-> Training is not in scope, but we include these architectural details for
-> learning purposes and completeness—understanding why each layer exists helps
-> you reason about model behavior and adapt architectures for your own needs.
-
-## Try it first
-
-Before diving into the implementation, you can experience what you'll build by
-running the complete reference model:
-
-```bash
-pixi run main
-```
-
-This runs the complete GPT-2 implementation from
-[`main.py`](https://github.com/modular/max-llm-book/blob/main/main.py), loading
-pretrained weights and starting an interactive prompt where you can enter text
-and see the model generate completions. It's the same model you'll build
-step-by-step through the tutorial.
-
-When you've completed every step of the tutorial, you can run your own
-implementation the exact same way:
+Before reading the implementation, run the complete GPT-2 model:
 
 ```bash
 pixi run gpt2
 ```
 
-This runs your completed `steps/step_11.py`, demonstrating that your
-implementation works identically to the reference. Both commands load the same
-pretrained weights, compile the model, and provide an interactive generation
-experience.
+This loads the pretrained weights and starts an interactive prompt where you can
+enter text and see the model generate completions. It's the same model you'll
+read through step-by-step in the tutorial.
 
 ## Get started
 
-To install the tutorial and begin building, follow the steps in
-[Setup](./setup.md).
+To install the project and begin, follow the steps in [Setup](./setup.md).

@@ -25,3 +25,4 @@
 - [Encode and decode tokens](./step_09.md)
 - [Text generation](./step_10.md)
 - [Load weights and run model](./step_11.md)
+- [Streaming chat](./step_12.md)

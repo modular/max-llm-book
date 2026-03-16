@@ -199,159 +199,67 @@
                     <main>
                         <h1 id="model-configuration"><a class="header" href="#model-configuration">Model configuration</a></h1>
 <div class="note">
-<p>Learn to define the GPT-2 model architecture parameters using configuration classes.</p>
+<p>Define the GPT-2 model architecture parameters using a configuration class.</p>
 </div>
-<p>Before you can implement GPT-2, you need to define its architecture: the
-dimensions, layer counts, and structural parameters that determine how the model
-processes information.</p>
-<p>In this step, you’ll create <code>GPT2Config</code>, a class that holds all the
-architectural decisions for GPT-2. This class describes things like: embedding
-dimensions, number of transformer layers, and number of attention heads. These
-parameters define the shape and capacity of your model.</p>
-<p>OpenAI trained the original GPT-2 model with specific parameters that you can
-see in the
+<p>Before implementing GPT-2, you need to define its architecture: the dimensions,
+layer counts, and structural parameters that determine how the model processes
+information.</p>
+<p><code>GPT2Config</code> holds all the architectural decisions for GPT-2—embedding
+dimensions, number of transformer layers, number of attention heads. These
+parameters define the shape and capacity of the model.</p>
+<p>OpenAI trained the original GPT-2 model with specific parameters available in
+the
 <a href="https://huggingface.co/openai-community/gpt2/blob/main/config.json">config.json file</a>
-on Hugging Face. By using the exact same values, we can access OpenAI’s
-pretrained weights in subsequent steps.</p>
-<h2 id="understanding-the-parameters"><a class="header" href="#understanding-the-parameters">Understanding the parameters</a></h2>
-<p>Looking at the
-<a href="https://huggingface.co/openai-community/gpt2/blob/main/config.json">config.json file</a>
-file, we can see some key information about the model. Each parameter controls
-a different aspect of the model’s architecture:</p>
+on Hugging Face. Using the exact same values lets us load OpenAI’s pretrained
+weights in the final step.</p>
+<h2 id="the-configuration-parameters"><a class="header" href="#the-configuration-parameters">The configuration parameters</a></h2>
+<p>Each field controls a different aspect of the model:</p>
 <ul>
-<li><code>vocab_size</code>: Size of the token vocabulary (default: 50,257). This seemingly
-odd number is actually 50,000 Byte Pair Encoding (BPE) tokens + 256 byte-level
-tokens (fallback for rare characters) + 1 special token.</li>
+<li><code>vocab_size</code>: Size of the token vocabulary (50,257). This number is
+50,000 Byte Pair Encoding tokens + 256 byte-level tokens (fallback for rare
+characters) + 1 special token.</li>
 <li><code>n_positions</code>: Maximum sequence length, also called the context window
-(default: 1,024). Longer sequences require quadratic memory in attention.</li>
-<li><code>n_embd</code>: Embedding dimension, or the size of the hidden states that flow
-through the model (default: 768). This determines the model’s capacity to
-represent information.</li>
-<li><code>n_layer</code>: Number of transformer blocks stacked vertically (default: 12). More
+(1,024). Longer sequences require quadratic memory in attention.</li>
+<li><code>n_embd</code>: Embedding dimension, the size of the hidden states that flow
+through the model (768). This determines the model’s capacity to represent
+information.</li>
+<li><code>n_layer</code>: Number of transformer blocks stacked vertically (12). More
 layers allow the model to learn more complex patterns.</li>
-<li><code>n_head</code>: Number of attention heads per layer (default: 12). Multiple heads
-let the model attend to different types of patterns simultaneously.</li>
-<li><code>n_inner</code>: Dimension of the MLP intermediate layer (default: 3,072). This is
-4x the embedding dimension, a ratio found empirically in the
-<a href="https://arxiv.org/abs/1706.03762"><em>Attention is all you need</em></a> paper to work
-well.</li>
+<li><code>n_head</code>: Number of attention heads per layer (12). Multiple heads let the
+model attend to different types of patterns simultaneously.</li>
+<li><code>n_inner</code>: Dimension of the MLP intermediate layer (optional, defaults to
+4× embedding). The 4× ratio comes from the original
+<a href="https://arxiv.org/abs/1706.03742"><em>Attention is all you need</em></a> paper.</li>
 <li><code>layer_norm_epsilon</code>: Small constant for numerical stability in layer
-normalization (default: <code>1e-5</code>). This prevents division by zero when variance
-is very small.</li>
+normalization (1e-5). Prevents division by zero when variance is very small.</li>
 </ul>
 <p>These values define the <em>small</em> GPT-2 model. OpenAI released four sizes (small,
-medium, large, XL), each with different configurations that scale up these
-parameters. For implementation purposes we will use these parameters.</p>
-<h2 id="implementing-the-configuration"><a class="header" href="#implementing-the-configuration">Implementing the configuration</a></h2>
-<p>Now let’s implement this yourself. You’ll create the <code>GPT2Config</code> class using
-Python’s <a href="https://docs.python.org/3/library/dataclasses.html"><code>@dataclass</code></a>
-decorator. Dataclasses reduce boilerplate.</p>
-<p>Instead of writing <code>__init__</code> and defining each parameter manually, you just
-declare the fields with type hints and default values.</p>
-<p>First, you’ll need to import the dataclass decorator from the dataclasses
-module. Then you’ll add the <code>@dataclass</code> decorator to the <code>GPT2Config</code> class
-definition.</p>
-<p>The actual parameter values come from Hugging Face. You can get them in two ways:</p>
-<ul>
-<li><strong>Option 1</strong>: Run <code>pixi run huggingface</code> to access these parameters
-programmatically from the Hugging Face <code>transformers</code> library.</li>
-<li><strong>Option 2</strong>: Read the values directly from the
-<a href="https://huggingface.co/openai-community/gpt2/blob/main/config.json">GPT-2 model card</a>.</li>
-</ul>
-<p>Once you have the values, replace each <code>None</code> in the <code>GPT2Config</code> class
-properties with the correct numbers from the configuration.</p>
-<p><strong>Implementation</strong> (<code>step_01.py</code>):</p>
-<pre><code class="language-python"># ===----------------------------------------------------------------------=== #
-#
-# This file is Modular Inc proprietary.
-#
-# ===----------------------------------------------------------------------=== #
-"""
-Step 01: Model Configuration
-
-Implement the GPT-2 configuration dataclass that stores model hyperparameters.
-
-Tasks:
-1. Import dataclass from the dataclasses module
-2. Add the @dataclass decorator to the GPT2Config class
-3. Fill in the configuration values from HuggingFace GPT-2 model
-
-Run: pixi run s01
-"""
-
-# 1. Import dataclass from the dataclasses module
-
-# 2. Add the Python @dataclass decorator to the GPT2Config class
-
-
+medium, large, XL), each scaling these parameters up.</p>
+<h2 id="the-code"><a class="header" href="#the-code">The code</a></h2>
+<p>Python’s
+<a href="https://docs.python.org/3/library/dataclasses.html"><code>@dataclass</code></a> decorator
+eliminates boilerplate. Instead of writing <code>__init__</code> manually, you declare
+fields with type hints and default values:</p>
+<pre><code class="language-python">@dataclass
 class GPT2Config:
-    """GPT-2 configuration matching HuggingFace.
-
-    Attributes:
-        vocab_size: Size of the vocabulary.
-        n_positions: Maximum sequence length.
-        n_embd: Embedding dimension.
-        n_layer: Number of transformer layers.
-        n_head: Number of attention heads.
-        n_inner: Inner dimension of feed-forward network (defaults to 4 * n_embd if None).
-        layer_norm_epsilon: Epsilon for layer normalization.
-    """
-
-    # 3a. Run `pixi run huggingface` to access the model parameters from the Hugging Face `transformers` library
-    # 3b. Alternately, read the values from GPT-2 model card: https://huggingface.co/openai-community/gpt2/blob/main/config.json
-    # 4. Replace the None of the GPT2Config properties with the correct values
-    vocab_size: int = None
-    n_positions: int = None
-    n_embd: int = None
-    n_layer: int = None
-    n_head: int = None
-    n_inner: int = None  # Equal to 4 * n_embd
-    layer_norm_epsilon: float = None
-</code></pre>
-<h3 id="validation"><a class="header" href="#validation">Validation</a></h3>
-<p>Run <code>pixi run s01</code> to verify your implementation matches the expected configuration.</p>
-<details>
-<summary>Show solution</summary>
-<pre><code class="language-python"># ===----------------------------------------------------------------------=== #
-#
-# This file is Modular Inc proprietary.
-#
-# ===----------------------------------------------------------------------=== #
-"""Solution for Step 01: Model Configuration
-
-This module implements the GPT-2 configuration dataclass that stores
-hyperparameters matching HuggingFace's GPT-2 model structure.
-"""
-
-from dataclasses import dataclass
-
-
-@dataclass
-class GPT2Config:
-    """GPT-2 configuration matching HuggingFace.
-
-    Attributes:
-        vocab_size: Size of the vocabulary.
-        n_positions: Maximum sequence length.
-        n_embd: Embedding dimension.
-        n_layer: Number of transformer layers.
-        n_head: Number of attention heads.
-        n_inner: Inner dimension of feed-forward network (defaults to 4 * n_embd if None).
-        layer_norm_epsilon: Epsilon for layer normalization.
-    """
+    """GPT-2 configuration matching HuggingFace"""
 
     vocab_size: int = 50257
     n_positions: int = 1024
     n_embd: int = 768
     n_layer: int = 12
     n_head: int = 12
-    n_inner: int = 3072
+    n_inner: int | None = None
     layer_norm_epsilon: float = 1e-5
+
+
 </code></pre>
-</details>
-<p><strong>Next</strong>: In <a href="./step_02.html">Step 02</a>, you’ll implement the feed-forward
-network—also known as a multilayer perceptron (MLP)—that processes information
-after attention in each transformer block.</p>
+<p>The <code>n_inner: int | None = None</code> field is optional. When <code>None</code>, the
+transformer block defaults to 4× the embedding dimension (3,072). This lets you
+override the inner dimension for experimental architectures without changing the
+other components.</p>
+<p><strong>Next</strong>: <a href="./step_02.html">Section 2</a> implements the feed-forward network—the MLP
+that processes information after attention in each transformer block.</p>
 
                     </main>
 

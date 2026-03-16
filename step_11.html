@@ -199,278 +199,169 @@
                     <main>
                         <h1 id="load-weights-and-run-model"><a class="header" href="#load-weights-and-run-model">Load weights and run model</a></h1>
 <div class="note">
-<p>Learn to load pretrained weights from HuggingFace and prepare the model for text
+<p>Load pretrained weights from HuggingFace and prepare the model for text
 generation.</p>
 </div>
-<p>With all components implemented, you’re ready to load OpenAI’s pretrained GPT-2
-weights and run the model. This step brings everything together: loading weights
-from HuggingFace, handling weight format differences, initializing the
-tokenizer, and compiling the model for efficient inference.</p>
-<p>The HuggingFace <code>transformers</code> library provides OpenAI’s pretrained GPT-2
-weights. You’ll load these weights into your MAX implementation, making your
-model immediately capable of generating coherent text without training.</p>
-<p>However, there’s a complication: HuggingFace’s GPT-2 uses Conv1D layers for its
-linear transformations, while your MAX implementation uses standard Linear
-layers. These store weights in transposed formats, so you’ll need to transpose
-specific weight matrices after loading.</p>
-<h2 id="understanding-weight-loading"><a class="header" href="#understanding-weight-loading">Understanding weight loading</a></h2>
-<p>Weight loading involves three steps: loading the HuggingFace model, transferring
-weights to your MAX model, and transposing Conv1D weights.</p>
-<p>First, load the pretrained model with <code>GPT2LMHeadModel.from_pretrained("gpt2")</code>.
-This downloads the weights (about 500MB) and returns a PyTorch model with the
-exact architecture you’ve implemented.</p>
-<p>Next, transfer these weights to your MAX model using
-<code>max_model.load_state_dict(hf_model.state_dict())</code>. The <code>state_dict</code> is a
-dictionary mapping layer names to weight tensors. Since your MAX model has the
-exact same architecture and layer names, this transfer works seamlessly.</p>
-<p>Finally, transpose the weights for layers that use Conv1D in HuggingFace:
-<code>c_attn</code>, <code>c_proj</code>, and <code>c_fc</code>. Conv1D stores weights in shape
-<code>[in_features, out_features]</code>, while Linear expects
-<code>[out_features, in_features]</code>. Use the <code>.T</code> property to transpose:
-<code>child.weight = child.weight.T</code>.</p>
-<h2 id="understanding-model-compilation"><a class="header" href="#understanding-model-compilation">Understanding model compilation</a></h2>
-<p>Before you can run text generation, compile the model with
-<code>.compile(token_type)</code>. Compilation analyzes the model’s computation graph and
-generates optimized code for your hardware.</p>
-<p>First, you need to specify the <code>token_type</code> input using <code>TensorType</code>. This tells
-the MAX compiler what shape and dtype to expect:</p>
-<pre><code class="language-python">token_type = TensorType(
-    DType.int64,
-    ("batch", "seqlen"),
-    device=DeviceRef.from_device(device)
-)
+<p><code>main()</code> brings everything together: it loads OpenAI’s pretrained GPT-2
+weights, builds the MAX model, compiles two inference heads, initializes the
+tokenizer, and starts an interactive session.</p>
+<h2 id="loading-and-transposing-weights"><a class="header" href="#loading-and-transposing-weights">Loading and transposing weights</a></h2>
+<p>HuggingFace loads the pretrained weights with
+<code>GPT2LMHeadModel.from_pretrained("gpt2")</code>. The weights are then transferred to
+the MAX model via <code>load_state_dict</code>.</p>
+<p>There’s one complication: HuggingFace’s GPT-2 uses <code>Conv1D</code> for its linear
+layers, which stores weights transposed relative to MAX’s <code>Linear</code>
+(<code>[in, out]</code> instead of <code>[out, in]</code>). The <code>transposed_state</code> loop
+pre-transposes the affected layers (<code>c_attn</code>, <code>c_proj</code>, <code>c_fc</code>) before loading,
+so the weights land in the correct orientation without modifying the model’s
+layer definitions.</p>
+<h2 id="lazy-initialization"><a class="header" href="#lazy-initialization">Lazy initialization</a></h2>
+<p>The model is constructed inside <code>F.lazy()</code>:</p>
+<pre><code class="language-python">with F.lazy():
+    max_model = MaxGPT2LMHeadModel(config)
+    max_model.load_state_dict(transposed_state)
 </code></pre>
-<p>The shape uses symbolic dimensions <code>("batch", "seqlen")</code> rather than concrete
-numbers like <code>[1, 20]</code>. This allows the compiled model to handle any batch size
-and sequence length, not just fixed dimensions.</p>
-<p>Compilation takes a few seconds but only happens once. After compilation,
-inference is much faster because MAX has optimized the entire computation graph.</p>
-<h2 id="understanding-the-tokenizer"><a class="header" href="#understanding-the-tokenizer">Understanding the tokenizer</a></h2>
-<p>Back in step 9, you implemented functions to encode and decode tokens, but both
-functions require a <code>tokenizer</code> argument. Now you’ll load that tokenizer from
-Hugging Face, using <code>GPT2Tokenizer.from_pretrained("gpt2")</code>,
-which downloads the same tokenization rules OpenAI used during training.</p>
-<p>Set the padding token to match the end-of-sequence token:
-<code>tokenizer.pad_token = tokenizer.eos_token</code>. GPT-2 doesn’t have a dedicated
-padding token, so we reuse the EOS token for this purpose.</p>
-<p>Then pass the <code>tokenizer</code> to the <code>generate_text()</code> function you created
-in step 10 (which passes it to <code>tokenize_text()</code> and <code>decode_tokens()</code>
-from step 9).</p>
-<h2 id="implementing-the-main-function"><a class="header" href="#implementing-the-main-function">Implementing the main function</a></h2>
-<p>You’ll implement the <code>main()</code> function that orchestrates the entire pipeline:
-loading models, transferring weights, initializing the tokenizer, compiling the
-model, and running an interactive prompt loop.</p>
-<p>Start by loading the pretrained HuggingFace model:</p>
-<pre><code class="language-python">hf_model = GPT2LMHeadModel.from_pretrained("gpt2")
+<p>Without <code>F.lazy()</code>, the <code>Embedding</code> and <code>Linear</code> initializers would allocate
+random tensors immediately, only to discard them when <code>load_state_dict</code> replaces
+them. Inside the lazy context, those random initializations are deferred—they’re
+never allocated or compiled. <code>load_state_dict</code> installs the real HuggingFace
+weights directly, saving both time and memory.</p>
+<h2 id="compiling-two-heads"><a class="header" href="#compiling-two-heads">Compiling two heads</a></h2>
+<p>The model is wrapped in <code>GPT2SamplingHead</code> and <code>GPT2GreedyHead</code> (from Section
+10), then each is compiled with <code>TensorType</code> inputs using symbolic dimensions:</p>
+<pre><code class="language-python">token_type = TensorType(DType.int64, ("batch", "seqlen"), device=device)
+temp_type  = TensorType(dtype, [], device=device)
+
+compiled_sampler = sampling_head.compile(token_type, temp_type)
+compiled_greedy  = greedy_head.compile(token_type)
 </code></pre>
-<p>Initialize your MAX model with the default device and configuration:</p>
-<pre><code class="language-python">_, device = defaults()
-config = GPT2Config()
-max_model = MaxGPT2LMHeadModel(config)
-</code></pre>
-<p>The <code>defaults()</code> function returns <code>(dtype, device)</code> tuples. You only need the
-device, so use <code>_</code> to ignore the dtype.</p>
-<p>Load and transpose the weights:</p>
-<pre><code class="language-python">max_model.load_state_dict(hf_model.state_dict())
-max_model.to(device)
-for name, child in max_model.descendents:
-    if isinstance(child, Linear):
-        if any(layer_name in name for layer_name in ["c_attn", "c_proj", "c_fc"]):
-            child.weight = child.weight.T
-</code></pre>
-<p>The <code>descendents</code> property gives you all nested modules with their full paths.
-Check each child’s name for the Conv1D layers and transpose their weights.</p>
-<p>Initialize the tokenizer:</p>
-<pre><code class="language-python">tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
-tokenizer.pad_token = tokenizer.eos_token
-</code></pre>
-<p>Compile the model:</p>
-<pre><code class="language-python">token_type = TensorType(
-    DType.int64, ("batch", "seqlen"), device=DeviceRef.from_device(device)
-)
-compiled_max_model = max_model.compile(token_type)
-</code></pre>
-<p>Finally, create an interactive prompt loop where users can input text and see
-generated results:</p>
-<pre><code class="language-python">try:
-    while True:
-        user_input = input("Enter your prompt: ").strip()
-
-        if user_input.lower() in ['quit', 'exit', 'q']:
-            break
-
-        if not user_input:
-            continue
-
-        generated_text = generate_text(
-            compiled_max_model,
-            tokenizer,
-            device,
-            user_input,
-            max_new_tokens=50,
-            temperature=0.8,
-            do_sample=True
-        )
-        print(f"\nGenerated text:\n{generated_text}\n")
-
-except KeyboardInterrupt:
-    print("\n\nExiting...")
-</code></pre>
-<p>The loop continues until the user types ‘quit’, ‘exit’, ‘q’, or presses Ctrl+C.</p>
-<p><strong>Implementation</strong> (<code>step_11.py</code>):</p>
-<pre><code class="language-python"># ===----------------------------------------------------------------------=== #
-#
-# This file is Modular Inc proprietary.
-#
-# ===----------------------------------------------------------------------=== #
-"""
-Step 11: Load Weights and Run Model
-
-Load pretrained GPT-2 weights from HuggingFace and run the complete model.
-
-Tasks:
-1. Load HuggingFace GPT-2 model and weights
-2. Initialize MAX model and load state dict
-3. Transpose weights for Conv1D-&gt;Linear compatibility
-4. Compile model with correct input specification
-5. Create interactive generation loop
-
-Run: pixi run s11
-"""
-
-
-def run_model() -&gt; None:
-    """Load GPT-2 model, compile it, and run interactive text generation."""
-
-    # TODO: Load HuggingFace model
-    # Hint: hf_model = GPT2LMHeadModel.from_pretrained("gpt2")
-    # Hint: print(f"Loaded HuggingFace model:\n{hf_model}")
-    hf_model = None
-
-    # TODO: Initialize MAX model with device
-    # Hint: _, device = defaults()
-    # Hint: print(f"Using device: {device}")
-    # Hint: config = GPT2Config()
-    # Hint: max_model = MaxGPT2LMHeadModel(config)
-    device = None
-    config = None
-    max_model = None
-
-    print(
-        f"Model has {config.n_layer} layers, {config.n_head} heads, {config.n_embd} embedding dim"
+<p>Symbolic dimensions (<code>"batch"</code>, <code>"seqlen"</code>) let the compiled model accept any
+sequence length without recompilation. Compilation takes a few seconds but only
+happens once per session.</p>
+<h2 id="the-full-main-function"><a class="header" href="#the-full-main-function">The full main function</a></h2>
+<pre><code class="language-python">def main() -&gt; None:
+    parser = argparse.ArgumentParser(description="MAX GPT-2 text generation")
+    parser.add_argument(
+        "--benchmark",
+        action="store_true",
+        help="Run timed benchmark instead of interactive generation",
     )
+    parser.add_argument(
+        "--prompt",
+        type=str,
+        default=None,
+        help="Run single generation with this prompt and exit (non-interactive)",
+    )
+    parser.add_argument(
+        "--chat",
+        action="store_true",
+        help="Open a rich terminal chat session (Human vs GPT-2)",
+    )
+    parser.add_argument(
+        "--chat-temperature",
+        type=float,
+        default=0.8,
+        help="Sampling temperature for --chat mode (default: 0.8; lower = more focused)",
+    )
+    args = parser.parse_args()
 
-    # TODO: Load state dict and move to device
-    # Hint: max_model.load_state_dict(hf_model.state_dict())
-    # Hint: max_model.to(device)
+    dtype, device = defaults()
+    print(f"Using device: {device}, dtype: {dtype}")
 
-    # TODO: Transpose weights for Linear layers
-    # Hint: HuggingFace uses Conv1D which stores weights transposed
-    # Hint: for name, child in max_model.descendents:
-    #     if isinstance(child, Linear):
-    #         if any(layer_name in name for layer_name in ["c_attn", "c_proj", "c_fc"]):
-    #             print(f"Transposing {name}: {child.weight.shape}")
-    #             child.weight = child.weight.T
-
-    # TODO: Initialize tokenizer
-    # Hint: tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
-    # Hint: tokenizer.pad_token = tokenizer.eos_token
-    tokenizer = None
-
-    # TODO: Compile model
-    # Hint: print("\nCompiling model...")
-    # Hint: Create TensorType with shape ("batch", "seqlen") and int64 dtype
-    # Hint: token_type = TensorType(DType.int64, ("batch", "seqlen"), device=DeviceRef.from_device(device))
-    # Hint: compiled_max_model = max_model.compile(token_type)
-    compiled_max_model = None
-
-    # Interactive prompt loop
-    print("\n" + "=" * 50)
-    print("Model ready! Enter prompts to generate text.")
-    print("Press Ctrl+C or type 'quit' to exit.")
-    print("=" * 50 + "\n")
-
-    # TODO: Implement interactive generation loop
-    # Hint: try:
-    #     while True:
-    #         user_input = input("Enter your prompt: ").strip()
-    #         if user_input.lower() in ['quit', 'exit', 'q']:
-    #             break
-    #         if not user_input:
-    #             continue
-    #         generated_text = generate_text(
-    #             compiled_max_model, tokenizer, device, user_input,
-    #             max_new_tokens=50, temperature=0.8, do_sample=True
-    #         )
-    #         print(f"\nGenerated text:\n{generated_text}\n")
-    # except KeyboardInterrupt:
-    #     print("\n\nExiting...")
-
-
-if __name__ == "__main__":
-    run_model()
-</code></pre>
-<h3 id="validation"><a class="header" href="#validation">Validation</a></h3>
-<p>Run <code>pixi run s11</code> to verify your implementation.</p>
-<details>
-<summary>Show solution</summary>
-<pre><code class="language-python"># ===----------------------------------------------------------------------=== #
-#
-# This file is Modular Inc proprietary.
-#
-# ===----------------------------------------------------------------------=== #
-"""
-Solution for Step 11: Load weights and run model
-
-
-"""
-
-from max.dtype import DType
-from max.experimental.nn import Linear
-from max.experimental.tensor import TensorType, defaults
-from max.graph import DeviceRef
-from step_01 import GPT2Config
-from step_08 import MaxGPT2LMHeadModel
-from step_10 import generate_text
-from transformers import GPT2LMHeadModel, GPT2Tokenizer
-
-
-def run_model() -&gt; None:
     # Load HuggingFace model
-    hf_model = GPT2LMHeadModel.from_pretrained("gpt2")
+    torch_dtype = torch.bfloat16 if dtype == DType.bfloat16 else torch.float32
+    hf_model = GPT2LMHeadModel.from_pretrained("gpt2", torch_dtype=torch_dtype)
     print(f"Loaded HuggingFace model:\n{hf_model}")
 
-    # Initialize Max model
-    _, device = defaults()
-    print(f"Using device: {device}")
     config = GPT2Config()
-    max_model = MaxGPT2LMHeadModel(config)
-
     print(
-        f"Model has {config.n_layer} layers, {config.n_head} heads, {config.n_embd} embedding dim"
+        f"Model has {config.n_layer} layers, {config.n_head} heads,"
+        f" {config.n_embd} embedding dim"
     )
 
-    # Load state dict and transpose weights
-    max_model.load_state_dict(hf_model.state_dict())
+    # 1. Build MAX model and load weights. `defaults()` resolves `device` to
+    #    GPU when one is available; input tensors and compile types both use
+    #    that device so everything stays on the same device without .to().
+    #    HuggingFace GPT-2 Conv1D stores weights as [in, out]; MAX Linear
+    #    expects [out, in], so pre-transpose before loading.
+    print("Building model and loading weights...", flush=True)
+    hf_state = hf_model.state_dict()
+    transposed_state: dict[str, torch.Tensor] = {}
+    for name, param in hf_state.items():
+        if any(k in name for k in ["c_attn", "c_proj", "c_fc"]) and name.endswith(
+            ".weight"
+        ):
+            transposed_state[name] = param.T.contiguous()
+        else:
+            transposed_state[name] = param
+
+    # F.lazy() defers all ops inside the block — random.normal in
+    # Linear.__init__ / Embedding.__init__ is NEVER compiled or allocated.
+    # load_state_dict replaces the lazy random tensors with the real HF
+    # weights before they are ever realized.
+    t0 = time.perf_counter()
+    with F.lazy():
+        max_model = MaxGPT2LMHeadModel(config)
+        max_model.load_state_dict(transposed_state)
+    print(
+        f"  model init   : {(time.perf_counter() - t0) * 1e3:.0f} ms (lazy)",
+        flush=True,
+    )
+
+    t0 = time.perf_counter()
     max_model.to(device)
-    for name, child in max_model.descendants:
-        if isinstance(child, Linear):
-            if any(layer_name in name for layer_name in ["c_attn", "c_proj", "c_fc"]):
-                print(f"Transposing {name}: {child.weight.shape}")
-                # The upstream model has conv1d layers instead of linear, which have their weights
-                # stored transposed compared to linear
-                child.weight = child.weight.T
+    print(
+        f"  to({device})  : {(time.perf_counter() - t0) * 1e3:.0f} ms",
+        flush=True,
+    )
+
+    # 2. Wrap in compiled heads.
+    sampling_head = GPT2SamplingHead(max_model)
+    greedy_head = GPT2GreedyHead(max_model)
+
+    token_type = TensorType(DType.int64, ("batch", "seqlen"), device=device)
+    temp_type = TensorType(dtype, [], device=device)
+
+    print("\nCompiling sampling model...", flush=True)
+    t_compile_start = time.perf_counter()
+    compiled_sampler = sampling_head.compile(token_type, temp_type)
+
+    print("Compiling greedy model...", flush=True)
+    compiled_greedy = greedy_head.compile(token_type)
+    t_compile_end = time.perf_counter()
+    print(f"Compile time: {t_compile_end - t_compile_start:.2f}s", flush=True)
 
     # Initialize tokenizer
     tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
-    tokenizer.pad_token = tokenizer.eos_token  # Set padding token
+    tokenizer.pad_token = tokenizer.eos_token
 
-    # Compile model
-    print("\nCompiling model...")
-    token_type = TensorType(
-        DType.int64, ("batch", "seqlen"), device=DeviceRef.from_device(device)
-    )
-    compiled_max_model = max_model.compile(token_type)
+    if args.benchmark:
+        run_benchmark(compiled_sampler, tokenizer, device, dtype)
+        return
+
+    if args.prompt:
+        generate_text(
+            compiled_sampler,
+            compiled_greedy,
+            tokenizer,
+            device,
+            dtype,
+            args.prompt,
+            max_new_tokens=20,
+            temperature=0.8,
+            do_sample=True,
+        )
+        return
+
+    if args.chat:
+        chat_loop(
+            compiled_sampler,
+            tokenizer,
+            device,
+            dtype,
+            temperature=args.chat_temperature,
+        )
+        return
 
     # Interactive prompt loop
     print("\n" + "=" * 50)
@@ -492,9 +383,11 @@ def run_model() -&gt; None:
 
             print()
             generated_text = generate_text(
-                compiled_max_model,
+                compiled_sampler,
+                compiled_greedy,
                 tokenizer,
                 device,
+                dtype,
                 user_input,
                 max_new_tokens=50,
                 temperature=0.8,
@@ -507,38 +400,19 @@ def run_model() -&gt; None:
         print("\n\nExiting...")
 
 
-if __name__ == "__main__":
-    run_model()
 </code></pre>
-</details>
-<p><strong>Congratulations!</strong> You’ve completed built a complete GPT-2 implementation from
-scratch.</p>
-<p>If code verification passed, you can execute your <code>step_11.py</code> code with
-<code>pixi run gpt2</code>.</p>
-<h2 id="whats-next"><a class="header" href="#whats-next">What’s next?</a></h2>
-<p>You now understand the architectural foundation that powers modern language
-models. LLaMA, Mistral, and more build on these same components with incremental
-refinements. You have everything you need to implement those refinements
-yourself.</p>
-<p>Consider extending your implementation with:</p>
-<ul>
-<li><strong>Grouped-query attention (GQA)</strong>: Reduce memory consumption by sharing
-key-value pairs across multiple query heads, as used in LLaMA 2.</li>
-<li><strong>Rotary position embeddings (RoPE)</strong>: Replace learned position embeddings
-with rotation-based encoding, improving length extrapolation in models like
-LLaMA and GPT-NeoX.</li>
-<li><strong>SwiGLU activation</strong>: Swap GELU for the gated linear unit variant used in
-LLaMA and PaLM.</li>
-<li><strong>Mixture of experts (MoE)</strong>: Add sparse expert routing to scale model
-capacity efficiently, as in Mixtral and GPT-4.</li>
-</ul>
-<p>Each refinement builds directly on what you’ve implemented. The attention
-mechanism you wrote becomes grouped-query attention with a simple modification
-to how you reshape key-value tensors. Your position embeddings can be replaced
-with RoPE by changing how you encode positional information. The feed-forward
-network you built becomes SwiGLU by adding a gating mechanism.</p>
-<p>Pick an architecture that interests you and start building. You’ll find the
-patterns are familiar because the fundamentals haven’t changed.</p>
+<p>With <code>--prompt</code>, the model generates 20 tokens and exits. With <code>--chat</code>, it
+opens the rich terminal chat interface. Without flags, it starts an interactive
+prompt loop.</p>
+<h2 id="running-the-model"><a class="header" href="#running-the-model">Running the model</a></h2>
+<pre><code class="language-bash">pixi run gpt2
+pixi run gpt2 -- --prompt "Once upon a time"
+pixi run gpt2 -- --chat
+pixi run gpt2 -- --benchmark
+</code></pre>
+<p><strong>Next</strong>: <a href="./step_12.html">Section 12</a> walks through the streaming chat
+implementation—stop sequences, BPE boundary handling, and the <code>rich</code> live
+rendering that makes the <code>--chat</code> mode work.</p>
 
                     </main>
 
@@ -548,6 +422,9 @@ patterns are familiar because the fundamentals haven’t changed.</p>
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
+                            <a rel="next prefetch" href="step_12.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
 
                         <div style="clear: both"></div>
                     </nav>
@@ -559,6 +436,9 @@ patterns are familiar because the fundamentals haven’t changed.</p>
                         <i class="fa fa-angle-left"></i>
                     </a>
 
+                    <a rel="next prefetch" href="step_12.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
             </nav>
 
         </div>

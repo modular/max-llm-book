@@ -204,15 +204,14 @@ been asked to adapt one of these models for your team, or you want to understand
 what’s actually happening when you call an inference API. Either way, building
 a transformer from scratch is one of the best ways to truly understand how they
 work.</p>
-<p>This guide walks you through implementing GPT-2 using the
-<a href="https://docs.modular.com/max/api/python/">MAX Python API</a>. You’ll
-build each component yourself: embeddings, attention mechanisms, and feed-forward
-layers. You’ll see how they fit together into a complete language model by
-completing the sequential coding challenges in the tutorial
+<p>This guide walks you through a complete GPT-2 implementation using the
+<a href="https://docs.modular.com/max/api/python/">MAX Python API</a>. Each section
+explains a component of the model—embeddings, attention mechanisms, feed-forward
+layers—and shows exactly how it’s implemented in the
 <a href="https://github.com/modular/max-llm-book">GitHub repository</a>.</p>
 <h2 id="why-gpt-2"><a class="header" href="#why-gpt-2">Why GPT-2?</a></h2>
 <p>It’s the architectural foundation for modern language models. LLaMA, Mistral,
-GPT-4; they’re all built on the same core components you’ll implement here:</p>
+GPT-4; they’re all built on the same core components you’ll find here:</p>
 <ul>
 <li>multi-head attention</li>
 <li>feed-forward layers</li>
@@ -224,10 +223,9 @@ real transformer architecture but simple enough to implement completely and
 understand deeply. When you grasp how its pieces fit together, you understand
 how to build any transformer-based model.</p>
 <blockquote>
-<p><strong>Learning by building</strong>: This tutorial follows a format popularized by Andrej
-Karpathy’s educational work and Sebastian Raschka’s hands-on approach. Rather
-than abstract theory, you’ll implement each component yourself, building
-intuition through practice.</p>
+<p><strong>Learning by example</strong>: Rather than abstract theory, this tutorial walks
+through a complete, working implementation and explains how each component
+works and why it’s designed that way.</p>
 </blockquote>
 <h2 id="why-max"><a class="header" href="#why-max">Why MAX?</a></h2>
 <p>Traditional ML development often feels like stitching together tools that
@@ -238,27 +236,13 @@ tools. Each handoff introduces complexity.</p>
 system. You write code to define your model, load weights, and run inference,
 all in MAX’s Python API. The MAX Framework handles optimization automatically and
 you can even use MAX Serve to manage your deployment.</p>
-<p>When you build GPT-2 in this guide, you’ll load pretrained weights from
-Hugging Face, implement the architecture, and run text generation, all in the same
+<p>The GPT-2 implementation in this guide loads pretrained weights from Hugging
+Face, implements the architecture, and runs text generation, all in the same
 environment.</p>
-<h2 id="why-coding-challenges"><a class="header" href="#why-coding-challenges">Why coding challenges?</a></h2>
-<p>This tutorial emphasizes <strong>active problem-solving over passive reading</strong>. Each
-step presents a focused implementation task with:</p>
-<ol>
-<li><strong>Clear context</strong>: What you’re building and why it matters</li>
-<li><strong>Guided implementation</strong>: Code structure with specific tasks to complete</li>
-<li><strong>Immediate validation</strong>: Tests that verify correctness before moving forward</li>
-<li><strong>Conceptual grounding</strong>: Explanations that connect code to architecture</li>
-</ol>
-<p>Rather than presenting complete solutions, this approach helps you develop
-intuition for <strong>when</strong> and <strong>why</strong> to use specific patterns. The skills you
-build extend beyond GPT-2 to model development more broadly.</p>
-<p>You can work through the tutorial sequentially for comprehensive understanding,
-or skip directly to topics you need. Each step is self-contained enough to be
-useful independently while building toward a complete implementation.</p>
-<h2 id="what-youll-build"><a class="header" href="#what-youll-build">What you’ll build</a></h2>
-<p>This tutorial guides you through building GPT-2 in manageable steps:</p>
-<div class="table-wrapper"><table><thead><tr><th>Step</th><th>Component</th><th>What you’ll learn</th></tr></thead><tbody>
+<h2 id="what-youll-explore"><a class="header" href="#what-youll-explore">What you’ll explore</a></h2>
+<p>Each section explains a component of the model through the working code in
+<code>gpt2.py</code>:</p>
+<div class="table-wrapper"><table><thead><tr><th>Section</th><th>Component</th><th>What you’ll learn</th></tr></thead><tbody>
 <tr><td>1</td><td><a href="./step_01.html">Model configuration</a></td><td>Define architecture hyperparameters matching HuggingFace GPT-2.</td></tr>
 <tr><td>2</td><td><a href="./step_02.html">Feed-forward network</a></td><td>Build the position-wise feed-forward network with GELU activation.</td></tr>
 <tr><td>3</td><td><a href="./step_03.html">Causal masking</a></td><td>Create attention masks to prevent looking at future tokens.</td></tr>
@@ -270,39 +254,28 @@ useful independently while building toward a complete implementation.</p>
 <tr><td>9</td><td><a href="./step_09.html">Encode and decode tokens</a></td><td>Convert between text and token IDs using HuggingFace tokenizer.</td></tr>
 <tr><td>10</td><td><a href="./step_10.html">Text generation</a></td><td>Generate text autoregressively with temperature sampling.</td></tr>
 <tr><td>11</td><td><a href="./step_11.html">Load weights and run model</a></td><td>Load pretrained weights and interact with your complete model.</td></tr>
+<tr><td>12</td><td><a href="./step_12.html">Streaming chat</a></td><td>Build a streaming multi-turn chat interface using stop sequences.</td></tr>
 </tbody></table>
 </div>
-<p>By the end, you’ll have a complete GPT-2 implementation and practical experience
-with MAX’s Python API. These are skills you can immediately apply to your own projects.</p>
+<p>By the end, you’ll understand every line of a complete GPT-2 implementation and
+have practical experience with MAX’s Python API—skills you can apply directly to
+your own projects.</p>
 <blockquote>
-<p><strong>Note on training vs. inference</strong>: While some steps reference concepts from
-training (like layer normalization for “stabilizing activations”), this
-tutorial focuses on inference using pretrained weights from Hugging Face.
-Training is not in scope, but we include these architectural details for
-learning purposes and completeness—understanding why each layer exists helps
-you reason about model behavior and adapt architectures for your own needs.</p>
+<p><strong>Note on training vs. inference</strong>: This tutorial focuses on inference using
+pretrained weights from Hugging Face. Training is not in scope, but we
+include architectural details like layer normalization for completeness—
+understanding why each layer exists helps you reason about model behavior and
+adapt architectures for your own needs.</p>
 </blockquote>
-<h2 id="try-it-first"><a class="header" href="#try-it-first">Try it first</a></h2>
-<p>Before diving into the implementation, you can experience what you’ll build by
-running the complete reference model:</p>
-<pre><code class="language-bash">pixi run main
-</code></pre>
-<p>This runs the complete GPT-2 implementation from
-<a href="https://github.com/modular/max-llm-book/blob/main/main.py"><code>main.py</code></a>, loading
-pretrained weights and starting an interactive prompt where you can enter text
-and see the model generate completions. It’s the same model you’ll build
-step-by-step through the tutorial.</p>
-<p>When you’ve completed every step of the tutorial, you can run your own
-implementation the exact same way:</p>
+<h2 id="try-it-now"><a class="header" href="#try-it-now">Try it now</a></h2>
+<p>Before reading the implementation, run the complete GPT-2 model:</p>
 <pre><code class="language-bash">pixi run gpt2
 </code></pre>
-<p>This runs your completed <code>steps/step_11.py</code>, demonstrating that your
-implementation works identically to the reference. Both commands load the same
-pretrained weights, compile the model, and provide an interactive generation
-experience.</p>
+<p>This loads the pretrained weights and starts an interactive prompt where you can
+enter text and see the model generate completions. It’s the same model you’ll
+read through step-by-step in the tutorial.</p>
 <h2 id="get-started"><a class="header" href="#get-started">Get started</a></h2>
-<p>To install the tutorial and begin building, follow the steps in
-<a href="./setup.html">Setup</a>.</p>
+<p>To install the project and begin, follow the steps in <a href="./setup.html">Setup</a>.</p>
 
                     </main>
 

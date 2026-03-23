@@ -33,8 +33,9 @@ patterns. The representations from all layers contribute to the final output.
 
 [`Sequential`](https://docs.modular.com/max/api/python/generated/max.nn.Sequential)
 chains the 12 transformer blocks in order, passing each block's output to the
-next. The `*` in `Sequential(*(GPT2Block(config) for _ in range(config.n_layer)))`
-unpacks the generator as positional arguments.
+next. The `*` in
+`Sequential(*(GPT2Block(config) for _ in range(config.n_layer)))` unpacks the
+generator as positional arguments.
 
 [`Tensor.arange`](https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor#max.experimental.tensor.Tensor.arange)
 generates position indices `[0, 1, ..., seq_length-1]` matching the input's

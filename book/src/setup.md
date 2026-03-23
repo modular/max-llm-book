@@ -78,6 +78,7 @@ This tutorial assumes:
 - **Interest in understanding**: Curiosity matters more than prior transformer
   experience
 
-You'll need to meet the [system requirements](https://docs.modular.com/max/packages#system-requirements).
+You'll need to meet the
+[system requirements](https://docs.modular.com/max/packages#system-requirements).
 
 Ready? Start with [Section 1: Model configuration](./step_01.md).

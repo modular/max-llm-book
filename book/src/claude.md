@@ -88,7 +88,8 @@ Can you review it and suggest improvements?
    working on
 2. **Share check output**: Paste the full check output when debugging
 3. **Share your code**: Let Claude see your implementation when asking for help
-4. **Ask follow-ups**: If an explanation isn't clear, ask for clarification or examples
+4. **Ask follow-ups**: If an explanation isn't clear, ask for clarification or
+   examples
 5. **Verify understanding**: Ask Claude to explain back what you just learned
 
 ## Using Claude Code CLI

@@ -340,7 +340,8 @@ argmax.</li>
 <p><code>rng_state</code> is incremented each step so consecutive tokens use different random
 seeds while still being reproducible from the initial <code>seed</code>.</p>
 <h2 id="temperature"><a class="header" href="#temperature">Temperature</a></h2>
-<p>Temperature scales the log-probabilities before sampling: <code>log_probs / temperature</code>.</p>
+<p>Temperature scales the log-probabilities before sampling:
+<code>log_probs / temperature</code>.</p>
 <ul>
 <li><strong>Lower temperature</strong> (e.g. 0.5): sharpens the distribution—the model
 strongly favors its top predictions, producing more focused text.</li>

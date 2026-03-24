@@ -19,8 +19,7 @@ why—from model configuration through streaming text generation.
 
 - [Pixi](https://pixi.sh/) package manager
 - Basic understanding of neural networks
-- You'll need to meet the
-  [MAX system requirements](https://docs.modular.com/max/packages#system-requirements)
+- You'll need to meet the [MAX system requirements](https://docs.modular.com/max/packages#system-requirements)
 
 ### Installation
 
@@ -94,8 +93,7 @@ max-llm-book/
 
 - **MAX Documentation**: [docs.modular.com](https://docs.modular.com/)
 - **HuggingFace GPT-2**: [huggingface.co/gpt2](https://huggingface.co/gpt2)
-- **Attention Is All You Need**:
-  [arxiv.org/abs/1706.03762](https://arxiv.org/abs/1706.03762)
+- **Attention Is All You Need**: [arxiv.org/abs/1706.03762](https://arxiv.org/abs/1706.03762)
 - **Language Models are Unsupervised Multitask Learners** (GPT-2 paper):
   [openai.com](https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf)
 

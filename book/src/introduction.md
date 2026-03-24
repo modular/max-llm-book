@@ -41,8 +41,8 @@ tools. Each handoff introduces complexity.
 
 MAX Framework takes a different approach: everything happens in one unified
 system. You write code to define your model, load weights, and run inference,
-all in MAX's Python API. The MAX Framework handles optimization automatically
-and you can even use MAX Serve to manage your deployment.
+all in MAX's Python API. The MAX Framework handles optimization automatically and
+you can even use MAX Serve to manage your deployment.
 
 The GPT-2 implementation in this guide loads pretrained weights from Hugging
 Face, implements the architecture, and runs text generation, all in the same

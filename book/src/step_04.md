@@ -28,10 +28,9 @@ efficient sequence of tensor operations.
 dimension: `[batch, 12, seq_length, 64]`. Now each of the 12 heads operates
 independently on its 64-dimensional subspace.
 
-**Merging** reverses the process: transpose back to
-`[batch, seq_length, 12, 64]`, then reshape to flatten the head dimension:
-`[batch, seq_length, 768]`. This concatenates all head outputs back into the
-original dimension.
+**Merging** reverses the process: transpose back to `[batch, seq_length, 12, 64]`,
+then reshape to flatten the head dimension: `[batch, seq_length, 768]`. This
+concatenates all head outputs back into the original dimension.
 
 ## Scaled dot-product attention
 

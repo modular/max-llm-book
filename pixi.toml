@@ -21,7 +21,7 @@ test = "pytest tests/ -v"
 
 [dependencies]
 modular = ">=26.1.0.dev2026012100"
-transformers = ">=4.57.0,<5"
+transformers = "*" # Use MAX's version constraint
 pytorch = ">=2.8.0,<3"
 numpy = ">=2.3.3,<3"
 mdbook = "==0.4.52"

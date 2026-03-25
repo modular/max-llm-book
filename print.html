@@ -235,8 +235,8 @@ optimize in CUDA, convert to ONNX for deployment, then use separate serving
 tools. Each handoff introduces complexity.</p>
 <p>MAX Framework takes a different approach: everything happens in one unified
 system. You write code to define your model, load weights, and run inference,
-all in MAX’s Python API. The MAX Framework handles optimization automatically
-and you can even use MAX Serve to manage your deployment.</p>
+all in MAX’s Python API. The MAX Framework handles optimization automatically and
+you can even use MAX Serve to manage your deployment.</p>
 <p>The GPT-2 implementation in this guide loads pretrained weights from Hugging
 Face, implements the architecture, and runs text generation, all in the same
 environment.</p>
@@ -331,8 +331,7 @@ explain the specifics)</li>
 <li><strong>Interest in understanding</strong>: Curiosity matters more than prior transformer
 experience</li>
 </ul>
-<p>You’ll need to meet the
-<a href="https://docs.modular.com/max/packages#system-requirements">system requirements</a>.</p>
+<p>You’ll need to meet the <a href="https://docs.modular.com/max/packages#system-requirements">system requirements</a>.</p>
 <p>Ready? Start with <a href="./step_01.html">Section 1: Model configuration</a>.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="model-configuration"><a class="header" href="#model-configuration">Model configuration</a></h1>
 <div class="note">
@@ -411,8 +410,7 @@ position independently. Attention aggregates information through weighted sums
 This combination allows the model to learn complex patterns beyond what linear
 transformations alone can capture.</p>
 <p>GPT-2 uses a 4× expansion ratio because this was found to work well in the
-original Transformer paper and has been validated across many architectures
-since.</p>
+original Transformer paper and has been validated across many architectures since.</p>
 <h2 id="the-three-steps"><a class="header" href="#the-three-steps">The three steps</a></h2>
 <p><strong>Expansion layer (<code>c_fc</code>)</strong>: Projects from 768 to 3,072 dimensions. This
 expansion gives the network more capacity to process information.</p>
@@ -538,10 +536,9 @@ efficient sequence of tensor operations.</p>
 <code>[batch, seq_length, 12, 64]</code>, then transpose to move heads before the sequence
 dimension: <code>[batch, 12, seq_length, 64]</code>. Now each of the 12 heads operates
 independently on its 64-dimensional subspace.</p>
-<p><strong>Merging</strong> reverses the process: transpose back to
-<code>[batch, seq_length, 12, 64]</code>, then reshape to flatten the head dimension:
-<code>[batch, seq_length, 768]</code>. This concatenates all head outputs back into the
-original dimension.</p>
+<p><strong>Merging</strong> reverses the process: transpose back to <code>[batch, seq_length, 12, 64]</code>,
+then reshape to flatten the head dimension: <code>[batch, seq_length, 768]</code>. This
+concatenates all head outputs back into the original dimension.</p>
 <h2 id="scaled-dot-product-attention"><a class="header" href="#scaled-dot-product-attention">Scaled dot-product attention</a></h2>
 <p>With shape <code>[batch, num_heads, seq_length, head_dim]</code>, computing attention for
 all heads simultaneously is just a matrix multiplication across the last two
@@ -640,11 +637,10 @@ the network.</p>
 position, it computes the mean and variance across all 768 features, normalizes
 to zero mean and unit variance, then applies learned weight and bias parameters
 to scale and shift the result.</p>
-<p>Unlike batch normalization,
-<a href="https://arxiv.org/abs/1607.06450">layer normalization</a> works independently for
-each example, with no dependence on batch size and no running statistics to
-track. This makes it ideal for transformers, where batch sizes and sequence
-lengths vary.</p>
+<p>Unlike batch normalization, <a href="https://arxiv.org/abs/1607.06450">layer normalization</a>
+works independently for each example, with no dependence on batch size and no
+running statistics to track. This makes it ideal for transformers, where batch
+sizes and sequence lengths vary.</p>
 <p>GPT-2 applies layer normalization <em>before</em> both the attention and MLP sublayers
 in each transformer block (pre-normalization). This pattern stabilizes training
 in deep networks by keeping activations in a consistent range as gradients flow
@@ -773,9 +769,8 @@ patterns. The representations from all layers contribute to the final output.</p
 <h2 id="key-apis"><a class="header" href="#key-apis">Key APIs</a></h2>
 <p><a href="https://docs.modular.com/max/api/python/generated/max.nn.Sequential"><code>Sequential</code></a>
 chains the 12 transformer blocks in order, passing each block’s output to the
-next. The <code>*</code> in
-<code>Sequential(*(GPT2Block(config) for _ in range(config.n_layer)))</code> unpacks the
-generator as positional arguments.</p>
+next. The <code>*</code> in <code>Sequential(*(GPT2Block(config) for _ in range(config.n_layer)))</code>
+unpacks the generator as positional arguments.</p>
 <p><a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor#max.experimental.tensor.Tensor.arange"><code>Tensor.arange</code></a>
 generates position indices <code>[0, 1, ..., seq_length-1]</code> matching the input’s
 dtype and device so they’re compatible for embedding lookup.</p>
@@ -1042,8 +1037,7 @@ argmax.</li>
 <p><code>rng_state</code> is incremented each step so consecutive tokens use different random
 seeds while still being reproducible from the initial <code>seed</code>.</p>
 <h2 id="temperature"><a class="header" href="#temperature">Temperature</a></h2>
-<p>Temperature scales the log-probabilities before sampling:
-<code>log_probs / temperature</code>.</p>
+<p>Temperature scales the log-probabilities before sampling: <code>log_probs / temperature</code>.</p>
 <ul>
 <li><strong>Lower temperature</strong> (e.g. 0.5): sharpens the distribution—the model
 strongly favors its top predictions, producing more focused text.</li>

@@ -206,11 +206,10 @@ the network.</p>
 position, it computes the mean and variance across all 768 features, normalizes
 to zero mean and unit variance, then applies learned weight and bias parameters
 to scale and shift the result.</p>
-<p>Unlike batch normalization,
-<a href="https://arxiv.org/abs/1607.06450">layer normalization</a> works independently for
-each example, with no dependence on batch size and no running statistics to
-track. This makes it ideal for transformers, where batch sizes and sequence
-lengths vary.</p>
+<p>Unlike batch normalization, <a href="https://arxiv.org/abs/1607.06450">layer normalization</a>
+works independently for each example, with no dependence on batch size and no
+running statistics to track. This makes it ideal for transformers, where batch
+sizes and sequence lengths vary.</p>
 <p>GPT-2 applies layer normalization <em>before</em> both the attention and MLP sublayers
 in each transformer block (pre-normalization). This pattern stabilizes training
 in deep networks by keeping activations in a consistent range as gradients flow

@@ -219,10 +219,9 @@ efficient sequence of tensor operations.</p>
 <code>[batch, seq_length, 12, 64]</code>, then transpose to move heads before the sequence
 dimension: <code>[batch, 12, seq_length, 64]</code>. Now each of the 12 heads operates
 independently on its 64-dimensional subspace.</p>
-<p><strong>Merging</strong> reverses the process: transpose back to
-<code>[batch, seq_length, 12, 64]</code>, then reshape to flatten the head dimension:
-<code>[batch, seq_length, 768]</code>. This concatenates all head outputs back into the
-original dimension.</p>
+<p><strong>Merging</strong> reverses the process: transpose back to <code>[batch, seq_length, 12, 64]</code>,
+then reshape to flatten the head dimension: <code>[batch, seq_length, 768]</code>. This
+concatenates all head outputs back into the original dimension.</p>
 <h2 id="scaled-dot-product-attention"><a class="header" href="#scaled-dot-product-attention">Scaled dot-product attention</a></h2>
 <p>With shape <code>[batch, num_heads, seq_length, head_dim]</code>, computing attention for
 all heads simultaneously is just a matrix multiplication across the last two

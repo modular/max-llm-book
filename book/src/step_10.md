@@ -67,7 +67,8 @@ seeds while still being reproducible from the initial `seed`.
 
 ## Temperature
 
-Temperature scales the log-probabilities before sampling: `log_probs / temperature`.
+Temperature scales the log-probabilities before sampling:
+`log_probs / temperature`.
 
 - **Lower temperature** (e.g. 0.5): sharpens the distribution—the model
   strongly favors its top predictions, producing more focused text.

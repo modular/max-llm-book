@@ -18,7 +18,8 @@ This combination allows the model to learn complex patterns beyond what linear
 transformations alone can capture.
 
 GPT-2 uses a 4× expansion ratio because this was found to work well in the
-original Transformer paper and has been validated across many architectures since.
+original Transformer paper and has been validated across many architectures
+since.
 
 ## The three steps
 

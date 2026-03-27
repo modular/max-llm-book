@@ -60,20 +60,20 @@ Or read it online at [llm.modular.com](https://llm.modular.com/).
 
 The tutorial walks through `gpt2.py` section by section:
 
-| Section | Topic                        | What you'll learn                                              |
-|---------|------------------------------|----------------------------------------------------------------|
-| 1       | Model configuration          | Architecture hyperparameters and HuggingFace compatibility     |
-| 2       | Feed-forward network         | Two-layer MLP with GELU activation                             |
-| 3       | Causal masking               | Preventing attention to future tokens                          |
-| 4       | Multi-head attention         | Parallel attention across 12 heads                             |
-| 5       | Layer normalization          | Pre-norm pattern for stable activations                        |
-| 6       | Transformer block            | Residual connections and component wiring                      |
-| 7       | Stacking transformer blocks  | Embeddings and the 12-layer model body                         |
-| 8       | Language model head          | Projecting hidden states to vocabulary logits                  |
-| 9       | Encode and decode tokens     | BPE tokenization with HuggingFace                              |
-| 10      | Text generation              | Compiled sampling heads and Gumbel-max sampling                |
-| 11      | Load weights and run model   | Lazy init, weight transposition, and model compilation         |
-| 12      | Streaming chat               | Stop sequences, BPE boundary handling, and live rendering      |
+| Section | Topic                       | What you'll learn                                          |
+|---------|-----------------------------|------------------------------------------------------------|
+| 1       | Model configuration         | Architecture hyperparameters and HuggingFace compatibility |
+| 2       | Feed-forward network        | Two-layer MLP with GELU activation                         |
+| 3       | Causal masking              | Preventing attention to future tokens                      |
+| 4       | Multi-head attention        | Parallel attention across 12 heads                         |
+| 5       | Layer normalization         | Pre-norm pattern for stable activations                    |
+| 6       | Transformer block           | Residual connections and component wiring                  |
+| 7       | Stacking transformer blocks | Embeddings and the 12-layer model body                     |
+| 8       | Language model head         | Projecting hidden states to vocabulary logits              |
+| 9       | Encode and decode tokens    | BPE tokenization with HuggingFace                          |
+| 10      | Text generation             | Compiled sampling heads and Gumbel-max sampling            |
+| 11      | Load weights and run model  | Lazy init, weight transposition, and model compilation     |
+| 12      | Streaming chat              | Stop sequences, BPE boundary handling, and live rendering  |
 
 ## Project structure
 

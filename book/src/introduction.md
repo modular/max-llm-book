@@ -53,20 +53,20 @@ environment.
 Each section explains a component of the model through the working code in
 `gpt2.py`:
 
-| Section | Component                                    | What you'll learn                                                  |
-|---------|----------------------------------------------|--------------------------------------------------------------------|
-| 1       | [Model configuration](./step_01.md)          | Define architecture hyperparameters matching HuggingFace GPT-2.    |
-| 2       | [Feed-forward network](./step_02.md)         | Build the position-wise feed-forward network with GELU activation. |
-| 3       | [Causal masking](./step_03.md)               | Create attention masks to prevent looking at future tokens.        |
-| 4       | [Multi-head attention](./step_04.md)         | Implement scaled dot-product attention with multiple heads.        |
-| 5       | [Layer normalization](./step_05.md)          | Ensure activation values are within a stable range.                |
-| 6       | [Transformer block](./step_06.md)            | Combine attention and MLP with residual connections.               |
-| 7       | [Stacking transformer blocks](./step_07.md)  | Create the complete 12-layer GPT-2 model with embeddings.          |
-| 8       | [Language model head](./step_08.md)          | Project hidden states to vocabulary logits.                        |
-| 9       | [Encode and decode tokens](./step_09.md)     | Convert between text and token IDs using HuggingFace tokenizer.    |
-| 10      | [Text generation](./step_10.md)              | Generate text autoregressively with temperature sampling.          |
-| 11      | [Load weights and run model](./step_11.md)   | Load pretrained weights and interact with your complete model.     |
-| 12      | [Streaming chat](./step_12.md)               | Build a streaming multi-turn chat interface using stop sequences.  |
+| Section | Component                                   | What you'll learn                                                  |
+|---------|---------------------------------------------|--------------------------------------------------------------------|
+| 1       | [Model configuration](./step_01.md)         | Define architecture hyperparameters matching HuggingFace GPT-2.    |
+| 2       | [Feed-forward network](./step_02.md)        | Build the position-wise feed-forward network with GELU activation. |
+| 3       | [Causal masking](./step_03.md)              | Create attention masks to prevent looking at future tokens.        |
+| 4       | [Multi-head attention](./step_04.md)        | Implement scaled dot-product attention with multiple heads.        |
+| 5       | [Layer normalization](./step_05.md)         | Ensure activation values are within a stable range.                |
+| 6       | [Transformer block](./step_06.md)           | Combine attention and MLP with residual connections.               |
+| 7       | [Stacking transformer blocks](./step_07.md) | Create the complete 12-layer GPT-2 model with embeddings.          |
+| 8       | [Language model head](./step_08.md)         | Project hidden states to vocabulary logits.                        |
+| 9       | [Encode and decode tokens](./step_09.md)    | Convert between text and token IDs using HuggingFace tokenizer.    |
+| 10      | [Text generation](./step_10.md)             | Generate text autoregressively with temperature sampling.          |
+| 11      | [Load weights and run model](./step_11.md)  | Load pretrained weights and interact with your complete model.     |
+| 12      | [Streaming chat](./step_12.md)              | Build a streaming multi-turn chat interface using stop sequences.  |
 
 By the end, you'll understand every line of a complete GPT-2 implementation and
 have practical experience with MAX's Python API—skills you can apply directly to

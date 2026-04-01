@@ -3,6 +3,7 @@ channels = ["https://conda.modular.com/max-nightly", "conda-forge"]
 name = "max-llm-book"
 platforms = ["linux-64", "osx-arm64"]
 version = "0.1.1"
+license = "Apache-2.0"
 
 [tasks]
 build-book = "cd book && mdbook build"

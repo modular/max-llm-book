@@ -20,9 +20,9 @@ following context in mind:
 
 **MAX Framework specifics:**
 - Functions use @F.functional decorator for graph definitions
-- Modules extend max.nn.Module base class
+- Modules extend max.experimental.nn.Module base class
 - Tensor operations use max.experimental.functional and max.experimental.tensor
-- Models use max.nn.Linear for linear layers
+- Models use max.experimental.nn.Linear for linear layers
 - The tutorial uses MAX Framework's Python API throughout
 
 **How to help me:**
@@ -65,7 +65,7 @@ What do I need to implement?
 
 - "What does @mo.graph do and why do we need it?"
 - "How does session.load() map Hugging Face weights to my model?"
-- "Explain the difference between max.nn.Linear and max.ops.linear"
+- "Explain the difference between max.experimental.nn.Linear and max.ops.linear"
 
 ### Code review
 

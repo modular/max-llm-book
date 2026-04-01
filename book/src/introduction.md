@@ -78,18 +78,21 @@ your own projects.
 > understanding why each layer exists helps you reason about model behavior and
 > adapt architectures for your own needs.
 
-## Try it now
+## The running model
 
-Before reading the implementation, run the complete GPT-2 model:
+The complete GPT-2 implementation runs with:
 
 ```bash
 pixi run gpt2
 ```
 
-This loads the pretrained weights and starts an interactive prompt where you can
-enter text and see the model generate completions. It's the same model you'll
-read through step-by-step in the tutorial.
+This loads the pretrained weights and starts an interactive prompt. It's the
+same model examined section by section throughout this guide.
+
+Note: You'll need to meet the
+[system requirements](https://docs.modular.com/max/packages#system-requirements)
+to run the model.
 
 ## Get started
 
-To install the project and begin, follow the steps in [Setup](./setup.md).
+Setup instructions are in [Setup](./setup.md).

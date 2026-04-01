@@ -23,7 +23,7 @@ pixi run gpt2
 ```
 
 This loads the pretrained GPT-2 weights from Hugging Face and starts an
-interactive prompt. Enter any text and the model will generate a continuation.
+interactive prompt. Type any text and the model generates a continuation.
 
 You can also run the model with a single prompt and exit:
 
@@ -36,6 +36,10 @@ Or open the streaming chat interface:
 ```bash
 pixi run gpt2 -- --chat
 ```
+
+Note: You'll need to meet the
+[system requirements](https://docs.modular.com/max/packages#system-requirements)
+to run the model.
 
 ## How to read this book
 
@@ -77,8 +81,5 @@ This tutorial assumes:
   explain the specifics)
 - **Interest in understanding**: Curiosity matters more than prior transformer
   experience
-
-You'll need to meet the
-[system requirements](https://docs.modular.com/max/packages#system-requirements).
 
 Ready? Start with [Section 1: Model configuration](./step_01.md).

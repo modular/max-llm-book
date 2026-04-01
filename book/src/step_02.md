@@ -41,7 +41,7 @@ pretrained weights in the final step.
 
 ## The code
 
-[`Linear(in_features, out_features, bias=True)`](https://docs.modular.com/max/api/python/generated/max.nn.Linear)
+[`Linear(in_dim, out_dim, bias=True)`](https://docs.modular.com/max/api/python/generated/max.experimental.nn.Linear/)
 applies `y = xW^T + b`. Both layers include bias terms.
 [`F.gelu`](https://docs.modular.com/max/api/python/experimental.functional#max.experimental.functional.gelu)
 applies the activation between them:

@@ -9,11 +9,19 @@ generation.
 </div>
 
 Self-attention, without any constraint, lets every token attend to every other
-token. That's fine for tasks where you have the full sequence at once—but GPT-2
-generates text one token at a time, left-to-right. When predicting token _n_,
-the model must not see tokens _n+1_ onward. Without a causal mask, the model
-would learn to copy from future positions during training and produce nonsense
-during generation.
+token. GPT-2 generates text left-to-right, so each token must only condition on
+positions before it. The causal mask enforces this constraint at two distinct
+points in inference:
+
+**Prefill** (processing the prompt): the full prompt is encoded in one parallel
+pass. Without a mask, later tokens in the prompt would influence earlier ones,
+producing attention scores that differ from what the model learned—corrupted
+representations from the start.
+
+**Decoding** (generating new tokens): in principle, generating a single token
+at the end of a sequence means no future tokens exist to mask. The original
+GPT-2 architecture has no KV cache—the full growing sequence is reprocessed
+on every step—so the mask is applied on every forward pass.
 
 The `causal_mask()` function creates a
 [mask matrix](https://docs.modular.com/glossary/ai/attention-mask/) that sets
@@ -58,6 +66,12 @@ above):
 ```python
 {{#include ../../gpt2.py:causal_mask}}
 ```
+
+The scalar `-inf` tensor is constructed with explicit `dtype` and `device`
+arguments rather than letting MAX infer them. Passing `dtype` pins the mask to
+exactly the same precision as the rest of the computation. Explicit device
+placement ensures the scalar is allocated on the correct device from the start,
+consistent with the rest of the graph.
 
 `Dim(sequence_length) + num_tokens` computes the total width of the mask using
 symbolic dimension arithmetic, which lets the compiled graph handle variable

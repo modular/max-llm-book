@@ -31,7 +31,7 @@ patterns. The representations from all layers contribute to the final output.
 
 ## Key APIs
 
-[`Sequential`](https://docs.modular.com/max/api/python/generated/max.nn.Sequential)
+[`Sequential`](https://docs.modular.com/max/api/python/generated/max.experimental.nn.Sequential/)
 chains the 12 transformer blocks in order, passing each block's output to the
 next. The `*` in
 `Sequential(*(GPT2Block(config) for _ in range(config.n_layer)))` unpacks the
@@ -41,7 +41,7 @@ generator as positional arguments.
 generates position indices `[0, 1, ..., seq_length-1]` matching the input's
 dtype and device so they're compatible for embedding lookup.
 
-[`Embedding(num_embeddings, dim)`](https://docs.modular.com/max/api/python/generated/max.nn.Embedding)
+[`Embedding(vocab_size, dim)`](https://docs.modular.com/max/api/python/generated/max.experimental.nn.Embedding/)
 is used for both token and position embeddings.
 
 ## The code

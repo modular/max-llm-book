@@ -268,15 +268,17 @@ include architectural details like layer normalization for completeness—
 understanding why each layer exists helps you reason about model behavior and
 adapt architectures for your own needs.</p>
 </blockquote>
-<h2 id="try-it-now"><a class="header" href="#try-it-now">Try it now</a></h2>
-<p>Before reading the implementation, run the complete GPT-2 model:</p>
+<h2 id="the-running-model"><a class="header" href="#the-running-model">The running model</a></h2>
+<p>The complete GPT-2 implementation runs with:</p>
 <pre><code class="language-bash">pixi run gpt2
 </code></pre>
-<p>This loads the pretrained weights and starts an interactive prompt where you can
-enter text and see the model generate completions. It’s the same model you’ll
-read through step-by-step in the tutorial.</p>
+<p>This loads the pretrained weights and starts an interactive prompt. It’s the
+same model examined section by section throughout this guide.</p>
+<p>Note: You’ll need to meet the
+<a href="https://docs.modular.com/max/packages#system-requirements">system requirements</a>
+to run the model.</p>
 <h2 id="get-started"><a class="header" href="#get-started">Get started</a></h2>
-<p>To install the project and begin, follow the steps in <a href="./setup.html">Setup</a>.</p>
+<p>Setup instructions are in <a href="./setup.html">Setup</a>.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="project-setup"><a class="header" href="#project-setup">Project Setup</a></h1>
 <p>Clone <a href="https://github.com/modular/max-llm-book">the GitHub repository</a> and
 navigate to it:</p>
@@ -291,13 +293,16 @@ cd max-llm-book
 <pre><code class="language-bash">pixi run gpt2
 </code></pre>
 <p>This loads the pretrained GPT-2 weights from Hugging Face and starts an
-interactive prompt. Enter any text and the model will generate a continuation.</p>
+interactive prompt. Type any text and the model generates a continuation.</p>
 <p>You can also run the model with a single prompt and exit:</p>
 <pre><code class="language-bash">pixi run gpt2 -- --prompt "The quick brown fox"
 </code></pre>
 <p>Or open the streaming chat interface:</p>
 <pre><code class="language-bash">pixi run gpt2 -- --chat
 </code></pre>
+<p>Note: You’ll need to meet the
+<a href="https://docs.modular.com/max/packages#system-requirements">system requirements</a>
+to run the model.</p>
 <h2 id="how-to-read-this-book"><a class="header" href="#how-to-read-this-book">How to read this book</a></h2>
 <p>The tutorial walks through <code>gpt2.py</code>, the complete GPT-2 implementation. Each
 section explains one component of the model, shows the relevant code snippet,
@@ -331,8 +336,6 @@ explain the specifics)</li>
 <li><strong>Interest in understanding</strong>: Curiosity matters more than prior transformer
 experience</li>
 </ul>
-<p>You’ll need to meet the
-<a href="https://docs.modular.com/max/packages#system-requirements">system requirements</a>.</p>
 <p>Ready? Start with <a href="./step_01.html">Section 1: Model configuration</a>.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="model-configuration"><a class="header" href="#model-configuration">Model configuration</a></h1>
 <div class="note">
@@ -427,7 +430,7 @@ connections.</p>
 Face’s GPT-2 checkpoint structure. This naming is essential for loading
 pretrained weights in the final step.</p>
 <h2 id="the-code-1"><a class="header" href="#the-code-1">The code</a></h2>
-<p><a href="https://docs.modular.com/max/api/python/generated/max.nn.Linear"><code>Linear(in_features, out_features, bias=True)</code></a>
+<p><a href="https://docs.modular.com/max/api/python/generated/max.experimental.nn.Linear/"><code>Linear(in_dim, out_dim, bias=True)</code></a>
 applies <code>y = xW^T + b</code>. Both layers include bias terms.
 <a href="https://docs.modular.com/max/api/python/experimental.functional#max.experimental.functional.gelu"><code>F.gelu</code></a>
 applies the activation between them:</p>
@@ -459,11 +462,17 @@ from attending to future positions during autoregressive generation.</p>
 generation.</p>
 </div>
 <p>Self-attention, without any constraint, lets every token attend to every other
-token. That’s fine for tasks where you have the full sequence at once—but GPT-2
-generates text one token at a time, left-to-right. When predicting token <em>n</em>,
-the model must not see tokens <em>n+1</em> onward. Without a causal mask, the model
-would learn to copy from future positions during training and produce nonsense
-during generation.</p>
+token. GPT-2 generates text left-to-right, so each token must only condition on
+positions before it. The causal mask enforces this constraint at two distinct
+points in inference:</p>
+<p><strong>Prefill</strong> (processing the prompt): the full prompt is encoded in one parallel
+pass. Without a mask, later tokens in the prompt would influence earlier ones,
+producing attention scores that differ from what the model learned—corrupted
+representations from the start.</p>
+<p><strong>Decoding</strong> (generating new tokens): in principle, generating a single token
+at the end of a sequence means no future tokens exist to mask. The original
+GPT-2 architecture has no KV cache—the full growing sequence is reprocessed
+on every step—so the mask is applied on every forward pass.</p>
 <p>The <code>causal_mask()</code> function creates a
 <a href="https://docs.modular.com/glossary/ai/attention-mask/">mask matrix</a> that sets
 attention scores to <code>-inf</code> for future positions. After softmax, <code>-inf</code> becomes
@@ -512,6 +521,11 @@ def causal_mask(
 
 
 </code></pre>
+<p>The scalar <code>-inf</code> tensor is constructed with explicit <code>dtype</code> and <code>device</code>
+arguments rather than letting MAX infer them. Passing <code>dtype</code> pins the mask to
+exactly the same precision as the rest of the computation. Explicit device
+placement ensures the scalar is allocated on the correct device from the start,
+consistent with the rest of the graph.</p>
 <p><code>Dim(sequence_length) + num_tokens</code> computes the total width of the mask using
 symbolic dimension arithmetic, which lets the compiled graph handle variable
 sequence lengths without recompilation.</p>
@@ -771,7 +785,7 @@ remaining trainable. Early layers tend to capture surface-level patterns like
 word shapes and punctuation; later layers capture higher-level semantic
 patterns. The representations from all layers contribute to the final output.</p>
 <h2 id="key-apis"><a class="header" href="#key-apis">Key APIs</a></h2>
-<p><a href="https://docs.modular.com/max/api/python/generated/max.nn.Sequential"><code>Sequential</code></a>
+<p><a href="https://docs.modular.com/max/api/python/generated/max.experimental.nn.Sequential/"><code>Sequential</code></a>
 chains the 12 transformer blocks in order, passing each block’s output to the
 next. The <code>*</code> in
 <code>Sequential(*(GPT2Block(config) for _ in range(config.n_layer)))</code> unpacks the
@@ -779,7 +793,7 @@ generator as positional arguments.</p>
 <p><a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor#max.experimental.tensor.Tensor.arange"><code>Tensor.arange</code></a>
 generates position indices <code>[0, 1, ..., seq_length-1]</code> matching the input’s
 dtype and device so they’re compatible for embedding lookup.</p>
-<p><a href="https://docs.modular.com/max/api/python/generated/max.nn.Embedding"><code>Embedding(num_embeddings, dim)</code></a>
+<p><a href="https://docs.modular.com/max/api/python/generated/max.experimental.nn.Embedding/"><code>Embedding(vocab_size, dim)</code></a>
 is used for both token and position embeddings.</p>
 <h2 id="the-code-6"><a class="header" href="#the-code-6">The code</a></h2>
 <pre><code class="language-python">class MaxGPT2Model(Module):  # type: ignore[type-arg]

@@ -204,11 +204,17 @@
 generation.</p>
 </div>
 <p>Self-attention, without any constraint, lets every token attend to every other
-token. That’s fine for tasks where you have the full sequence at once—but GPT-2
-generates text one token at a time, left-to-right. When predicting token <em>n</em>,
-the model must not see tokens <em>n+1</em> onward. Without a causal mask, the model
-would learn to copy from future positions during training and produce nonsense
-during generation.</p>
+token. GPT-2 generates text left-to-right, so each token must only condition on
+positions before it. The causal mask enforces this constraint at two distinct
+points in inference:</p>
+<p><strong>Prefill</strong> (processing the prompt): the full prompt is encoded in one parallel
+pass. Without a mask, later tokens in the prompt would influence earlier ones,
+producing attention scores that differ from what the model learned—corrupted
+representations from the start.</p>
+<p><strong>Decoding</strong> (generating new tokens): in principle, generating a single token
+at the end of a sequence means no future tokens exist to mask. The original
+GPT-2 architecture has no KV cache—the full growing sequence is reprocessed
+on every step—so the mask is applied on every forward pass.</p>
 <p>The <code>causal_mask()</code> function creates a
 <a href="https://docs.modular.com/glossary/ai/attention-mask/">mask matrix</a> that sets
 attention scores to <code>-inf</code> for future positions. After softmax, <code>-inf</code> becomes
@@ -257,6 +263,11 @@ def causal_mask(
 
 
 </code></pre>
+<p>The scalar <code>-inf</code> tensor is constructed with explicit <code>dtype</code> and <code>device</code>
+arguments rather than letting MAX infer them. Passing <code>dtype</code> pins the mask to
+exactly the same precision as the rest of the computation. Explicit device
+placement ensures the scalar is allocated on the correct device from the start,
+consistent with the rest of the graph.</p>
 <p><code>Dim(sequence_length) + num_tokens</code> computes the total width of the mask using
 symbolic dimension arithmetic, which lets the compiled graph handle variable
 sequence lengths without recompilation.</p>

@@ -18,13 +18,13 @@
         
         <!-- Additional meta tags -->
         <meta property="og:title" content="Build an LLM from scratch with MAX">
-        <meta property="og:description" content="Learn by building LLMs from scratch with Modular's MAX Framework">
+        <meta property="og:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
         <meta property="og:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
         <meta property="og:url" content="https://llm.modular.com/">
         <meta name="twitter:card" content="summary">
         <meta name="twitter:image:alt" content="MAX Docs">
         <meta name="twitter:title" content="Build an LLM from scratch with MAX">
-        <meta name="twitter:description" content="Learn by building LLMs from scratch with Modular's MAX Framework">
+        <meta name="twitter:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
         <meta name="twitter:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
         <link rel="icon" type="image/png" href="https://llm.modular.com/assets/icons/m-dark.svg">
         <script>
@@ -197,64 +197,49 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="project-setup"><a class="header" href="#project-setup">Project Setup</a></h1>
+                        <style>
+div.codeblock_filename_container + pre {
+  margin-top: 0;
+}
+
+span.codeblock_filename_inner {
+  border-radius: 0.4rem 0.4rem 0 0;
+  padding: 0.6rem 1rem 0.6rem 1rem;
+  font-family: var(--mono-font) !important;
+  font-size: var(--code-font-size);
+}
+
+</style>
+<h1 id="set-up-the-project"><a class="header" href="#set-up-the-project">Set up the project</a></h1>
+<p>This page walks you through cloning the repository and installing the
+dependencies you need to follow the tutorial.</p>
+<h2 id="prerequisites"><a class="header" href="#prerequisites">Prerequisites</a></h2>
+<p>This tutorial assumes the following:</p>
+<ul>
+<li><strong>Basic Python knowledge</strong>: Classes, functions, type hints.</li>
+<li><strong>Familiarity with neural networks</strong>: What embeddings and layers do (we’ll
+explain the specifics).</li>
+</ul>
+<p>Check the
+<a href="https://docs.modular.com/max/packages#system-requirements">MAX system requirements</a>
+to confirm your platform is supported before continuing.</p>
+<h2 id="install"><a class="header" href="#install">Install</a></h2>
 <p>Clone <a href="https://github.com/modular/max-llm-book">the GitHub repository</a> and
 navigate to it:</p>
+<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">sh</span></div>
 <pre><code class="language-sh">git clone https://github.com/modular/max-llm-book
 cd max-llm-book
 </code></pre>
-<p>Then download and install <a href="https://pixi.sh/dev/">pixi</a>:</p>
+<p>Install <a href="https://pixi.sh/dev/">pixi</a>:</p>
+<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">sh</span></div>
 <pre><code class="language-sh">curl -fsSL https://pixi.sh/install.sh | sh
 </code></pre>
-<h2 id="run-the-model"><a class="header" href="#run-the-model">Run the model</a></h2>
-<p>To run the complete GPT-2 implementation interactively:</p>
-<pre><code class="language-bash">pixi run gpt2
+<p>Install the tutorial’s dependencies:</p>
+<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">sh</span></div>
+<pre><code class="language-sh">pixi install
 </code></pre>
-<p>This loads the pretrained GPT-2 weights from Hugging Face and starts an
-interactive prompt. Type any text and the model generates a continuation.</p>
-<p>You can also run the model with a single prompt and exit:</p>
-<pre><code class="language-bash">pixi run gpt2 -- --prompt "The quick brown fox"
-</code></pre>
-<p>Or open the streaming chat interface:</p>
-<pre><code class="language-bash">pixi run gpt2 -- --chat
-</code></pre>
-<p>Note: You’ll need to meet the
-<a href="https://docs.modular.com/max/packages#system-requirements">system requirements</a>
-to run the model.</p>
-<h2 id="how-to-read-this-book"><a class="header" href="#how-to-read-this-book">How to read this book</a></h2>
-<p>The tutorial walks through <code>gpt2.py</code>, the complete GPT-2 implementation. Each
-section explains one component of the model, shows the relevant code snippet,
-and explains how it works and why it’s designed that way.</p>
-<p>You don’t need to write any code. Read each section, follow along in the source
-file if you like, and run the model to see the output.</p>
-<h2 id="a-note-on-compile-times"><a class="header" href="#a-note-on-compile-times">A note on compile times</a></h2>
-<p>Compile times are actively being improved. As MAX continues to evolve, you
-should expect performance improvements alongside upcoming Modular releases.</p>
-<h2 id="using-code-assistants"><a class="header" href="#using-code-assistants">Using code assistants</a></h2>
-<p>Code assistants like <a href="https://claude.ai">Claude</a>, <a href="https://cursor.sh">Cursor</a>,
-or similar tools can help you navigate this tutorial. They’re particularly
-useful for:</p>
-<ul>
-<li><strong>Explaining concepts</strong>: Ask about transformer architecture, attention
-mechanisms, or any component in the tutorial</li>
-<li><strong>Understanding the MAX API</strong>: Get clarification on MAX Framework methods,
-parameters, and patterns</li>
-<li><strong>Exploring alternatives</strong>: Ask “why this approach?” to deepen your
-understanding</li>
-</ul>
-<p>If you’re using Claude, see
-<a href="https://github.com/modular/max-llm-book/blob/main/book/src/claude.md">claude.md</a>
-for custom instructions tailored to this tutorial.</p>
-<h2 id="prerequisites"><a class="header" href="#prerequisites">Prerequisites</a></h2>
-<p>This tutorial assumes:</p>
-<ul>
-<li><strong>Basic Python knowledge</strong>: Classes, functions, type hints</li>
-<li><strong>Familiarity with neural networks</strong>: What embeddings and layers do (we’ll
-explain the specifics)</li>
-<li><strong>Interest in understanding</strong>: Curiosity matters more than prior transformer
-experience</li>
-</ul>
-<p>Ready? Start with <a href="./step_01.html">Section 1: Model configuration</a>.</p>
+<p><strong>Next</strong>: <a href="./serve_first.html">Run the model</a> serves GPT-2 and calls the
+endpoint before you write a line of model code.</p>
 
                     </main>
 
@@ -264,7 +249,7 @@ experience</li>
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="step_01.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="serve_first.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -278,7 +263,7 @@ experience</li>
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="step_01.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="serve_first.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

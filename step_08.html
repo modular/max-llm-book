@@ -18,13 +18,13 @@
         
         <!-- Additional meta tags -->
         <meta property="og:title" content="Build an LLM from scratch with MAX">
-        <meta property="og:description" content="Learn by building LLMs from scratch with Modular's MAX Framework">
+        <meta property="og:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
         <meta property="og:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
         <meta property="og:url" content="https://llm.modular.com/">
         <meta name="twitter:card" content="summary">
         <meta name="twitter:image:alt" content="MAX Docs">
         <meta name="twitter:title" content="Build an LLM from scratch with MAX">
-        <meta name="twitter:description" content="Learn by building LLMs from scratch with Modular's MAX Framework">
+        <meta name="twitter:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
         <meta name="twitter:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
         <link rel="icon" type="image/png" href="https://llm.modular.com/assets/icons/m-dark.svg">
         <script>
@@ -197,26 +197,40 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="language-model-head"><a class="header" href="#language-model-head">Language model head</a></h1>
+                        <style>
+div.codeblock_filename_container + pre {
+  margin-top: 0;
+}
+
+span.codeblock_filename_inner {
+  border-radius: 0.4rem 0.4rem 0 0;
+  padding: 0.6rem 1rem 0.6rem 1rem;
+  font-family: var(--mono-font) !important;
+  font-size: var(--code-font-size);
+}
+
+</style>
+<h1 id="language-model-head"><a class="header" href="#language-model-head">Language model head</a></h1>
 <div class="note">
 <p>Add the final linear projection layer that converts hidden states to vocabulary
 logits for next-token prediction.</p>
 </div>
 <p><code>MaxGPT2LMHeadModel</code> wraps the transformer body with a single linear layer that
 projects 768-dimensional hidden states to 50,257-dimensional vocabulary logits.
-This completes the GPT-2 architecture.</p>
+This completes the GPT-2 model architecture. The next sections cover the serving
+package that loads pretrained weights and connects the model to <code>max serve</code>.</p>
 <h2 id="the-projection"><a class="header" href="#the-projection">The projection</a></h2>
 <p>For each position in the sequence, the language model head outputs a score for
 every possible next token. Higher scores mean the model thinks that token is
-more likely to come next. These scores are called <em>logits</em>—raw values before
+more likely to come next. These scores are called <em>logits</em>, raw values before
 softmax, which can be any real number.</p>
 <p>The layer uses <code>bias=False</code>, omitting the bias vector. Layer normalization
 before the head already centers the activations, so a constant bias adds
 nothing to the relative scores after softmax. Omitting it saves 50,257
 parameters.</p>
-<p>At 768 × 50,257 = 38.6M parameters, the LM head is the largest single
-component in GPT-2—about 33% of the model’s 117M total parameters, more than
-all 12 transformer blocks combined.</p>
+<p>At 768 × 50,257 = 38.6M parameters, the LM head contains the largest single
+weight matrix in GPT-2, larger than any individual weight matrix in the
+transformer blocks (the biggest of which, <code>c_fc</code>, is 768 × 3,072 ≈ 2.4M).</p>
 <h2 id="the-complete-model-pipeline"><a class="header" href="#the-complete-model-pipeline">The complete model pipeline</a></h2>
 <p>With the LM head, the full data flow is:</p>
 <div class="table-wrapper"><table><thead><tr><th>Stage</th><th>Shape</th></tr></thead><tbody>
@@ -230,7 +244,10 @@ all 12 transformer blocks combined.</p>
 <p>Each position gets independent logits over the vocabulary. To predict the next
 token after position <em>i</em>, look at the logits at position <em>i</em>. The
 highest-scoring token is the model’s top prediction.</p>
-<h2 id="the-code"><a class="header" href="#the-code">The code</a></h2>
+<h2 id="maxgpt2lmheadmodel"><a class="header" href="#maxgpt2lmheadmodel">MaxGPT2LMHeadModel</a></h2>
+<p><code>MaxGPT2LMHeadModel</code> wraps <code>MaxGPT2Model</code> with a single linear projection from
+hidden states to vocabulary logits:</p>
+<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">gpt2.py</span></div>
 <pre><code class="language-python">class MaxGPT2LMHeadModel(Module):  # type: ignore[type-arg]
     """Exact HuggingFace GPT-2 model structure"""
 
@@ -246,10 +263,12 @@ highest-scoring token is the model’s top prediction.</p>
 
 </code></pre>
 <p>The <code>forward</code> method reuses the parameter name <code>input_ids</code> for the transformer
-output—by the time the LM head runs, it holds hidden states rather than IDs,
+output; by the time the LM head runs, it holds hidden states rather than IDs,
 but the name reflects its origin.</p>
-<p><strong>Next</strong>: <a href="./step_09.html">Section 9</a> covers tokenization: converting between
-text strings and the token ID sequences the model operates on.</p>
+<p><code>model.py</code> in <code>gpt2_arch/</code> compiles this class directly. The same
+<code>MaxGPT2LMHeadModel</code> you’ve just read is what <code>max serve</code> runs.</p>
+<p><strong>Next</strong>: <a href="./step_09.html">Weight adaptation</a> covers the three mappings that
+load GPT-2’s Hugging Face checkpoint into MAX’s typed parameter interface.</p>
 
                     </main>
 

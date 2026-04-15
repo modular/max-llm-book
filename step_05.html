@@ -18,13 +18,13 @@
         
         <!-- Additional meta tags -->
         <meta property="og:title" content="Build an LLM from scratch with MAX">
-        <meta property="og:description" content="Learn by building LLMs from scratch with Modular's MAX Framework">
+        <meta property="og:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
         <meta property="og:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
         <meta property="og:url" content="https://llm.modular.com/">
         <meta name="twitter:card" content="summary">
         <meta name="twitter:image:alt" content="MAX Docs">
         <meta name="twitter:title" content="Build an LLM from scratch with MAX">
-        <meta name="twitter:description" content="Learn by building LLMs from scratch with Modular's MAX Framework">
+        <meta name="twitter:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
         <meta name="twitter:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
         <link rel="icon" type="image/png" href="https://llm.modular.com/assets/icons/m-dark.svg">
         <script>
@@ -197,7 +197,20 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="layer-normalization"><a class="header" href="#layer-normalization">Layer normalization</a></h1>
+                        <style>
+div.codeblock_filename_container + pre {
+  margin-top: 0;
+}
+
+span.codeblock_filename_inner {
+  border-radius: 0.4rem 0.4rem 0 0;
+  padding: 0.6rem 1rem 0.6rem 1rem;
+  font-family: var(--mono-font) !important;
+  font-size: var(--code-font-size);
+}
+
+</style>
+<h1 id="layer-normalization"><a class="header" href="#layer-normalization">Layer normalization</a></h1>
 <div class="note">
 <p>Implement layer normalization to keep activations in a stable range throughout
 the network.</p>
@@ -220,19 +233,21 @@ pretrained weights were optimized assuming normalized inputs at each sublayer.
 Skipping it would cause activations to be in completely different ranges than
 what the model learned, producing poor or nonsensical output.</p>
 <h2 id="the-normalization-formula"><a class="header" href="#the-normalization-formula">The normalization formula</a></h2>
+<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">math</span></div>
 <pre><code class="language-math">output = weight * (x - mean) / sqrt(variance + epsilon) + bias
 </code></pre>
 <p>The mean and variance are computed across all features in each example.
 <code>epsilon</code> (1e-5) prevents division by zero when variance is very small. The
-learned <code>weight</code> scales the normalized result and <code>bias</code> shifts it—initialized
+learned <code>weight</code> scales the normalized result and <code>bias</code> shifts it, initialized
 to ones and zeros so the initial transformation is identity.</p>
-<h2 id="the-code"><a class="header" href="#the-code">The code</a></h2>
+<h2 id="layernorm"><a class="header" href="#layernorm">LayerNorm</a></h2>
 <p><a href="https://docs.modular.com/max/api/python/experimental.functional#max.experimental.functional.layer_norm"><code>F.layer_norm</code></a>
 computes the normalization and applies the learned parameters in one call. The
 weight is initialized with
 <a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor#max.experimental.tensor.Tensor.ones"><code>Tensor.ones</code></a>
 and the bias with
 <a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor#max.experimental.tensor.Tensor.zeros"><code>Tensor.zeros</code></a>:</p>
+<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">gpt2.py</span></div>
 <pre><code class="language-python">class LayerNorm(Module):  # type: ignore[type-arg]
     def __init__(self, dim: DimLike, *, eps: float = 1e-5) -&gt; None:
         self.eps = eps
@@ -240,11 +255,16 @@ and the bias with
         self.bias = Tensor.zeros([dim])
 
     def forward(self, x: Tensor) -&gt; Tensor:
-        return F.layer_norm(x, gamma=self.weight, beta=self.bias, epsilon=self.eps)
+        return F.layer_norm(
+            x, gamma=self.weight, beta=self.bias, epsilon=self.eps
+        )
 
 
 </code></pre>
-<p><strong>Next</strong>: <a href="./step_06.html">Section 6</a> combines attention, MLP, layer
+<p><code>LayerNorm</code> gives each transformer block two sets of learned scale and
+bias parameters (one applied before attention, one before the MLP), so the
+model can adjust how aggressively it normalizes at each sublayer.</p>
+<p><strong>Next</strong>: <a href="./step_06.html">Transformer block</a> combines attention, MLP, layer
 normalization, and residual connections into a complete transformer block.</p>
 
                     </main>

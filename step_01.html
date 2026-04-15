@@ -18,13 +18,13 @@
         
         <!-- Additional meta tags -->
         <meta property="og:title" content="Build an LLM from scratch with MAX">
-        <meta property="og:description" content="Learn by building LLMs from scratch with Modular's MAX Framework">
+        <meta property="og:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
         <meta property="og:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
         <meta property="og:url" content="https://llm.modular.com/">
         <meta name="twitter:card" content="summary">
         <meta name="twitter:image:alt" content="MAX Docs">
         <meta name="twitter:title" content="Build an LLM from scratch with MAX">
-        <meta name="twitter:description" content="Learn by building LLMs from scratch with Modular's MAX Framework">
+        <meta name="twitter:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
         <meta name="twitter:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
         <link rel="icon" type="image/png" href="https://llm.modular.com/assets/icons/m-dark.svg">
         <script>
@@ -197,14 +197,27 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="model-configuration"><a class="header" href="#model-configuration">Model configuration</a></h1>
+                        <style>
+div.codeblock_filename_container + pre {
+  margin-top: 0;
+}
+
+span.codeblock_filename_inner {
+  border-radius: 0.4rem 0.4rem 0 0;
+  padding: 0.6rem 1rem 0.6rem 1rem;
+  font-family: var(--mono-font) !important;
+  font-size: var(--code-font-size);
+}
+
+</style>
+<h1 id="model-configuration"><a class="header" href="#model-configuration">Model configuration</a></h1>
 <div class="note">
 <p>Define the GPT-2 model architecture parameters using a configuration class.</p>
 </div>
-<p>Before implementing GPT-2, you need to define its architecture: the dimensions,
-layer counts, and structural parameters that determine how the model processes
-information.</p>
-<p><code>GPT2Config</code> holds all the architectural decisions for GPT-2—embedding
+<p>These chapters implement <code>gpt2_arch/gpt2.py</code>, the model class that <code>max serve</code>
+compiles when you run the architecture package. The first thing that file needs
+is a configuration object.</p>
+<p><code>GPT2Config</code> holds all the architectural decisions for GPT-2: embedding
 dimensions, number of transformer layers, number of attention heads. These
 parameters define the shape and capacity of the model.</p>
 <p>OpenAI trained the original GPT-2 model with specific parameters available in
@@ -227,19 +240,21 @@ information.</li>
 layers allow the model to learn more complex patterns.</li>
 <li><code>n_head</code>: Number of attention heads per layer (12). Multiple heads let the
 model attend to different types of patterns simultaneously.</li>
-<li><code>n_inner</code>: Dimension of the MLP intermediate layer (optional, defaults to
-4× embedding). The 4× ratio comes from the original
-<a href="https://arxiv.org/abs/1706.03742"><em>Attention is all you need</em></a> paper.</li>
+<li><code>n_inner</code>: Dimension of the MLP intermediate layer (optional; the transformer
+block defaults to 4× embedding when <code>None</code>). The 4× ratio comes from the
+original <a href="https://arxiv.org/abs/1706.03762"><em>Attention is all you need</em></a>
+paper.</li>
 <li><code>layer_norm_epsilon</code>: Small constant for numerical stability in layer
 normalization (1e-5). Prevents division by zero when variance is very small.</li>
 </ul>
 <p>These values define the <em>small</em> GPT-2 model. OpenAI released four sizes (small,
 medium, large, XL), each scaling these parameters up.</p>
-<h2 id="the-code"><a class="header" href="#the-code">The code</a></h2>
+<h2 id="gpt2config"><a class="header" href="#gpt2config">GPT2Config</a></h2>
 <p>Python’s
 <a href="https://docs.python.org/3/library/dataclasses.html"><code>@dataclass</code></a> decorator
 eliminates boilerplate. Instead of writing <code>__init__</code> manually, you declare
 fields with type hints and default values:</p>
+<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">gpt2.py</span></div>
 <pre><code class="language-python">@dataclass
 class GPT2Config:
     """GPT-2 configuration matching HuggingFace"""
@@ -258,14 +273,16 @@ class GPT2Config:
 transformer block defaults to 4× the embedding dimension (3,072). This lets you
 override the inner dimension for experimental architectures without changing the
 other components.</p>
-<p><strong>Next</strong>: <a href="./step_02.html">Section 2</a> implements the feed-forward network—the MLP
+<p><code>GPT2ArchConfig</code> in <code>model_config.py</code> reads <code>n_head</code>, <code>n_embd</code>, and <code>n_layer</code>
+from this config at serving time to calculate KV cache dimensions.</p>
+<p><strong>Next</strong>: <a href="./step_02.html">Feed-forward network</a> implements the MLP
 that processes information after attention in each transformer block.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="setup.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="serve_first.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
@@ -279,7 +296,7 @@ that processes information after attention in each transformer block.</p>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="setup.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="serve_first.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 

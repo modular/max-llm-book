@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Encode and decode tokens - Build an LLM from scratch with MAX</title>
+        <title>Weight adaptation - Build an LLM from scratch with MAX</title>
 
 
         <!-- Custom HTML head -->
@@ -18,13 +18,13 @@
         
         <!-- Additional meta tags -->
         <meta property="og:title" content="Build an LLM from scratch with MAX">
-        <meta property="og:description" content="Learn by building LLMs from scratch with Modular's MAX Framework">
+        <meta property="og:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
         <meta property="og:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
         <meta property="og:url" content="https://llm.modular.com/">
         <meta name="twitter:card" content="summary">
         <meta name="twitter:image:alt" content="MAX Docs">
         <meta name="twitter:title" content="Build an LLM from scratch with MAX">
-        <meta name="twitter:description" content="Learn by building LLMs from scratch with Modular's MAX Framework">
+        <meta name="twitter:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
         <meta name="twitter:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
         <link rel="icon" type="image/png" href="https://llm.modular.com/assets/icons/m-dark.svg">
         <script>
@@ -197,43 +197,142 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="encode-and-decode-tokens"><a class="header" href="#encode-and-decode-tokens">Encode and decode tokens</a></h1>
+                        <style>
+div.codeblock_filename_container + pre {
+  margin-top: 0;
+}
+
+span.codeblock_filename_inner {
+  border-radius: 0.4rem 0.4rem 0 0;
+  padding: 0.6rem 1rem 0.6rem 1rem;
+  font-family: var(--mono-font) !important;
+  font-size: var(--code-font-size);
+}
+
+</style>
+<h1 id="weight-adaptation"><a class="header" href="#weight-adaptation">Weight adaptation</a></h1>
 <div class="note">
-<p>Convert between text and token IDs using the HuggingFace GPT-2 tokenizer.</p>
+<p>How MAX’s typed parameter interface works, and the three mappings that load
+GPT-2’s Hugging Face checkpoint into it.</p>
 </div>
-<p>The model operates on integer token IDs, not raw text. <code>encode_text</code> and
-<code>decode_tokens</code> bridge the gap, wrapping the HuggingFace tokenizer in a
-minimal interface.</p>
-<h2 id="how-gpt-2-tokenizes-text"><a class="header" href="#how-gpt-2-tokenizes-text">How GPT-2 tokenizes text</a></h2>
-<p>GPT-2 uses Byte Pair Encoding (BPE): it breaks text into subword units drawn
-from a vocabulary of 50,257 tokens. Common words get a single token; rarer
-words are split into pieces. For example, “Hello world” becomes <code>[15496, 995]</code>.</p>
-<p>The tokenizer handles all the vocabulary details. The encode and decode
-functions just call it and pass the results along.</p>
-<h2 id="the-code"><a class="header" href="#the-code">The code</a></h2>
-<pre><code class="language-python">def encode_text(
-    text: str, tokenizer: GPT2Tokenizer, max_length: int = 128
-) -&gt; list[int]:
-    """Tokenize text and return token IDs as a plain Python list."""
-    return tokenizer.encode(text, max_length=max_length, truncation=True)
+<p><code>compile(weights=state_dict)</code> maps a <code>dict[str, WeightData]</code> to the named
+parameters in your module. Each key must match a parameter name exactly, and
+each value must carry the right shape for that parameter. MAX enforces this at
+compile time: a mismatched name leaves a parameter uninitialized; a mismatched
+shape fails the compile.</p>
+<p>The adapter produces the <code>dict[str, WeightData]</code> that <code>compile()</code> requires.
+Three things satisfy that contract for GPT-2: key renaming to match MAX’s
+module hierarchy, matrix transposition to match <code>Linear</code>’s declared shape,
+and an explicit copy of the tied embedding weight the checkpoint omits.</p>
+<h2 id="maxs-typed-parameter-interface"><a class="header" href="#maxs-typed-parameter-interface">MAX’s typed parameter interface</a></h2>
+<p>MAX modules declare parameters by name through the class hierarchy.
+<code>MaxGPT2LMHeadModel</code> contains a <code>MaxGPT2Model</code> called <code>transformer</code>, which
+contains a list of <code>MaxGPT2Block</code> layers under <code>h</code>, each with a
+<code>MaxGPT2Attention</code> called <code>attn</code>, and so on. When MAX loads weights, it walks
+this hierarchy to construct the expected parameter names:
+<code>transformer.h.0.attn.c_attn.weight</code>, <code>transformer.h.0.ln_1.weight</code>,
+<code>lm_head.weight</code>.</p>
+<p><a href="https://docs.modular.com/max/api/python/generated/max.graph.weights.WeightData/"><code>WeightData.from_numpy(arr, name)</code></a>
+binds an array to one of those names. The adapter builds the output dict by
+producing one
+<a href="https://docs.modular.com/max/api/python/generated/max.graph.weights.WeightData/"><code>WeightData</code></a>
+per parameter, with the name MAX expects and an array in the shape MAX expects.
+That’s the entire contract: name and shape.</p>
+<p>For any model you bring up in MAX, this is the same pattern: declare your
+modules, identify the checkpoint’s naming and layout conventions, and write an
+adapter that produces <code>dict[str, WeightData]</code> with the keys and shapes your
+modules declare. The adapter is the explicit boundary between what a checkpoint
+provides and what MAX’s typed parameter interface requires.</p>
+<h2 id="checkpoint-mappings"><a class="header" href="#checkpoint-mappings">Checkpoint mappings</a></h2>
+<p><strong>Key naming:</strong> The Hugging Face checkpoint stores keys without the top-level
+module name: <code>h.0.ln_1.weight</code>. MAX expects <code>transformer.h.0.ln_1.weight</code>. The
+adapter prepends <code>transformer.</code> to any key that doesn’t already have the prefix.</p>
+<p><strong>Shape alignment:</strong> OpenAI trained GPT-2 with a custom <code>Conv1D</code> layer that
+stores weight matrices as <code>[in_features, out_features]</code>. MAX’s <code>Linear</code>
+declares its weight as <code>[out_features, in_features]</code>. Three layers are
+affected: <code>c_attn</code> (the combined Q/K/V projection), <code>c_proj</code> (the attention
+output projection), and <code>c_fc</code> (the MLP expansion). The adapter transposes
+these before wrapping them in <code>WeightData</code>. All other weight matrices are
+already in the right layout.</p>
+<p><strong>Tied weight:</strong> GPT-2’s safetensors file doesn’t include <code>lm_head.weight</code>.
+The language model head shares its weight matrix with the token embedding
+table, so the checkpoint omits it to save 38.6M parameters on disk. MAX’s
+module declares <code>lm_head.weight</code> as a distinct named parameter, so the adapter
+adds it by copying <code>transformer.wte.weight</code> into a new array under the
+<code>lm_head.weight</code> key.</p>
+<p>The adapter copies each weight into a fresh NumPy array rather than wrapping
+the original buffer. GPT-2’s weights arrive as memory-mapped safetensors
+buffers, read-only views into the file. <code>compile()</code> requires contiguous,
+writable memory; <code>_to_numpy()</code> ensures that requirement is always met.</p>
+<p>Two keys per transformer block are skipped entirely: <code>.attn.bias</code> and
+<code>.attn.masked_bias</code>. These are pre-computed causal mask buffers, not trainable
+parameters. The model computes its own causal mask at runtime from
+<code>causal_mask()</code>.</p>
+<h2 id="the-adapter"><a class="header" href="#the-adapter">The adapter</a></h2>
+<p><code>convert_safetensor_state_dict()</code> applies all three operations in a single
+pass over the checkpoint keys:</p>
+<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">weight_adapters.py</span></div>
+<pre><code class="language-python">from __future__ import annotations
+
+import numpy as np
+from max.graph.weights import WeightData, Weights
+
+# Layer name suffixes that use Conv1D and need transposing
+_CONV1D_LAYERS = ("c_attn", "c_proj", "c_fc")
+
+# Keys in the safetensors that are causal-mask buffers, not parameters.
+_SKIP_SUFFIXES = (".attn.bias", ".attn.masked_bias")
 
 
-def decode_tokens(token_ids: list[int], tokenizer: GPT2Tokenizer) -&gt; str:
-    """Decode a list of token IDs back to text."""
-    return tokenizer.decode(token_ids, skip_special_tokens=True)
+def _to_numpy(wd: WeightData) -&gt; np.ndarray:
+    # np.from_dlpack() reads via DLPack; np.array() then copies into new,
+    # contiguous, writable memory — required by compile().
+    return np.array(np.from_dlpack(wd))
+
+
+def convert_safetensor_state_dict(
+    state_dict: dict[str, Weights],
+    **unused_kwargs,
+) -&gt; dict[str, WeightData]:
+    result: dict[str, WeightData] = {}
+
+    for key, value in state_dict.items():
+        # Skip causal-mask buffers — they are not model parameters.
+        if any(key.endswith(suffix) for suffix in _SKIP_SUFFIXES):
+            continue
+
+        mapped_key = (
+            key if key.startswith("transformer.") else f"transformer.{key}"
+        )
+        arr = _to_numpy(value.data())
+
+        # Conv1D stores [in, out]; MAX Linear expects [out, in].
+        if any(
+            layer in mapped_key for layer in _CONV1D_LAYERS
+        ) and mapped_key.endswith(".weight"):
+            arr = np.ascontiguousarray(arr.T)
+
+        result[mapped_key] = WeightData.from_numpy(arr, mapped_key)
+
+    # GPT-2 small: lm_head weight is tied to wte; add it explicitly.
+    wte_key = "transformer.wte.weight"
+    if "lm_head.weight" not in result and wte_key in result:
+        wte_arr = np.array(result[wte_key].data)
+        result["lm_head.weight"] = WeightData.from_numpy(
+            wte_arr, "lm_head.weight"
+        )
+
+    return result
 
 
 </code></pre>
-<p><code>encode_text</code> returns a plain Python <code>list[int]</code>—the token IDs are kept as
-Python data at this stage and only converted to a MAX tensor when needed in the
-generation loop (Section 10).</p>
-<p><code>decode_tokens</code> takes a <code>list[int]</code> and returns a string.
-<code>skip_special_tokens=True</code> removes the EOS and padding markers that GPT-2 uses
-internally from the decoded text.</p>
-<p>The functions accept the tokenizer as a parameter rather than capturing it as a
-global, making them straightforward to test and reuse.</p>
-<p><strong>Next</strong>: <a href="./step_10.html">Section 10</a> builds the generation loop that uses these
-functions to produce text autoregressively.</p>
+<p>The transpose condition checks two things: the key ends in <code>.weight</code>, and it
+contains one of the three Conv1D layer names. Bias vectors, stored as
+<code>[out_features]</code> in both conventions, don’t need transposing; only the weight
+matrices do.</p>
+<p><strong>Next</strong>: <a href="./step_10.html">KV cache configuration</a> covers <code>model_config.py</code>,
+which tells the serving layer how much cache to allocate before the first
+token runs.</p>
 
                     </main>
 

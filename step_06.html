@@ -18,13 +18,13 @@
         
         <!-- Additional meta tags -->
         <meta property="og:title" content="Build an LLM from scratch with MAX">
-        <meta property="og:description" content="Learn by building LLMs from scratch with Modular's MAX Framework">
+        <meta property="og:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
         <meta property="og:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
         <meta property="og:url" content="https://llm.modular.com/">
         <meta name="twitter:card" content="summary">
         <meta name="twitter:image:alt" content="MAX Docs">
         <meta name="twitter:title" content="Build an LLM from scratch with MAX">
-        <meta name="twitter:description" content="Learn by building LLMs from scratch with Modular's MAX Framework">
+        <meta name="twitter:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
         <meta name="twitter:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
         <link rel="icon" type="image/png" href="https://llm.modular.com/assets/icons/m-dark.svg">
         <script>
@@ -197,7 +197,20 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="transformer-block"><a class="header" href="#transformer-block">Transformer block</a></h1>
+                        <style>
+div.codeblock_filename_container + pre {
+  margin-top: 0;
+}
+
+span.codeblock_filename_inner {
+  border-radius: 0.4rem 0.4rem 0 0;
+  padding: 0.6rem 1rem 0.6rem 1rem;
+  font-family: var(--mono-font) !important;
+  font-size: var(--code-font-size);
+}
+
+</style>
+<h1 id="transformer-block"><a class="header" href="#transformer-block">Transformer block</a></h1>
 <div class="note">
 <p>Combine attention, MLP, layer normalization, and residual connections into a
 complete transformer block.</p>
@@ -211,17 +224,18 @@ layers to abstract semantic understanding in later layers.</p>
 <h2 id="the-pre-norm-pattern"><a class="header" href="#the-pre-norm-pattern">The pre-norm pattern</a></h2>
 <p>Each sublayer follows the same structure: normalize first, apply the sublayer,
 then add the original input back:</p>
+<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">text</span></div>
 <pre><code class="language-text">x = x + sublayer(layer_norm(x))
 </code></pre>
 <p>This is called pre-normalization. GPT-2 uses it because normalizing before each
-sublayer (rather than after) gives more stable gradients in deep networks—the
+sublayer (rather than after) gives more stable gradients in deep networks. The
 residual connection provides a direct path for gradients to flow backward
 through all 12 blocks without passing through the normalization.</p>
 <p>The pattern happens twice per block:</p>
 <ol>
 <li><strong>Attention</strong>: <code>hidden_states = attn_output + residual</code> (where <code>residual</code>
-is the pre-norm input)</li>
-<li><strong>MLP</strong>: <code>hidden_states = residual + feed_forward_hidden_states</code></li>
+is the pre-norm input).</li>
+<li><strong>MLP</strong>: <code>hidden_states = residual + feed_forward_hidden_states</code>.</li>
 </ol>
 <p>The block maintains a constant 768-dimensional representation throughout. Input
 shape <code>[batch, seq_length, 768]</code> is unchanged after each sublayer, which is
@@ -229,16 +243,17 @@ essential for stacking 12 blocks together.</p>
 <h2 id="component-names"><a class="header" href="#component-names">Component names</a></h2>
 <p><code>ln_1</code>, <code>attn</code>, <code>ln_2</code>, and <code>mlp</code> match Hugging Face’s GPT-2 implementation
 exactly. This naming is required for loading pretrained weights.</p>
-<h2 id="the-code"><a class="header" href="#the-code">The code</a></h2>
+<h2 id="gpt2block"><a class="header" href="#gpt2block">GPT2Block</a></h2>
+<p><code>GPT2Block</code> wires the four components (<code>ln_1</code>, <code>attn</code>, <code>ln_2</code>, <code>mlp</code>) with
+pre-norm and residual connections in two passes:</p>
+<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">gpt2.py</span></div>
 <pre><code class="language-python">class GPT2Block(Module):  # type: ignore[type-arg]
     """Exact HuggingFace GPT-2 transformer block structure"""
 
     def __init__(self, config: GPT2Config) -&gt; None:
         hidden_size = config.n_embd
         inner_dim = (
-            config.n_inner
-            if hasattr(config, "n_inner") and config.n_inner is not None
-            else 4 * hidden_size
+            config.n_inner if config.n_inner is not None else 4 * hidden_size
         )
 
         self.ln_1 = LayerNorm(hidden_size, eps=config.layer_norm_epsilon)
@@ -261,8 +276,12 @@ exactly. This naming is required for loading pretrained weights.</p>
 
 
 </code></pre>
-<p><strong>Next</strong>: <a href="./step_07.html">Section 7</a> stacks 12 of these blocks with embeddings
-to create the main body of the GPT-2 model.</p>
+<p>The block reads input at 768 dimensions, normalizes and applies attention with
+a residual, then normalizes and applies the MLP with another residual. Input
+and output shapes are identical, which is what makes stacking 12 of them
+possible.</p>
+<p><strong>Next</strong>: <a href="./step_07.html">Stack transformer blocks</a> stacks 12 of these blocks
+with embeddings to create the main body of the GPT-2 model.</p>
 
                     </main>
 

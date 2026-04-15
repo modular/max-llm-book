@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Stacking transformer blocks - Build an LLM from scratch with MAX</title>
+        <title>Stack transformer blocks - Build an LLM from scratch with MAX</title>
 
 
         <!-- Custom HTML head -->
@@ -18,13 +18,13 @@
         
         <!-- Additional meta tags -->
         <meta property="og:title" content="Build an LLM from scratch with MAX">
-        <meta property="og:description" content="Learn by building LLMs from scratch with Modular's MAX Framework">
+        <meta property="og:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
         <meta property="og:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
         <meta property="og:url" content="https://llm.modular.com/">
         <meta name="twitter:card" content="summary">
         <meta name="twitter:image:alt" content="MAX Docs">
         <meta name="twitter:title" content="Build an LLM from scratch with MAX">
-        <meta name="twitter:description" content="Learn by building LLMs from scratch with Modular's MAX Framework">
+        <meta name="twitter:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
         <meta name="twitter:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
         <link rel="icon" type="image/png" href="https://llm.modular.com/assets/icons/m-dark.svg">
         <script>
@@ -197,7 +197,20 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="stacking-transformer-blocks"><a class="header" href="#stacking-transformer-blocks">Stacking transformer blocks</a></h1>
+                        <style>
+div.codeblock_filename_container + pre {
+  margin-top: 0;
+}
+
+span.codeblock_filename_inner {
+  border-radius: 0.4rem 0.4rem 0 0;
+  padding: 0.6rem 1rem 0.6rem 1rem;
+  font-family: var(--mono-font) !important;
+  font-size: var(--code-font-size);
+}
+
+</style>
+<h1 id="stack-transformer-blocks"><a class="header" href="#stack-transformer-blocks">Stack transformer blocks</a></h1>
 <div class="note">
 <p>Stack 12 transformer blocks with embeddings and final normalization to create
 the complete body of the GPT-2 model.</p>
@@ -216,12 +229,12 @@ so the model knows token order.</li>
 sequentially. Each block refines the representation.</li>
 <li><strong>Final layer norm</strong>: Normalize the output before the language model head.</li>
 </ol>
-<h2 id="why-12-layers"><a class="header" href="#why-12-layers">Why 12 layers?</a></h2>
+<h2 id="layer-depth"><a class="header" href="#layer-depth">Layer depth</a></h2>
 <p>GPT-2 uses 12 layers because this depth allows complex pattern learning while
 remaining trainable. Early layers tend to capture surface-level patterns like
 word shapes and punctuation; later layers capture higher-level semantic
 patterns. The representations from all layers contribute to the final output.</p>
-<h2 id="key-apis"><a class="header" href="#key-apis">Key APIs</a></h2>
+<h2 id="module-composition"><a class="header" href="#module-composition">Module composition</a></h2>
 <p><a href="https://docs.modular.com/max/api/python/generated/max.experimental.nn.Sequential/"><code>Sequential</code></a>
 chains the 12 transformer blocks in order, passing each block’s output to the
 next. The <code>*</code> in
@@ -232,7 +245,10 @@ generates position indices <code>[0, 1, ..., seq_length-1]</code> matching the i
 dtype and device so they’re compatible for embedding lookup.</p>
 <p><a href="https://docs.modular.com/max/api/python/generated/max.experimental.nn.Embedding/"><code>Embedding(vocab_size, dim)</code></a>
 is used for both token and position embeddings.</p>
-<h2 id="the-code"><a class="header" href="#the-code">The code</a></h2>
+<h2 id="maxgpt2model"><a class="header" href="#maxgpt2model">MaxGPT2Model</a></h2>
+<p><code>MaxGPT2Model</code> combines token embeddings, position embeddings, 12 transformer
+blocks, and final layer normalization into the complete model body:</p>
+<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">gpt2.py</span></div>
 <pre><code class="language-python">class MaxGPT2Model(Module):  # type: ignore[type-arg]
     def __init__(
         self,
@@ -247,7 +263,9 @@ is used for both token and position embeddings.</p>
         _, seq_length = input_ids.shape
         tok_embeds = self.wte(input_ids)
         pos_embeds = self.wpe(
-            Tensor.arange(seq_length, dtype=input_ids.dtype, device=input_ids.device)
+            Tensor.arange(
+                seq_length, dtype=input_ids.dtype, device=input_ids.device
+            )
         )
         x = tok_embeds + pos_embeds
         x = self.h(x)
@@ -256,10 +274,12 @@ is used for both token and position embeddings.</p>
 
 
 </code></pre>
-<p>The <code>_</code> in <code>_, seq_length = input_ids.shape</code> discards the batch dimension—we
-only need the sequence length to generate position indices.</p>
-<p><strong>Next</strong>: <a href="./step_08.html">Section 8</a> adds the language model head that projects
-these 768-dimensional hidden states to vocabulary logits.</p>
+<p>The <code>_</code> in <code>_, seq_length = input_ids.shape</code> discards the batch dimension; only
+the sequence length is needed to generate position indices. The output is a
+<code>[batch, seq_length, 768]</code> tensor: one contextualized representation per token
+position, ready for the language model head to project into vocabulary logits.</p>
+<p><strong>Next</strong>: <a href="./step_08.html">Language model head</a> adds the final projection layer
+that maps these 768-dimensional hidden states to vocabulary logits.</p>
 
                     </main>
 

@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Causal masking - Build an LLM from scratch with MAX</title>
+        <title>Run the model - Build an LLM from scratch with MAX</title>
 
 
         <!-- Custom HTML head -->
@@ -210,93 +210,93 @@ span.codeblock_filename_inner {
 }
 
 </style>
-<h1 id="causal-masking"><a class="header" href="#causal-masking">Causal masking</a></h1>
-<div class="note">
-<p>Create attention masks to prevent the model from <em>seeing</em> future tokens during
-<a href="https://docs.modular.com/glossary/ai/autoregression">autoregressive</a>
-generation.</p>
-</div>
-<p>Self-attention, without any constraint, lets every token attend to every other
-token. GPT-2 generates text left-to-right, so each token must only condition on
-positions before it. The causal mask enforces this constraint at two distinct
-points in inference:</p>
-<p><strong>Prefill</strong> (processing the prompt): the full prompt is encoded in one parallel
-pass. Without a mask, later tokens in the prompt would influence earlier ones,
-producing attention scores that differ from what the model learned: corrupted
-representations from the start.</p>
-<p><strong>Decoding</strong> (generating new tokens): in principle, generating a single token
-at the end of a sequence means no future tokens exist to mask. The original
-GPT-2 architecture has no KV cache, so the full growing sequence is reprocessed
-on every step and the mask is applied on every forward pass.</p>
-<p>The <code>causal_mask()</code> function creates a
-<a href="https://docs.modular.com/glossary/ai/attention-mask/">mask matrix</a> that sets
-attention scores to <code>-inf</code> for future positions. After softmax, <code>-inf</code> becomes
-zero probability, blocking information flow from later tokens.</p>
-<figure>
-<img src="./images/causal-masking-light.png"
-  alt="Causal mask matrix with lower triangular pattern"
-  class="light-mode-img" width="530" height="475">
-<img src="./images/causal-masking-dark.png"
-  alt="Causal mask matrix with lower triangular pattern"
-  class="dark-mode-img" width="530" height="475">
-</figure>
-<h2 id="the-mask-pattern"><a class="header" href="#the-mask-pattern">The mask pattern</a></h2>
-<p>The mask is lower-triangular: each token can attend to itself and all earlier
-tokens, but not anything to its right:</p>
-<ul>
-<li>Position 0 attends to: position 0 only</li>
-<li>Position 1 attends to: positions 0–1</li>
-<li>Position 2 attends to: positions 0–2</li>
-<li>And so on…</li>
-</ul>
-<p>The mask shape is <code>(sequence_length, sequence_length + num_tokens)</code>. The extra
-<code>num_tokens</code> dimension is for
-<a href="https://docs.modular.com/glossary/ai/kv-cache/">KV cache</a> compatibility: during
-generation, cached keys and values from earlier tokens can be attended to
-without recomputing them.</p>
-<h2 id="causal_mask"><a class="header" href="#causal_mask">causal_mask()</a></h2>
-<p>The function uses the <code>@F.functional</code> decorator, which converts it to a MAX
-graph operation that can be compiled and optimized.</p>
-<p>The implementation creates a scalar <code>-inf</code> tensor, broadcasts it to the full
-mask shape, then uses <code>F.band_part</code> to zero out the upper triangle
-(<code>num_upper=0, exclude=True</code> keeps zeros on and below the diagonal, <code>-inf</code>
-above):</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">gpt2.py</span></div>
-<pre><code class="language-python">@F.functional
-def causal_mask(
-    sequence_length: DimLike,
-    num_tokens: DimLike,
-    *,
-    dtype: DType,
-    device: Device,
-) -&gt; Tensor:
-    n = Dim(sequence_length) + num_tokens
-    mask = Tensor(float("-inf"), dtype=dtype, device=device)
-    mask = F.broadcast_to(mask, shape=(sequence_length, n))
-    return F.band_part(mask, num_lower=None, num_upper=0, exclude=True)
-
-
+<h1 id="run-the-model"><a class="header" href="#run-the-model">Run the model</a></h1>
+<p>Before building GPT-2 from scratch, run it. The <code>max serve</code> command exposes an
+OpenAI-compatible HTTP API for models you run through it, including this
+tutorial’s custom GPT-2. That differs from wiring PyTorch or Hugging Face
+Transformers for inference and HTTP serving yourself: you add a small
+architecture package and get a live endpoint without stitching together serving,
+compilation, and weight loading by hand.</p>
+<p>You’ll see text generation working in minutes; then the build chapters
+explain every component that makes it work.</p>
+<h2 id="start-the-server"><a class="header" href="#start-the-server">Start the server</a></h2>
+<p>Start the server with:</p>
+<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">sh</span></div>
+<pre><code class="language-sh">pixi run serve
 </code></pre>
-<p>The scalar <code>-inf</code> tensor is constructed with explicit <code>dtype</code> and <code>device</code>
-arguments rather than letting MAX infer them. Passing <code>dtype</code> pins the mask to
-exactly the same precision as the rest of the computation. Explicit device
-placement ensures the scalar is allocated on the correct device from the start,
-consistent with the rest of the graph.</p>
-<p><code>Dim(sequence_length) + num_tokens</code> computes the total width of the mask using
-symbolic dimension arithmetic, which lets the compiled graph handle variable
-sequence lengths without recompilation.</p>
-<p><strong>Next</strong>: <a href="./step_04.html">Multi-head attention</a> uses this mask inside the
-attention mechanism.</p>
+<p>That command runs:</p>
+<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">sh</span></div>
+<pre><code class="language-sh">max serve --custom-architectures gpt2_arch --model-path gpt2
+</code></pre>
+<p>On the first run, MAX downloads the pretrained GPT-2 weights from Hugging Face
+(≈ 548 MB) and compiles the model. Your first run might take a minute or two;
+later runs use cached weights and start faster. When the server is ready you’ll
+see:</p>
+<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">text</span></div>
+<pre><code class="language-text">Server ready on http://0.0.0.0:8000 (Press CTRL+C to quit)
+</code></pre>
+<h2 id="query-the-model"><a class="header" href="#query-the-model">Query the model</a></h2>
+<p>GPT-2 is a <em>completion</em> model, not a chat model. It continues text rather than
+answering questions: pass it the start of a sentence and it generates what
+comes next. Use the <code>/v1/completions</code> endpoint with a <code>prompt</code> field:</p>
+<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">sh</span></div>
+<pre><code class="language-sh">curl -X POST http://localhost:8000/v1/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt2",
+    "prompt": "In the beginning",
+    "max_tokens": 30,
+    "temperature": 0
+  }'
+</code></pre>
+<p><code>temperature: 0</code> picks the highest-probability token at each step, producing
+deterministic output. Try values between 0.7 and 1.0 for more varied
+completions. Or query with the Python <code>openai</code> client (requires
+<code>pip install openai</code>):</p>
+<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">python</span></div>
+<pre><code class="language-python">from openai import OpenAI
+
+client = OpenAI(base_url="http://localhost:8000/v1", api_key="EMPTY")
+
+response = client.completions.create(
+    model="gpt2",
+    prompt="In the beginning",
+    max_tokens=30,
+    temperature=0,
+)
+print(response.choices[0].text)
+</code></pre>
+<p>The completion text is in <code>response.choices[0].text</code>.</p>
+<h2 id="how-it-works"><a class="header" href="#how-it-works">How it works</a></h2>
+<p><code>gpt2_arch/</code> is a custom architecture package that implements the interface
+<code>max serve</code> expects. When you send a request, <code>max serve</code> tokenizes the prompt,
+runs the token IDs through the compiled model graph, and samples the next token
+from the output logits. It repeats that until <code>max_tokens</code> is reached, then
+returns the detokenized completion.</p>
+<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">text</span></div>
+<pre><code class="language-text">gpt2_arch/
+├── __init__.py        # registers the architecture with max serve
+├── arch.py            # declares the supported model name and config
+├── model_config.py    # KV cache params, max sequence length
+├── gpt2.py            # the model architecture you build in this tutorial
+├── model.py           # loads weights, compiles, and serves the model
+└── weight_adapters.py # adapts GPT-2 Conv1D weights to MAX format
+</code></pre>
+<h2 id="whats-next"><a class="header" href="#whats-next">What’s next</a></h2>
+<p>The next sections build the GPT-2 architecture and serving infrastructure from
+scratch, component by component: the model definition, weight loading, and the
+package that connects everything to <code>max serve</code>. Start with
+<a href="./step_01.html">Model configuration</a>.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="step_02.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="setup.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="step_04.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="step_01.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -306,11 +306,11 @@ attention mechanism.</p>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="step_02.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="setup.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="step_04.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="step_01.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

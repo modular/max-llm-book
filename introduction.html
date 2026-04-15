@@ -18,13 +18,13 @@
         
         <!-- Additional meta tags -->
         <meta property="og:title" content="Build an LLM from scratch with MAX">
-        <meta property="og:description" content="Learn by building LLMs from scratch with Modular's MAX Framework">
+        <meta property="og:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
         <meta property="og:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
         <meta property="og:url" content="https://llm.modular.com/">
         <meta name="twitter:card" content="summary">
         <meta name="twitter:image:alt" content="MAX Docs">
         <meta name="twitter:title" content="Build an LLM from scratch with MAX">
-        <meta name="twitter:description" content="Learn by building LLMs from scratch with Modular's MAX Framework">
+        <meta name="twitter:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
         <meta name="twitter:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
         <link rel="icon" type="image/png" href="https://llm.modular.com/assets/icons/m-dark.svg">
         <script>
@@ -197,17 +197,30 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="build-an-llm-from-scratch-in-max"><a class="header" href="#build-an-llm-from-scratch-in-max">Build an LLM from scratch in MAX</a></h1>
+                        <style>
+div.codeblock_filename_container + pre {
+  margin-top: 0;
+}
+
+span.codeblock_filename_inner {
+  border-radius: 0.4rem 0.4rem 0 0;
+  padding: 0.6rem 1rem 0.6rem 1rem;
+  font-family: var(--mono-font) !important;
+  font-size: var(--code-font-size);
+}
+
+</style>
+<h1 id="build-an-llm-from-scratch-in-max"><a class="header" href="#build-an-llm-from-scratch-in-max">Build an LLM from scratch in MAX</a></h1>
 <p>Transformer models power today’s most impactful AI applications, from language
-models like ChatGPT to code generation tools like GitHub Copilot. Maybe you’ve
-been asked to adapt one of these models for your team, or you want to understand
-what’s actually happening when you call an inference API. Either way, building
-a transformer from scratch is one of the best ways to truly understand how they
-work.</p>
+models like ChatGPT to code generation tools like GitHub Copilot. If you want
+to understand what’s actually happening when you call an inference API, or you
+need to adapt one of these models for your own work, building one from scratch
+is the fastest path to that understanding.</p>
 <p>This guide walks you through a complete GPT-2 implementation using the
-<a href="https://docs.modular.com/max/api/python/">MAX Python API</a>. Each section
-explains a component of the model—embeddings, attention mechanisms, feed-forward
-layers—and shows exactly how it’s implemented in the
+<a href="https://docs.modular.com/max/api/python/">MAX Python API</a>. You’ll start by
+running a working model, then build it component by component: embeddings,
+attention, feed-forward layers, and the serving layer that connects it all.
+Everything runs from the
 <a href="https://github.com/modular/max-llm-book">GitHub repository</a>.</p>
 <h2 id="why-gpt-2"><a class="header" href="#why-gpt-2">Why GPT-2?</a></h2>
 <p>It’s the architectural foundation for modern language models. LLaMA, Mistral,
@@ -222,62 +235,40 @@ experts, but the fundamentals remain the same. GPT-2 is complex enough to teach
 real transformer architecture but simple enough to implement completely and
 understand deeply. When you grasp how its pieces fit together, you understand
 how to build any transformer-based model.</p>
-<blockquote>
-<p><strong>Learning by example</strong>: Rather than abstract theory, this tutorial walks
-through a complete, working implementation and explains how each component
-works and why it’s designed that way.</p>
-</blockquote>
 <h2 id="why-max"><a class="header" href="#why-max">Why MAX?</a></h2>
-<p>Traditional ML development often feels like stitching together tools that
-weren’t designed to work together. Maybe you write your model in PyTorch,
-optimize in CUDA, convert to ONNX for deployment, then use separate serving
-tools. Each handoff introduces complexity.</p>
-<p>MAX Framework takes a different approach: everything happens in one unified
-system. You write code to define your model, load weights, and run inference,
-all in MAX’s Python API. The MAX Framework handles optimization automatically
-and you can even use MAX Serve to manage your deployment.</p>
+<p>Building a model for inference typically means a separate tool for each stage:
+one framework for model definition, another for optimization, another for
+serving. Each handoff is another thing to learn and another place for things
+to break.</p>
+<p>MAX handles all of it in one Python API. You define the model, load weights,
+run inference, and serve with <code>max serve</code>, all in the same environment.</p>
 <p>The GPT-2 implementation in this guide loads pretrained weights from Hugging
-Face, implements the architecture, and runs text generation, all in the same
+Face, implements the architecture, and serves text generation, all in that same
 environment.</p>
-<h2 id="what-youll-explore"><a class="header" href="#what-youll-explore">What you’ll explore</a></h2>
-<p>Each section explains a component of the model through the working code in
-<code>gpt2.py</code>:</p>
-<div class="table-wrapper"><table><thead><tr><th>Section</th><th>Component</th><th>What you’ll learn</th></tr></thead><tbody>
-<tr><td>1</td><td><a href="./step_01.html">Model configuration</a></td><td>Define architecture hyperparameters matching HuggingFace GPT-2.</td></tr>
-<tr><td>2</td><td><a href="./step_02.html">Feed-forward network</a></td><td>Build the position-wise feed-forward network with GELU activation.</td></tr>
-<tr><td>3</td><td><a href="./step_03.html">Causal masking</a></td><td>Create attention masks to prevent looking at future tokens.</td></tr>
-<tr><td>4</td><td><a href="./step_04.html">Multi-head attention</a></td><td>Implement scaled dot-product attention with multiple heads.</td></tr>
-<tr><td>5</td><td><a href="./step_05.html">Layer normalization</a></td><td>Ensure activation values are within a stable range.</td></tr>
-<tr><td>6</td><td><a href="./step_06.html">Transformer block</a></td><td>Combine attention and MLP with residual connections.</td></tr>
-<tr><td>7</td><td><a href="./step_07.html">Stacking transformer blocks</a></td><td>Create the complete 12-layer GPT-2 model with embeddings.</td></tr>
-<tr><td>8</td><td><a href="./step_08.html">Language model head</a></td><td>Project hidden states to vocabulary logits.</td></tr>
-<tr><td>9</td><td><a href="./step_09.html">Encode and decode tokens</a></td><td>Convert between text and token IDs using HuggingFace tokenizer.</td></tr>
-<tr><td>10</td><td><a href="./step_10.html">Text generation</a></td><td>Generate text autoregressively with temperature sampling.</td></tr>
-<tr><td>11</td><td><a href="./step_11.html">Load weights and run model</a></td><td>Load pretrained weights and interact with your complete model.</td></tr>
-<tr><td>12</td><td><a href="./step_12.html">Streaming chat</a></td><td>Build a streaming multi-turn chat interface using stop sequences.</td></tr>
+<h2 id="how-to-read-this-book"><a class="header" href="#how-to-read-this-book">How to read this book</a></h2>
+<p>You’ll start by serving GPT-2 with MAX, getting a working model running before
+you write a line of model code. From there, you’ll build the transformer block
+component by component, assemble those components into the full model, and
+finish by learning how inference and serving work with <code>max serve</code>.</p>
+<div class="table-wrapper"><table><thead><tr><th>Chapter</th><th>What you’ll learn</th></tr></thead><tbody>
+<tr><td><a href="./setup.html">Project setup</a></td><td>Install MAX and clone the repository</td></tr>
+<tr><td><a href="./serve_first.html">Run the model</a></td><td>Serve GPT-2 and call the endpoint</td></tr>
+<tr><td><a href="./step_01.html">Model configuration</a></td><td>Define the architecture hyperparameters</td></tr>
+<tr><td><a href="./step_02.html">Feed-forward network</a></td><td>Build the position-wise MLP with GELU activation</td></tr>
+<tr><td><a href="./step_03.html">Causal masking</a></td><td>Create attention masks that prevent looking at future tokens</td></tr>
+<tr><td><a href="./step_04.html">Multi-head attention</a></td><td>Implement scaled dot-product attention with multiple heads</td></tr>
+<tr><td><a href="./step_05.html">Layer normalization</a></td><td>Stabilize activations between sub-layers</td></tr>
+<tr><td><a href="./step_06.html">Transformer block</a></td><td>Combine attention and MLP with residual connections</td></tr>
+<tr><td><a href="./step_07.html">Stack transformer blocks</a></td><td>Build the complete 12-layer GPT-2 with embeddings</td></tr>
+<tr><td><a href="./step_08.html">Language model head</a></td><td>Project hidden states to vocabulary logits</td></tr>
+<tr><td><a href="./step_09.html">Weight adaptation</a></td><td>Reconcile GPT-2’s Hugging Face checkpoint with MAX’s weight layout</td></tr>
+<tr><td><a href="./step_10.html">KV cache configuration</a></td><td>Expose attention dimensions for cache pre-allocation</td></tr>
+<tr><td><a href="./step_11.html">Pipeline model</a></td><td>Load, compile, and execute the model inside <code>max serve</code></td></tr>
+<tr><td><a href="./step_12.html">Architecture registration</a></td><td>Declare the package to <code>max serve</code> and wire all pieces together</td></tr>
 </tbody></table>
 </div>
-<p>By the end, you’ll understand every line of a complete GPT-2 implementation and
-have practical experience with MAX’s Python API—skills you can apply directly to
-your own projects.</p>
-<blockquote>
-<p><strong>Note on training vs. inference</strong>: This tutorial focuses on inference using
-pretrained weights from Hugging Face. Training is not in scope, but we
-include architectural details like layer normalization for completeness—
-understanding why each layer exists helps you reason about model behavior and
-adapt architectures for your own needs.</p>
-</blockquote>
-<h2 id="the-running-model"><a class="header" href="#the-running-model">The running model</a></h2>
-<p>The complete GPT-2 implementation runs with:</p>
-<pre><code class="language-bash">pixi run gpt2
-</code></pre>
-<p>This loads the pretrained weights and starts an interactive prompt. It’s the
-same model examined section by section throughout this guide.</p>
-<p>Note: You’ll need to meet the
-<a href="https://docs.modular.com/max/packages#system-requirements">system requirements</a>
-to run the model.</p>
-<h2 id="get-started"><a class="header" href="#get-started">Get started</a></h2>
-<p>Setup instructions are in <a href="./setup.html">Setup</a>.</p>
+<p>The code is pre-written in the repository. Training is not in scope.</p>
+<p>Start with <a href="./setup.html">Project setup</a> to get your environment ready.</p>
 
                     </main>
 

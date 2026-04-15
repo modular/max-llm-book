@@ -18,13 +18,13 @@
         
         <!-- Additional meta tags -->
         <meta property="og:title" content="Build an LLM from scratch with MAX">
-        <meta property="og:description" content="Learn by building LLMs from scratch with Modular's MAX Framework">
+        <meta property="og:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
         <meta property="og:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
         <meta property="og:url" content="https://llm.modular.com/">
         <meta name="twitter:card" content="summary">
         <meta name="twitter:image:alt" content="MAX Docs">
         <meta name="twitter:title" content="Build an LLM from scratch with MAX">
-        <meta name="twitter:description" content="Learn by building LLMs from scratch with Modular's MAX Framework">
+        <meta name="twitter:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
         <meta name="twitter:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
         <link rel="icon" type="image/png" href="https://llm.modular.com/assets/icons/m-dark.svg">
         <script>
@@ -197,10 +197,23 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="feed-forward-network-mlp"><a class="header" href="#feed-forward-network-mlp">Feed-forward network (MLP)</a></h1>
+                        <style>
+div.codeblock_filename_container + pre {
+  margin-top: 0;
+}
+
+span.codeblock_filename_inner {
+  border-radius: 0.4rem 0.4rem 0 0;
+  padding: 0.6rem 1rem 0.6rem 1rem;
+  font-family: var(--mono-font) !important;
+  font-size: var(--code-font-size);
+}
+
+</style>
+<h1 id="feed-forward-network-mlp"><a class="header" href="#feed-forward-network-mlp">Feed-forward network (MLP)</a></h1>
 <div class="note">
-<p>Build the feed-forward network—also known as a multilayer perceptron (MLP)—that
-processes information after attention in each transformer block.</p>
+<p>Build the feed-forward network, also known as a multilayer perceptron (MLP),
+that processes information after attention in each transformer block.</p>
 </div>
 <p>Every transformer block contains a two-layer feed-forward network. <code>GPT2MLP</code>
 expands the embedding dimension by 4× (768 → 3,072), applies GELU activation
@@ -211,26 +224,30 @@ position independently. Attention aggregates information through weighted sums
 This combination allows the model to learn complex patterns beyond what linear
 transformations alone can capture.</p>
 <p>GPT-2 uses a 4× expansion ratio because this was found to work well in the
-original Transformer paper and has been validated across many architectures
-since.</p>
-<h2 id="the-three-steps"><a class="header" href="#the-three-steps">The three steps</a></h2>
-<p><strong>Expansion layer (<code>c_fc</code>)</strong>: Projects from 768 to 3,072 dimensions. This
-expansion gives the network more capacity to process information.</p>
-<p><strong>GELU activation</strong>: Applies Gaussian Error Linear Unit, a smooth non-linear
-function. GPT-2 uses <code>approximate="tanh"</code> for the tanh-based approximation.
-This approximation was faster when GPT-2 was first implemented, but we use it
-here to match the original pretrained weights exactly.</p>
-<p><strong>Projection layer (<code>c_proj</code>)</strong>: Projects back from 3,072 to 768 dimensions.
-This returns to the embedding dimension so outputs can be added to residual
-connections.</p>
+<a href="https://arxiv.org/abs/1706.03762">original Transformer paper</a> and has been
+validated across many architectures since.</p>
+<h2 id="mlp-operations"><a class="header" href="#mlp-operations">MLP operations</a></h2>
+<p>The MLP has three operations:</p>
+<ul>
+<li><strong>Expansion layer (<code>c_fc</code>)</strong>: Projects from 768 to 3,072 dimensions, giving
+the network more capacity to process information.</li>
+<li><strong>GELU activation</strong>: Applies Gaussian Error Linear Unit, a smooth non-linear
+function. GPT-2 uses <code>approximate="tanh"</code> for the tanh-based approximation,
+which was faster when GPT-2 was first implemented and is required here to
+match the original pretrained weights exactly.</li>
+<li><strong>Projection layer (<code>c_proj</code>)</strong>: Projects back from 3,072 to 768 dimensions,
+returning to the embedding dimension so outputs can be added to residual
+connections.</li>
+</ul>
 <p>The layer names <code>c_fc</code> (fully connected) and <code>c_proj</code> (projection) match Hugging
 Face’s GPT-2 checkpoint structure. This naming is essential for loading
 pretrained weights in the final step.</p>
-<h2 id="the-code"><a class="header" href="#the-code">The code</a></h2>
+<h2 id="gpt2mlp"><a class="header" href="#gpt2mlp">GPT2MLP</a></h2>
 <p><a href="https://docs.modular.com/max/api/python/generated/max.experimental.nn.Linear/"><code>Linear(in_dim, out_dim, bias=True)</code></a>
 applies <code>y = xW^T + b</code>. Both layers include bias terms.
 <a href="https://docs.modular.com/max/api/python/experimental.functional#max.experimental.functional.gelu"><code>F.gelu</code></a>
 applies the activation between them:</p>
+<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">gpt2.py</span></div>
 <pre><code class="language-python">class GPT2MLP(Module):  # type: ignore[type-arg]
     """Exact HuggingFace GPT-2 MLP structure"""
 
@@ -248,9 +265,9 @@ applies the activation between them:</p>
 
 </code></pre>
 <p>The input and output both have shape <code>[batch, seq_length, 768]</code>. The 3,072
-intermediate dimension exists only inside the MLP—the transformer block sees
+intermediate dimension exists only inside the MLP; the transformer block sees
 the same shape going in and coming out.</p>
-<p><strong>Next</strong>: <a href="./step_03.html">Section 3</a> implements causal masking to prevent tokens
+<p><strong>Next</strong>: <a href="./step_03.html">Causal masking</a> prevents tokens
 from attending to future positions during autoregressive generation.</p>
 
                     </main>

@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Load weights and run model - Build an LLM from scratch with MAX</title>
+        <title>Pipeline model - Build an LLM from scratch with MAX</title>
 
 
         <!-- Custom HTML head -->
@@ -18,13 +18,13 @@
         
         <!-- Additional meta tags -->
         <meta property="og:title" content="Build an LLM from scratch with MAX">
-        <meta property="og:description" content="Learn by building LLMs from scratch with Modular's MAX Framework">
+        <meta property="og:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
         <meta property="og:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
         <meta property="og:url" content="https://llm.modular.com/">
         <meta name="twitter:card" content="summary">
         <meta name="twitter:image:alt" content="MAX Docs">
         <meta name="twitter:title" content="Build an LLM from scratch with MAX">
-        <meta name="twitter:description" content="Learn by building LLMs from scratch with Modular's MAX Framework">
+        <meta name="twitter:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
         <meta name="twitter:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
         <link rel="icon" type="image/png" href="https://llm.modular.com/assets/icons/m-dark.svg">
         <script>
@@ -197,222 +197,145 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="load-weights-and-run-model"><a class="header" href="#load-weights-and-run-model">Load weights and run model</a></h1>
+                        <style>
+div.codeblock_filename_container + pre {
+  margin-top: 0;
+}
+
+span.codeblock_filename_inner {
+  border-radius: 0.4rem 0.4rem 0 0;
+  padding: 0.6rem 1rem 0.6rem 1rem;
+  font-family: var(--mono-font) !important;
+  font-size: var(--code-font-size);
+}
+
+</style>
+<h1 id="pipeline-model"><a class="header" href="#pipeline-model">Pipeline model</a></h1>
 <div class="note">
-<p>Load pretrained weights from HuggingFace and prepare the model for text
-generation.</p>
+<p>How <code>model.py</code> loads the compiled GPT-2 graph, runs it on each decode step,
+and manages the growing token sequence.</p>
 </div>
-<p><code>main()</code> brings everything together: it loads OpenAI’s pretrained GPT-2
-weights, builds the MAX model, compiles two inference heads, initializes the
-tokenizer, and starts an interactive session.</p>
-<h2 id="loading-and-transposing-weights"><a class="header" href="#loading-and-transposing-weights">Loading and transposing weights</a></h2>
-<p>HuggingFace loads the pretrained weights with
-<code>GPT2LMHeadModel.from_pretrained("gpt2")</code>. The weights are then transferred to
-the MAX model via <code>load_state_dict</code>.</p>
-<p>There’s one complication: HuggingFace’s GPT-2 uses <code>Conv1D</code> for its linear
-layers, which stores weights transposed relative to MAX’s <code>Linear</code>
-(<code>[in, out]</code> instead of <code>[out, in]</code>). The <code>transposed_state</code> loop
-pre-transposes the affected layers (<code>c_attn</code>, <code>c_proj</code>, <code>c_fc</code>) before loading,
-so the weights land in the correct orientation without modifying the model’s
-layer definitions.</p>
-<h2 id="lazy-initialization"><a class="header" href="#lazy-initialization">Lazy initialization</a></h2>
-<p>The model is constructed inside <code>F.lazy()</code>:</p>
-<pre><code class="language-python">with F.lazy():
-    max_model = MaxGPT2LMHeadModel(config)
-    max_model.load_state_dict(transposed_state)
-</code></pre>
-<p>Without <code>F.lazy()</code>, the <code>Embedding</code> and <code>Linear</code> initializers would allocate
-random tensors immediately, only to discard them when <code>load_state_dict</code> replaces
-them. Inside the lazy context, those random initializations are deferred—they’re
-never allocated or compiled. <code>load_state_dict</code> installs the real HuggingFace
-weights directly, saving both time and memory.</p>
-<h2 id="compiling-two-heads"><a class="header" href="#compiling-two-heads">Compiling two heads</a></h2>
-<p>The model is wrapped in <code>GPT2SamplingHead</code> and <code>GPT2GreedyHead</code> (from Section
-10), then each is compiled with <code>TensorType</code> inputs using symbolic dimensions:</p>
-<pre><code class="language-python">token_type = TensorType(DType.int64, ("batch", "seqlen"), device=device)
-temp_type  = TensorType(dtype, [], device=device)
+<p>To extend a pipeline and connect it to a serving layer, you’ll need to subclass
+<a href="https://docs.modular.com/max/api/python/generated/max.pipelines.lib.PipelineModelWithKVCache/"><code>PipelineModelWithKVCache</code></a>
+and tell it how to load your model, run each decode step, and manage the token
+sequence.</p>
+<h2 id="load-the-model"><a class="header" href="#load-the-model">Load the model</a></h2>
+<p>Every
+<a href="https://docs.modular.com/max/api/python/generated/max.experimental.nn.Linear/"><code>Linear</code></a>
+and
+<a href="https://docs.modular.com/max/api/python/generated/max.experimental.nn.Embedding/"><code>Embedding</code></a>
+layer in <code>MaxGPT2LMHeadModel</code> allocates tensors when constructed. Without the
+lazy context, those allocations fill with random values and are immediately
+discarded when the checkpoint loads.
+<a href="https://docs.modular.com/max/api/python/generated/max.experimental.functional#max.experimental.functional.lazy"><code>F.lazy()</code></a>
+defers all allocation inside the block: layers are declared, but nothing is
+allocated until <code>compile()</code> runs.</p>
+<p><a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor#max.experimental.tensor.default_device"><code>default_device()</code></a>
+and
+<a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor#max.experimental.tensor.default_dtype"><code>default_dtype()</code></a>
+set context variables that module construction code reads inside the lazy block,
+so layers pick up the right device and numeric type without being passed them
+explicitly.</p>
+<p><a href="https://docs.modular.com/max/api/python/generated/max.experimental.nn.Module#max.experimental.nn.Module.compile"><code>compile()</code></a>
+runs outside the lazy block. Loading safetensors buffers inside
+<a href="https://docs.modular.com/max/api/python/generated/max.experimental.functional#max.experimental.functional.lazy"><code>F.lazy()</code></a>
+triggers the same memory alignment error that <code>_to_numpy()</code> in
+<code>weight_adapters.py</code> solves by copying into a fresh array. Passing
+<code>weights=state_dict</code> to <code>compile()</code> loads and compiles in one step after the
+lazy context closes:</p>
+<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">model.py</span></div>
+<pre><code class="language-python">    def _load_model(
+        self,
+        weights: Weights,
+        adapter: WeightsAdapter | None,
+    ) -&gt; Any:
+        hf_config = self.huggingface_config
+        device = self.devices[0]
 
-compiled_sampler = sampling_head.compile(token_type, temp_type)
-compiled_greedy  = greedy_head.compile(token_type)
-</code></pre>
-<p>Symbolic dimensions (<code>"batch"</code>, <code>"seqlen"</code>) let the compiled model accept any
-sequence length without recompilation. Compilation takes a few seconds but only
-happens once per session.</p>
-<h2 id="the-full-main-function"><a class="header" href="#the-full-main-function">The full main function</a></h2>
-<pre><code class="language-python">def main() -&gt; None:
-    parser = argparse.ArgumentParser(description="MAX GPT-2 text generation")
-    parser.add_argument(
-        "--benchmark",
-        action="store_true",
-        help="Run timed benchmark instead of interactive generation",
-    )
-    parser.add_argument(
-        "--prompt",
-        type=str,
-        default=None,
-        help="Run single generation with this prompt and exit (non-interactive)",
-    )
-    parser.add_argument(
-        "--chat",
-        action="store_true",
-        help="Open a rich terminal chat session (Human vs GPT-2)",
-    )
-    parser.add_argument(
-        "--chat-temperature",
-        type=float,
-        default=0.8,
-        help="Sampling temperature for --chat mode (default: 0.8; lower = more focused)",
-    )
-    args = parser.parse_args()
-
-    dtype, device = defaults()
-    print(f"Using device: {device}, dtype: {dtype}")
-
-    # Load HuggingFace model
-    torch_dtype = torch.bfloat16 if dtype == DType.bfloat16 else torch.float32
-    hf_model = GPT2LMHeadModel.from_pretrained("gpt2", torch_dtype=torch_dtype)
-    print(f"Loaded HuggingFace model:\n{hf_model}")
-
-    config = GPT2Config()
-    print(
-        f"Model has {config.n_layer} layers, {config.n_head} heads,"
-        f" {config.n_embd} embedding dim"
-    )
-
-    # 1. Build MAX model and load weights. `defaults()` resolves `device` to
-    #    GPU when one is available; input tensors and compile types both use
-    #    that device so everything stays on the same device without .to().
-    #    HuggingFace GPT-2 Conv1D stores weights as [in, out]; MAX Linear
-    #    expects [out, in], so pre-transpose before loading.
-    print("Building model and loading weights...", flush=True)
-    hf_state = hf_model.state_dict()
-    transposed_state: dict[str, torch.Tensor] = {}
-    for name, param in hf_state.items():
-        if any(k in name for k in ["c_attn", "c_proj", "c_fc"]) and name.endswith(
-            ".weight"
-        ):
-            transposed_state[name] = param.T.contiguous()
-        else:
-            transposed_state[name] = param
-
-    # F.lazy() defers all ops inside the block — random.normal in
-    # Linear.__init__ / Embedding.__init__ is NEVER compiled or allocated.
-    # load_state_dict replaces the lazy random tensors with the real HF
-    # weights before they are ever realized.
-    t0 = time.perf_counter()
-    with F.lazy():
-        max_model = MaxGPT2LMHeadModel(config)
-        max_model.load_state_dict(transposed_state)
-    print(
-        f"  model init   : {(time.perf_counter() - t0) * 1e3:.0f} ms (lazy)",
-        flush=True,
-    )
-
-    t0 = time.perf_counter()
-    max_model.to(device)
-    print(
-        f"  to({device})  : {(time.perf_counter() - t0) * 1e3:.0f} ms",
-        flush=True,
-    )
-
-    # 2. Wrap in compiled heads.
-    sampling_head = GPT2SamplingHead(max_model)
-    greedy_head = GPT2GreedyHead(max_model)
-
-    token_type = TensorType(DType.int64, ("batch", "seqlen"), device=device)
-    temp_type = TensorType(dtype, [], device=device)
-
-    print("\nCompiling sampling model...", flush=True)
-    t_compile_start = time.perf_counter()
-    compiled_sampler = sampling_head.compile(token_type, temp_type)
-
-    print("Compiling greedy model...", flush=True)
-    compiled_greedy = greedy_head.compile(token_type)
-    t_compile_end = time.perf_counter()
-    print(f"Compile time: {t_compile_end - t_compile_start:.2f}s", flush=True)
-
-    # Initialize tokenizer
-    tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
-    tokenizer.pad_token = tokenizer.eos_token
-
-    if args.benchmark:
-        run_benchmark(compiled_sampler, tokenizer, device, dtype)
-        return
-
-    if args.prompt:
-        generate_text(
-            compiled_sampler,
-            compiled_greedy,
-            tokenizer,
-            device,
-            dtype,
-            args.prompt,
-            max_new_tokens=20,
-            temperature=0.8,
-            do_sample=True,
+        state_dict = parse_state_dict_from_weights(
+            self.pipeline_config, weights, adapter
         )
-        return
 
-    if args.chat:
-        chat_loop(
-            compiled_sampler,
-            tokenizer,
-            device,
-            dtype,
-            temperature=args.chat_temperature,
+        with F.lazy(), default_device(device), default_dtype(self.dtype):
+            gpt2_module = MaxGPT2LMHeadModel(hf_config)
+            gpt2_module.to(device)
+
+        token_type = TensorType(
+            DType.int64, ("batch", "seq_len"), device=device
         )
-        return
-
-    # Interactive prompt loop
-    print("\n" + "=" * 50)
-    print("Model ready! Enter prompts to generate text.")
-    print("Press Ctrl+C or type 'quit' to exit.")
-    print("=" * 50 + "\n")
-
-    try:
-        while True:
-            user_input = input("Enter your prompt: ").strip()
-
-            if user_input.lower() in ["quit", "exit", "q"]:
-                print("Exiting...")
-                break
-
-            if not user_input:
-                print("Please enter a non-empty prompt.\n")
-                continue
-
-            print()
-            generated_text = generate_text(
-                compiled_sampler,
-                compiled_greedy,
-                tokenizer,
-                device,
-                dtype,
-                user_input,
-                max_new_tokens=50,
-                temperature=0.8,
-                do_sample=True,
-            )
-            print(f"\nGenerated text:\n{generated_text}\n")
-            print("-" * 50 + "\n")
-
-    except KeyboardInterrupt:
-        print("\n\nExiting...")
-
+        return gpt2_module.compile(token_type, weights=state_dict)
 
 </code></pre>
-<p>With <code>--prompt</code>, the model generates 20 tokens and exits. With <code>--chat</code>, it
-opens the rich terminal chat interface. Without flags, it starts an interactive
-prompt loop.</p>
-<h2 id="running-the-model"><a class="header" href="#running-the-model">Running the model</a></h2>
-<pre><code class="language-bash">pixi run gpt2
-pixi run gpt2 -- --prompt "Once upon a time"
-pixi run gpt2 -- --chat
-pixi run gpt2 -- --benchmark
+<h2 id="execute-a-step"><a class="header" href="#execute-a-step">Execute a step</a></h2>
+<p><code>execute()</code> receives a <code>GPT2Inputs</code>, a dataclass with one field: <code>tokens</code>,
+a <code>[1, seq_len]</code> int64 <code>Buffer</code> containing all token IDs for the current
+sequence.</p>
+<p><a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor#max.experimental.tensor.Tensor.from_dlpack"><code>Tensor.from_dlpack()</code></a>
+converts the driver <code>Buffer</code> to a MAX <code>Tensor</code> without copying. The compiled
+model returns <code>[1, seq_len, vocab_size]</code>: one logit vector per position. Only
+the final position’s logits are needed to sample the next token, so the output
+is narrowed to <code>[1, vocab_size]</code> before being handed to MAX’s serving
+infrastructure, which handles sampling: temperature scaling, top-p filtering,
+and token selection:</p>
+<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">model.py</span></div>
+<pre><code class="language-python">    def execute(self, model_inputs: ModelInputs) -&gt; ModelOutputs:
+        assert isinstance(model_inputs, GPT2Inputs)
+
+        input_tensor = Tensor.from_dlpack(model_inputs.tokens).to(
+            self.devices[0]
+        )
+
+        all_logits: Tensor = self.model(input_tensor)
+
+        last_logits_np: np.ndarray = np.from_dlpack(all_logits.to(CPU()))
+        last_logits_np = np.ascontiguousarray(last_logits_np[0, -1:, :])
+
+        last_buf = Buffer.from_numpy(last_logits_np).to(self.devices[0])
+        return ModelOutputs(logits=last_buf, next_token_logits=last_buf)
+
 </code></pre>
-<p><strong>Next</strong>: <a href="./step_12.html">Section 12</a> walks through the streaming chat
-implementation—stop sequences, BPE boundary handling, and the <code>rich</code> live
-rendering that makes the <code>--chat</code> mode work.</p>
+<h2 id="manage-the-token-sequence"><a class="header" href="#manage-the-token-sequence">Manage the token sequence</a></h2>
+<p>On the first step (prefill), <code>prepare_initial_token_inputs()</code> reads the full
+prompt from <code>ctx.tokens.all</code> and packages it as <code>GPT2Inputs</code>. On each decode
+step, <code>prepare_next_token_inputs()</code> appends the newly sampled token to the
+previous token array and returns the extended sequence.</p>
+<p>Because GPT-2 has no incremental KV cache, every decode step re-processes the
+full token history from position 0. Generating 30 tokens from a 10-token prompt
+means the 11th decode step processes 20 tokens, the 12th processes 21, and so
+on. The implementation stays simple at the cost of efficiency: compute grows
+linearly with sequence length.</p>
+<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">model.py</span></div>
+<pre><code class="language-python">    def prepare_initial_token_inputs(
+        self,
+        replica_batches: Sequence[Sequence[TextContext]],
+        kv_cache_inputs: KVCacheInputs | None = None,
+        return_n_logits: int = 1,
+    ) -&gt; GPT2Inputs:
+        _ = return_n_logits  # PipelineModel API; last-token logits only in `execute`.
+        ctx = replica_batches[0][0]
+        token_ids = _tokens_from_context(ctx)
+        inputs = _make_gpt2_inputs(token_ids, self.devices[0])
+        inputs.kv_cache_inputs = kv_cache_inputs
+        return inputs
+
+    def prepare_next_token_inputs(
+        self,
+        next_tokens: Buffer,
+        prev_model_inputs: ModelInputs,
+    ) -&gt; GPT2Inputs:
+        assert isinstance(prev_model_inputs, GPT2Inputs)
+        prev_np: np.ndarray = np.from_dlpack(prev_model_inputs.tokens.to(CPU()))
+        new_token_np: np.ndarray = np.from_dlpack(next_tokens.to(CPU()))
+        new_token = int(new_token_np.ravel()[0])
+        extended = np.concatenate([prev_np.ravel(), [new_token]])[np.newaxis, :]
+        inputs = _make_gpt2_inputs(extended.ravel().tolist(), self.devices[0])
+        inputs.kv_cache_inputs = prev_model_inputs.kv_cache_inputs
+        return inputs
+
+</code></pre>
+<p><strong>Next</strong>: <a href="./step_12.html">Architecture registration</a> covers <code>arch.py</code> and
+<code>__init__.py</code>, the three-line contract that plugs the whole package into
+<code>max serve</code>.</p>
 
                     </main>
 

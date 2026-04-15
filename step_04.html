@@ -18,13 +18,13 @@
         
         <!-- Additional meta tags -->
         <meta property="og:title" content="Build an LLM from scratch with MAX">
-        <meta property="og:description" content="Learn by building LLMs from scratch with Modular's MAX Framework">
+        <meta property="og:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
         <meta property="og:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
         <meta property="og:url" content="https://llm.modular.com/">
         <meta name="twitter:card" content="summary">
         <meta name="twitter:image:alt" content="MAX Docs">
         <meta name="twitter:title" content="Build an LLM from scratch with MAX">
-        <meta name="twitter:description" content="Learn by building LLMs from scratch with Modular's MAX Framework">
+        <meta name="twitter:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
         <meta name="twitter:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
         <link rel="icon" type="image/png" href="https://llm.modular.com/assets/icons/m-dark.svg">
         <script>
@@ -197,7 +197,20 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="multi-head-attention"><a class="header" href="#multi-head-attention">Multi-head attention</a></h1>
+                        <style>
+div.codeblock_filename_container + pre {
+  margin-top: 0;
+}
+
+span.codeblock_filename_inner {
+  border-radius: 0.4rem 0.4rem 0 0;
+  padding: 0.6rem 1rem 0.6rem 1rem;
+  font-family: var(--mono-font) !important;
+  font-size: var(--code-font-size);
+}
+
+</style>
+<h1 id="multi-head-attention"><a class="header" href="#multi-head-attention">Multi-head attention</a></h1>
 <div class="note">
 <p>Implement scaled dot-product
 <a href="https://docs.modular.com/glossary/ai/attention/">attention</a> with multiple
@@ -206,7 +219,7 @@ heads, enabling the model to attend to different representation subspaces.</p>
 <p><code>GPT2MultiHeadAttention</code> runs 12 attention operations in parallel. Instead of
 computing attention once over the full 768-dimensional space, it splits the
 dimensions into 12 heads of 64 dimensions each. Each head independently learns
-to focus on different patterns—syntactic structure, semantic similarity,
+to focus on different patterns: syntactic structure, semantic similarity,
 positional relationships, and so on.</p>
 <p>GPT-2 uses 12 heads with 768-dimensional embeddings, giving each head 768 ÷ 12
 = 64 dimensions. The Q, K, V tensors are reshaped to split the embedding across
@@ -229,13 +242,17 @@ all heads simultaneously is just a matrix multiplication across the last two
 dimensions. The scaling factor <code>1 / sqrt(head_dim)</code> prevents the dot products
 from growing too large as head dimension increases, which would push softmax
 into regions with very small gradients.</p>
-<p>The causal mask from Section 3 is added to the attention scores before softmax,
-masking out future positions.</p>
+<p>The causal mask from <a href="./step_03.html">Causal masking</a> is added to the attention
+scores before softmax, masking out future positions.</p>
 <p>After the output projection (<code>c_proj</code>), the model can mix information across
-heads—combining the different perspectives each head learned.</p>
+heads, combining the different perspectives each head learned.</p>
 <p>The layer names <code>c_attn</code> (combined Q/K/V projection) and <code>c_proj</code> (output
 projection) match Hugging Face’s GPT-2 implementation for weight loading.</p>
-<h2 id="the-code"><a class="header" href="#the-code">The code</a></h2>
+<h2 id="gpt2multiheadattention"><a class="header" href="#gpt2multiheadattention">GPT2MultiHeadAttention</a></h2>
+<p><code>GPT2MultiHeadAttention</code> combines the single <code>c_attn</code> projection, the split
+into Q/K/V heads, scaled dot-product attention with the causal mask, and the
+output projection <code>c_proj</code> into one class:</p>
+<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">gpt2.py</span></div>
 <pre><code class="language-python">class GPT2MultiHeadAttention(Module):  # type: ignore[type-arg]
     """Exact HuggingFace GPT-2 attention structure"""
 
@@ -275,7 +292,9 @@ projection) match Hugging Face’s GPT-2 implementation for weight loading.</p>
         """Split the last dimension into (num_heads, head_size)"""
         new_shape = list(tensor.shape[:-1]) + [num_heads, attn_head_size]
         tensor = tensor.reshape(new_shape)
-        return tensor.transpose(-3, -2)  # (batch, head, seq_length, head_features)
+        return tensor.transpose(
+            -3, -2
+        )  # (batch, head, seq_length, head_features)
 
     def _merge_heads(
         self, tensor: Tensor | TensorValue, num_heads: int, attn_head_size: int
@@ -300,7 +319,9 @@ projection) match Hugging Face’s GPT-2 implementation for weight loading.</p>
         value = self._split_heads(value, self.num_heads, self.head_dim)
 
         attn_output = self._attn(query, key, value)
-        attn_output = self._merge_heads(attn_output, self.num_heads, self.head_dim)
+        attn_output = self._merge_heads(
+            attn_output, self.num_heads, self.head_dim
+        )
         attn_output = self.c_proj(cast(Tensor, attn_output))
 
         return cast(Tensor, attn_output)
@@ -308,10 +329,12 @@ projection) match Hugging Face’s GPT-2 implementation for weight loading.</p>
 
 </code></pre>
 <p><code>F.split</code> divides the combined Q/K/V projection into three equal tensors along
-the last axis. The <code>cast</code> calls are needed because MAX’s type system requires
-explicit casts at certain boundaries between <code>Tensor</code> and <code>TensorValue</code>.</p>
-<p><strong>Next</strong>: <a href="./step_05.html">Section 5</a> implements layer normalization, which
-normalizes activations before each sublayer in the transformer block.</p>
+the last axis. MAX’s type system requires explicit casts between <code>Tensor</code> and
+<code>TensorValue</code> at certain functional boundaries, which is what the <code>cast</code> calls
+handle. The result is a <code>[batch, seq_length, 768]</code> tensor where every position
+has attended to all earlier positions across all 12 heads simultaneously.</p>
+<p><strong>Next</strong>: <a href="./step_05.html">Layer normalization</a> normalizes activations before
+each sublayer in the transformer block.</p>
 
                     </main>
 

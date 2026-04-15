@@ -25,15 +25,15 @@ x = x + sublayer(layer_norm(x))
 ```
 
 This is called pre-normalization. GPT-2 uses it because normalizing before each
-sublayer (rather than after) gives more stable gradients in deep networks—the
+sublayer (rather than after) gives more stable gradients in deep networks. The
 residual connection provides a direct path for gradients to flow backward
 through all 12 blocks without passing through the normalization.
 
 The pattern happens twice per block:
 
 1. **Attention**: `hidden_states = attn_output + residual` (where `residual`
-   is the pre-norm input)
-2. **MLP**: `hidden_states = residual + feed_forward_hidden_states`
+   is the pre-norm input).
+2. **MLP**: `hidden_states = residual + feed_forward_hidden_states`.
 
 The block maintains a constant 768-dimensional representation throughout. Input
 shape `[batch, seq_length, 768]` is unchanged after each sublayer, which is
@@ -44,11 +44,19 @@ essential for stacking 12 blocks together.
 `ln_1`, `attn`, `ln_2`, and `mlp` match Hugging Face's GPT-2 implementation
 exactly. This naming is required for loading pretrained weights.
 
-## The code
+## GPT2Block
 
-```python
-{{#include ../../gpt2.py:transformer_block}}
+`GPT2Block` wires the four components (`ln_1`, `attn`, `ln_2`, `mlp`) with
+pre-norm and residual connections in two passes:
+
+```python:gpt2.py
+{{#include ../../gpt2_arch/gpt2.py:transformer_block}}
 ```
 
-**Next**: [Section 7](./step_07.md) stacks 12 of these blocks with embeddings
-to create the main body of the GPT-2 model.
+The block reads input at 768 dimensions, normalizes and applies attention with
+a residual, then normalizes and applies the MLP with another residual. Input
+and output shapes are identical, which is what makes stacking 12 of them
+possible.
+
+**Next**: [Stack transformer blocks](./step_07.md) stacks 12 of these blocks
+with embeddings to create the main body of the GPT-2 model.

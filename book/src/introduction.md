@@ -1,16 +1,16 @@
 # Build an LLM from scratch in MAX
 
 Transformer models power today's most impactful AI applications, from language
-models like ChatGPT to code generation tools like GitHub Copilot. Maybe you've
-been asked to adapt one of these models for your team, or you want to understand
-what's actually happening when you call an inference API. Either way, building
-a transformer from scratch is one of the best ways to truly understand how they
-work.
+models like ChatGPT to code generation tools like GitHub Copilot. If you want
+to understand what's actually happening when you call an inference API, or you
+need to adapt one of these models for your own work, building one from scratch
+is the fastest path to that understanding.
 
 This guide walks you through a complete GPT-2 implementation using the
-[MAX Python API](https://docs.modular.com/max/api/python/). Each section
-explains a component of the model—embeddings, attention mechanisms, feed-forward
-layers—and shows exactly how it's implemented in the
+[MAX Python API](https://docs.modular.com/max/api/python/). You'll start by
+running a working model, then build it component by component: embeddings,
+attention, feed-forward layers, and the serving layer that connects it all.
+Everything runs from the
 [GitHub repository](https://github.com/modular/max-llm-book).
 
 ## Why GPT-2?
@@ -28,71 +28,44 @@ real transformer architecture but simple enough to implement completely and
 understand deeply. When you grasp how its pieces fit together, you understand
 how to build any transformer-based model.
 
-> **Learning by example**: Rather than abstract theory, this tutorial walks
-> through a complete, working implementation and explains how each component
-> works and why it's designed that way.
-
 ## Why MAX?
 
-Traditional ML development often feels like stitching together tools that
-weren't designed to work together. Maybe you write your model in PyTorch,
-optimize in CUDA, convert to ONNX for deployment, then use separate serving
-tools. Each handoff introduces complexity.
+Building a model for inference typically means a separate tool for each stage:
+one framework for model definition, another for optimization, another for
+serving. Each handoff is another thing to learn and another place for things
+to break.
 
-MAX Framework takes a different approach: everything happens in one unified
-system. You write code to define your model, load weights, and run inference,
-all in MAX's Python API. The MAX Framework handles optimization automatically
-and you can even use MAX Serve to manage your deployment.
+MAX handles all of it in one Python API. You define the model, load weights,
+run inference, and serve with `max serve`, all in the same environment.
 
 The GPT-2 implementation in this guide loads pretrained weights from Hugging
-Face, implements the architecture, and runs text generation, all in the same
+Face, implements the architecture, and serves text generation, all in that same
 environment.
 
-## What you'll explore
+## How to read this book
 
-Each section explains a component of the model through the working code in
-`gpt2.py`:
+You'll start by serving GPT-2 with MAX, getting a working model running before
+you write a line of model code. From there, you'll build the transformer block
+component by component, assemble those components into the full model, and
+finish by learning how inference and serving work with `max serve`.
 
-| Section | Component                                   | What you'll learn                                                  |
-|---------|---------------------------------------------|--------------------------------------------------------------------|
-| 1       | [Model configuration](./step_01.md)         | Define architecture hyperparameters matching HuggingFace GPT-2.    |
-| 2       | [Feed-forward network](./step_02.md)        | Build the position-wise feed-forward network with GELU activation. |
-| 3       | [Causal masking](./step_03.md)              | Create attention masks to prevent looking at future tokens.        |
-| 4       | [Multi-head attention](./step_04.md)        | Implement scaled dot-product attention with multiple heads.        |
-| 5       | [Layer normalization](./step_05.md)         | Ensure activation values are within a stable range.                |
-| 6       | [Transformer block](./step_06.md)           | Combine attention and MLP with residual connections.               |
-| 7       | [Stacking transformer blocks](./step_07.md) | Create the complete 12-layer GPT-2 model with embeddings.          |
-| 8       | [Language model head](./step_08.md)         | Project hidden states to vocabulary logits.                        |
-| 9       | [Encode and decode tokens](./step_09.md)    | Convert between text and token IDs using HuggingFace tokenizer.    |
-| 10      | [Text generation](./step_10.md)             | Generate text autoregressively with temperature sampling.          |
-| 11      | [Load weights and run model](./step_11.md)  | Load pretrained weights and interact with your complete model.     |
-| 12      | [Streaming chat](./step_12.md)              | Build a streaming multi-turn chat interface using stop sequences.  |
+| Chapter                                   | What you'll learn                                                  |
+|-------------------------------------------|--------------------------------------------------------------------|
+| [Project setup](./setup.md)               | Install MAX and clone the repository                               |
+| [Run the model](./serve_first.md)         | Serve GPT-2 and call the endpoint                                  |
+| [Model configuration](./step_01.md)       | Define the architecture hyperparameters                            |
+| [Feed-forward network](./step_02.md)      | Build the position-wise MLP with GELU activation                   |
+| [Causal masking](./step_03.md)            | Create attention masks that prevent looking at future tokens       |
+| [Multi-head attention](./step_04.md)      | Implement scaled dot-product attention with multiple heads         |
+| [Layer normalization](./step_05.md)       | Stabilize activations between sub-layers                           |
+| [Transformer block](./step_06.md)         | Combine attention and MLP with residual connections                |
+| [Stack transformer blocks](./step_07.md)  | Build the complete 12-layer GPT-2 with embeddings                  |
+| [Language model head](./step_08.md)       | Project hidden states to vocabulary logits                         |
+| [Weight adaptation](./step_09.md)         | Reconcile GPT-2's Hugging Face checkpoint with MAX's weight layout |
+| [KV cache configuration](./step_10.md)    | Expose attention dimensions for cache pre-allocation               |
+| [Pipeline model](./step_11.md)            | Load, compile, and execute the model inside `max serve`            |
+| [Architecture registration](./step_12.md) | Declare the package to `max serve` and wire all pieces together    |
 
-By the end, you'll understand every line of a complete GPT-2 implementation and
-have practical experience with MAX's Python API—skills you can apply directly to
-your own projects.
+The code is pre-written in the repository. Training is not in scope.
 
-> **Note on training vs. inference**: This tutorial focuses on inference using
-> pretrained weights from Hugging Face. Training is not in scope, but we
-> include architectural details like layer normalization for completeness—
-> understanding why each layer exists helps you reason about model behavior and
-> adapt architectures for your own needs.
-
-## The running model
-
-The complete GPT-2 implementation runs with:
-
-```bash
-pixi run gpt2
-```
-
-This loads the pretrained weights and starts an interactive prompt. It's the
-same model examined section by section throughout this guide.
-
-Note: You'll need to meet the
-[system requirements](https://docs.modular.com/max/packages#system-requirements)
-to run the model.
-
-## Get started
-
-Setup instructions are in [Setup](./setup.md).
+Start with [Project setup](./setup.md) to get your environment ready.

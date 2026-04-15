@@ -36,10 +36,10 @@ output = weight * (x - mean) / sqrt(variance + epsilon) + bias
 
 The mean and variance are computed across all features in each example.
 `epsilon` (1e-5) prevents division by zero when variance is very small. The
-learned `weight` scales the normalized result and `bias` shifts it—initialized
+learned `weight` scales the normalized result and `bias` shifts it, initialized
 to ones and zeros so the initial transformation is identity.
 
-## The code
+## LayerNorm
 
 [`F.layer_norm`](https://docs.modular.com/max/api/python/experimental.functional#max.experimental.functional.layer_norm)
 computes the normalization and applies the learned parameters in one call. The
@@ -48,9 +48,13 @@ weight is initialized with
 and the bias with
 [`Tensor.zeros`](https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor#max.experimental.tensor.Tensor.zeros):
 
-```python
-{{#include ../../gpt2.py:layer_normalization}}
+```python:gpt2.py
+{{#include ../../gpt2_arch/gpt2.py:layer_normalization}}
 ```
 
-**Next**: [Section 6](./step_06.md) combines attention, MLP, layer
+`LayerNorm` gives each transformer block two sets of learned scale and
+bias parameters (one applied before attention, one before the MLP), so the
+model can adjust how aggressively it normalizes at each sublayer.
+
+**Next**: [Transformer block](./step_06.md) combines attention, MLP, layer
 normalization, and residual connections into a complete transformer block.

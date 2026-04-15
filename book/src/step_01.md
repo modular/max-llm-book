@@ -6,11 +6,11 @@ Define the GPT-2 model architecture parameters using a configuration class.
 
 </div>
 
-Before implementing GPT-2, you need to define its architecture: the dimensions,
-layer counts, and structural parameters that determine how the model processes
-information.
+These chapters implement `gpt2_arch/gpt2.py`, the model class that `max serve`
+compiles when you run the architecture package. The first thing that file needs
+is a configuration object.
 
-`GPT2Config` holds all the architectural decisions for GPT-2—embedding
+`GPT2Config` holds all the architectural decisions for GPT-2: embedding
 dimensions, number of transformer layers, number of attention heads. These
 parameters define the shape and capacity of the model.
 
@@ -36,24 +36,25 @@ Each field controls a different aspect of the model:
   layers allow the model to learn more complex patterns.
 - `n_head`: Number of attention heads per layer (12). Multiple heads let the
   model attend to different types of patterns simultaneously.
-- `n_inner`: Dimension of the MLP intermediate layer (optional, defaults to
-  4× embedding). The 4× ratio comes from the original
-  [_Attention is all you need_](https://arxiv.org/abs/1706.03742) paper.
+- `n_inner`: Dimension of the MLP intermediate layer (optional; the transformer
+  block defaults to 4× embedding when `None`). The 4× ratio comes from the
+  original [_Attention is all you need_](https://arxiv.org/abs/1706.03762)
+  paper.
 - `layer_norm_epsilon`: Small constant for numerical stability in layer
   normalization (1e-5). Prevents division by zero when variance is very small.
 
 These values define the _small_ GPT-2 model. OpenAI released four sizes (small,
 medium, large, XL), each scaling these parameters up.
 
-## The code
+## GPT2Config
 
 Python's
 [`@dataclass`](https://docs.python.org/3/library/dataclasses.html) decorator
 eliminates boilerplate. Instead of writing `__init__` manually, you declare
 fields with type hints and default values:
 
-```python
-{{#include ../../gpt2.py:model_configuration}}
+```python:gpt2.py
+{{#include ../../gpt2_arch/gpt2.py:model_configuration}}
 ```
 
 The `n_inner: int | None = None` field is optional. When `None`, the
@@ -61,5 +62,8 @@ transformer block defaults to 4× the embedding dimension (3,072). This lets you
 override the inner dimension for experimental architectures without changing the
 other components.
 
-**Next**: [Section 2](./step_02.md) implements the feed-forward network—the MLP
+`GPT2ArchConfig` in `model_config.py` reads `n_head`, `n_embd`, and `n_layer`
+from this config at serving time to calculate KV cache dimensions.
+
+**Next**: [Feed-forward network](./step_02.md) implements the MLP
 that processes information after attention in each transformer block.

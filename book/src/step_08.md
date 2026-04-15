@@ -9,13 +9,14 @@ logits for next-token prediction.
 
 `MaxGPT2LMHeadModel` wraps the transformer body with a single linear layer that
 projects 768-dimensional hidden states to 50,257-dimensional vocabulary logits.
-This completes the GPT-2 architecture.
+This completes the GPT-2 model architecture. The next sections cover the serving
+package that loads pretrained weights and connects the model to `max serve`.
 
 ## The projection
 
 For each position in the sequence, the language model head outputs a score for
 every possible next token. Higher scores mean the model thinks that token is
-more likely to come next. These scores are called _logits_—raw values before
+more likely to come next. These scores are called _logits_, raw values before
 softmax, which can be any real number.
 
 The layer uses `bias=False`, omitting the bias vector. Layer normalization
@@ -23,9 +24,9 @@ before the head already centers the activations, so a constant bias adds
 nothing to the relative scores after softmax. Omitting it saves 50,257
 parameters.
 
-At 768 × 50,257 = 38.6M parameters, the LM head is the largest single
-component in GPT-2—about 33% of the model's 117M total parameters, more than
-all 12 transformer blocks combined.
+At 768 × 50,257 = 38.6M parameters, the LM head contains the largest single
+weight matrix in GPT-2, larger than any individual weight matrix in the
+transformer blocks (the biggest of which, `c_fc`, is 768 × 3,072 ≈ 2.4M).
 
 ## The complete model pipeline
 
@@ -43,15 +44,21 @@ Each position gets independent logits over the vocabulary. To predict the next
 token after position _i_, look at the logits at position _i_. The
 highest-scoring token is the model's top prediction.
 
-## The code
+## MaxGPT2LMHeadModel
 
-```python
-{{#include ../../gpt2.py:language_model_head}}
+`MaxGPT2LMHeadModel` wraps `MaxGPT2Model` with a single linear projection from
+hidden states to vocabulary logits:
+
+```python:gpt2.py
+{{#include ../../gpt2_arch/gpt2.py:language_model_head}}
 ```
 
 The `forward` method reuses the parameter name `input_ids` for the transformer
-output—by the time the LM head runs, it holds hidden states rather than IDs,
+output; by the time the LM head runs, it holds hidden states rather than IDs,
 but the name reflects its origin.
 
-**Next**: [Section 9](./step_09.md) covers tokenization: converting between
-text strings and the token ID sequences the model operates on.
+`model.py` in `gpt2_arch/` compiles this class directly. The same
+`MaxGPT2LMHeadModel` you've just read is what `max serve` runs.
+
+**Next**: [Weight adaptation](./step_09.md) covers the three mappings that
+load GPT-2's Hugging Face checkpoint into MAX's typed parameter interface.

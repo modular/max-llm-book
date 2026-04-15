@@ -1,6 +1,6 @@
 # Build an LLM from scratch with MAX
 
-A guided tour of a complete GPT-2 implementation using Modular's MAX platform.
+A guided tour of a complete GPT-2 implementation using the MAX framework.
 Each section walks through the code in `gpt2.py` and explains what it does and
 why—from model configuration through streaming text generation.
 
@@ -32,19 +32,35 @@ pixi install
 
 ### Run the model
 
+Serve GPT-2 via an OpenAI-compatible HTTP endpoint:
+
+```bash
+pixi run serve
+```
+
+Then query it:
+
+```bash
+curl -X POST http://localhost:8000/v1/completions \
+  -H "Content-Type: application/json" \
+  -d '{"model":"gpt2","prompt":"In the beginning","max_tokens":30,"temperature":0}'
+```
+
+Or run the model directly in your terminal:
+
 ```bash
 pixi run gpt2
 ```
 
-This downloads the pretrained GPT-2 weights from HuggingFace, compiles the
+This downloads the pretrained GPT-2 weights from Hugging Face, compiles the
 model, and starts an interactive prompt where you can enter text and see
 generated completions.
 
 Additional modes:
 
 ```bash
-pixi run gpt2 -- --prompt "Once upon a time"   # single generation, then exit
-pixi run gpt2 -- --chat                         # streaming multi-turn chat
+pixi run gpt2 -- --prompt "In the beginning"   # single generation, then exit
+pixi run chat                                    # streaming multi-turn chat
 pixi run gpt2 -- --benchmark                    # tokens/sec benchmark
 ```
 
@@ -60,20 +76,19 @@ Or read it online at [llm.modular.com](https://llm.modular.com/).
 
 The tutorial walks through `gpt2.py` section by section:
 
-| Section | Topic                       | What you'll learn                                          |
-|---------|-----------------------------|------------------------------------------------------------|
-| 1       | Model configuration         | Architecture hyperparameters and HuggingFace compatibility |
-| 2       | Feed-forward network        | Two-layer MLP with GELU activation                         |
-| 3       | Causal masking              | Preventing attention to future tokens                      |
-| 4       | Multi-head attention        | Parallel attention across 12 heads                         |
-| 5       | Layer normalization         | Pre-norm pattern for stable activations                    |
-| 6       | Transformer block           | Residual connections and component wiring                  |
-| 7       | Stacking transformer blocks | Embeddings and the 12-layer model body                     |
-| 8       | Language model head         | Projecting hidden states to vocabulary logits              |
-| 9       | Encode and decode tokens    | BPE tokenization with HuggingFace                          |
-| 10      | Text generation             | Compiled sampling heads and Gumbel-max sampling            |
-| 11      | Load weights and run model  | Lazy init, weight transposition, and model compilation     |
-| 12      | Streaming chat              | Stop sequences, BPE boundary handling, and live rendering  |
+| Section | Topic                         | What you'll learn                                                 |
+|---------|-------------------------------|-------------------------------------------------------------------|
+| —       | Run the model                 | Serve GPT-2 with `pixi run serve` before diving into code         |
+| 1       | Model configuration           | Architecture hyperparameters and Hugging Face compatibility       |
+| 2       | Feed-forward network          | Two-layer MLP with GELU activation                                |
+| 3       | Causal masking                | Preventing attention to future tokens                             |
+| 4       | Multi-head attention          | Parallel attention across 12 heads                                |
+| 5       | Layer normalization           | Pre-norm pattern for stable activations                           |
+| 6       | Transformer block             | Residual connections and component wiring                         |
+| 7       | Stacking transformer blocks   | Embeddings and the 12-layer model body                            |
+| 8       | Language model head           | Projecting hidden states to vocabulary logits                     |
+| 9       | Tokens, weights, and sampling | BPE tokenization, weight loading, and Gumbel-max sampling         |
+| 10      | Serving GPT-2 with MAX        | Connect the model to `max serve`; the custom architecture pattern |
 
 ## Project structure
 
@@ -82,18 +97,20 @@ max-llm-book/
 ├── book/                  # mdBook tutorial documentation
 │   └── src/
 │       ├── introduction.md
-│       ├── step_01.md ... step_12.md
+│       ├── serve_first.md
+│       ├── step_01.md ... step_10.md
 │       └── SUMMARY.md
 ├── gpt2.py               # Complete GPT-2 implementation
-├── tests/                # Tests for gpt2.py
+├── gpt2_arch/            # Custom architecture package for `max serve`
+├── tests/                # Tests for gpt2.py and gpt2_arch/
 ├── pixi.toml             # Project dependencies and tasks
 └── README.md             # This file
 ```
 
 ## Learning resources
 
-- **MAX Documentation**: [docs.modular.com](https://docs.modular.com/)
-- **HuggingFace GPT-2**: [huggingface.co/gpt2](https://huggingface.co/gpt2)
+- **MAX documentation**: [docs.modular.com](https://docs.modular.com/)
+- **Hugging Face GPT-2**: [huggingface.co/gpt2](https://huggingface.co/gpt2)
 - **Attention Is All You Need**:
   [arxiv.org/abs/1706.03762](https://arxiv.org/abs/1706.03762)
 - **Language Models are Unsupervised Multitask Learners** (GPT-2 paper):

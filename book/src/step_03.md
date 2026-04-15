@@ -15,13 +15,13 @@ points in inference:
 
 **Prefill** (processing the prompt): the full prompt is encoded in one parallel
 pass. Without a mask, later tokens in the prompt would influence earlier ones,
-producing attention scores that differ from what the model learned—corrupted
+producing attention scores that differ from what the model learned: corrupted
 representations from the start.
 
 **Decoding** (generating new tokens): in principle, generating a single token
 at the end of a sequence means no future tokens exist to mask. The original
-GPT-2 architecture has no KV cache—the full growing sequence is reprocessed
-on every step—so the mask is applied on every forward pass.
+GPT-2 architecture has no KV cache, so the full growing sequence is reprocessed
+on every step and the mask is applied on every forward pass.
 
 The `causal_mask()` function creates a
 [mask matrix](https://docs.modular.com/glossary/ai/attention-mask/) that sets
@@ -40,7 +40,7 @@ zero probability, blocking information flow from later tokens.
 ## The mask pattern
 
 The mask is lower-triangular: each token can attend to itself and all earlier
-tokens, but nothing to its right.
+tokens, but not anything to its right:
 
 - Position 0 attends to: position 0 only
 - Position 1 attends to: positions 0–1
@@ -53,7 +53,7 @@ The mask shape is `(sequence_length, sequence_length + num_tokens)`. The extra
 generation, cached keys and values from earlier tokens can be attended to
 without recomputing them.
 
-## The code
+## causal_mask()
 
 The function uses the `@F.functional` decorator, which converts it to a MAX
 graph operation that can be compiled and optimized.
@@ -63,8 +63,8 @@ mask shape, then uses `F.band_part` to zero out the upper triangle
 (`num_upper=0, exclude=True` keeps zeros on and below the diagonal, `-inf`
 above):
 
-```python
-{{#include ../../gpt2.py:causal_mask}}
+```python:gpt2.py
+{{#include ../../gpt2_arch/gpt2.py:causal_mask}}
 ```
 
 The scalar `-inf` tensor is constructed with explicit `dtype` and `device`
@@ -77,4 +77,5 @@ consistent with the rest of the graph.
 symbolic dimension arithmetic, which lets the compiled graph handle variable
 sequence lengths without recompilation.
 
-**Next**: [Section 4](./step_04.md) uses this mask inside multi-head attention.
+**Next**: [Multi-head attention](./step_04.md) uses this mask inside the
+attention mechanism.

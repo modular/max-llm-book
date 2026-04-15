@@ -5,6 +5,7 @@
 ## 1: Get started
 
 - [Project setup](./setup.md)
+- [Run the model](./serve_first.md)
 - [Model configuration](./step_01.md)
 
 ## 2: Build the transformer block
@@ -17,12 +18,12 @@
 
 ## 3: Assemble the model
 
-- [Stacking transformer blocks](./step_07.md)
+- [Stack transformer blocks](./step_07.md)
 - [Language model head](./step_08.md)
 
-## 4: Generate text
+## 4: The serving package
 
-- [Encode and decode tokens](./step_09.md)
-- [Text generation](./step_10.md)
-- [Load weights and run model](./step_11.md)
-- [Streaming chat](./step_12.md)
+- [Weight adaptation](./step_09.md)
+- [KV cache configuration](./step_10.md)
+- [Pipeline model](./step_11.md)
+- [Architecture registration](./step_12.md)

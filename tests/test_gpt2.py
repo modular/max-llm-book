@@ -10,22 +10,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===----------------------------------------------------------------------=== #
-from unittest.mock import Mock, patch
-
 import numpy as np
-from gpt2 import (
+from gpt2_arch.gpt2 import (
     GPT2MLP,
     GPT2Block,
     GPT2Config,
-    GPT2GreedyHead,
     GPT2MultiHeadAttention,
-    GPT2SamplingHead,
     LayerNorm,
     MaxGPT2LMHeadModel,
     MaxGPT2Model,
     causal_mask,
-    decode_tokens,
-    encode_text,
 )
 from max.driver import CPU
 from max.dtype import DType
@@ -282,55 +276,6 @@ class TestMaxGPT2LMHeadModel:
             seq_len,
             config.vocab_size,
         ]
-
-
-class TestTokenizationFunctions:
-    """Test tokenization and decoding functions."""
-
-    @patch("main.GPT2Tokenizer")
-    def test_encode_text(self, mock_tokenizer_class: Mock) -> None:
-        """Test encode_text returns list[int] from tokenizer."""
-        mock_tokenizer = Mock()
-        mock_tokenizer.encode.return_value = [15496, 995]  # "Hello world"
-
-        result = encode_text("Hello world", mock_tokenizer, max_length=128)
-
-        mock_tokenizer.encode.assert_called_once_with(
-            "Hello world", max_length=128, truncation=True
-        )
-        assert isinstance(result, list)
-        assert result == [15496, 995]
-
-    @patch("main.GPT2Tokenizer")
-    def test_decode_tokens(self, mock_tokenizer_class: Mock) -> None:
-        """Test decode_tokens accepts list[int] and returns decoded string."""
-        mock_tokenizer = Mock()
-        mock_tokenizer.decode.return_value = "Hello world"
-
-        result = decode_tokens([15496, 995], mock_tokenizer)
-
-        mock_tokenizer.decode.assert_called_once_with(
-            [15496, 995], skip_special_tokens=True
-        )
-        assert result == "Hello world"
-
-
-class TestSamplingHeads:
-    """Test GPT2SamplingHead and GPT2GreedyHead module structure."""
-
-    def test_sampling_head_initialization(self) -> None:
-        """Test that GPT2SamplingHead initializes correctly."""
-        config = GPT2Config()
-        lm_head = MaxGPT2LMHeadModel(config)
-        head = GPT2SamplingHead(lm_head)
-        assert head.lm_head is lm_head
-
-    def test_greedy_head_initialization(self) -> None:
-        """Test that GPT2GreedyHead initializes correctly."""
-        config = GPT2Config()
-        lm_head = MaxGPT2LMHeadModel(config)
-        head = GPT2GreedyHead(lm_head)
-        assert head.lm_head is lm_head
 
 
 class TestModelDimensions:

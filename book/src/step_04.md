@@ -11,7 +11,7 @@ heads, enabling the model to attend to different representation subspaces.
 `GPT2MultiHeadAttention` runs 12 attention operations in parallel. Instead of
 computing attention once over the full 768-dimensional space, it splits the
 dimensions into 12 heads of 64 dimensions each. Each head independently learns
-to focus on different patterns—syntactic structure, semantic similarity,
+to focus on different patterns: syntactic structure, semantic similarity,
 positional relationships, and so on.
 
 GPT-2 uses 12 heads with 768-dimensional embeddings, giving each head 768 ÷ 12
@@ -41,24 +41,30 @@ dimensions. The scaling factor `1 / sqrt(head_dim)` prevents the dot products
 from growing too large as head dimension increases, which would push softmax
 into regions with very small gradients.
 
-The causal mask from Section 3 is added to the attention scores before softmax,
-masking out future positions.
+The causal mask from [Causal masking](./step_03.md) is added to the attention
+scores before softmax, masking out future positions.
 
 After the output projection (`c_proj`), the model can mix information across
-heads—combining the different perspectives each head learned.
+heads, combining the different perspectives each head learned.
 
 The layer names `c_attn` (combined Q/K/V projection) and `c_proj` (output
 projection) match Hugging Face's GPT-2 implementation for weight loading.
 
-## The code
+## GPT2MultiHeadAttention
 
-```python
-{{#include ../../gpt2.py:multi_head_attention}}
+`GPT2MultiHeadAttention` combines the single `c_attn` projection, the split
+into Q/K/V heads, scaled dot-product attention with the causal mask, and the
+output projection `c_proj` into one class:
+
+```python:gpt2.py
+{{#include ../../gpt2_arch/gpt2.py:multi_head_attention}}
 ```
 
 `F.split` divides the combined Q/K/V projection into three equal tensors along
-the last axis. The `cast` calls are needed because MAX's type system requires
-explicit casts at certain boundaries between `Tensor` and `TensorValue`.
+the last axis. MAX's type system requires explicit casts between `Tensor` and
+`TensorValue` at certain functional boundaries, which is what the `cast` calls
+handle. The result is a `[batch, seq_length, 768]` tensor where every position
+has attended to all earlier positions across all 12 heads simultaneously.
 
-**Next**: [Section 5](./step_05.md) implements layer normalization, which
-normalizes activations before each sublayer in the transformer block.
+**Next**: [Layer normalization](./step_05.md) normalizes activations before
+each sublayer in the transformer block.

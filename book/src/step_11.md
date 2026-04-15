@@ -1,81 +1,84 @@
-# Load weights and run model
+# Pipeline model
 
 <div class="note">
 
-Load pretrained weights from HuggingFace and prepare the model for text
-generation.
+How `model.py` loads the compiled GPT-2 graph, runs it on each decode step,
+and manages the growing token sequence.
 
 </div>
 
-`main()` brings everything together: it loads OpenAI's pretrained GPT-2
-weights, builds the MAX model, compiles two inference heads, initializes the
-tokenizer, and starts an interactive session.
+To extend a pipeline and connect it to a serving layer, you'll need to subclass
+[`PipelineModelWithKVCache`](https://docs.modular.com/max/api/python/generated/max.pipelines.lib.PipelineModelWithKVCache/)
+and tell it how to load your model, run each decode step, and manage the token
+sequence.
 
-## Loading and transposing weights
+## Load the model
 
-HuggingFace loads the pretrained weights with
-`GPT2LMHeadModel.from_pretrained("gpt2")`. The weights are then transferred to
-the MAX model via `load_state_dict`.
+Every
+[`Linear`](https://docs.modular.com/max/api/python/generated/max.experimental.nn.Linear/)
+and
+[`Embedding`](https://docs.modular.com/max/api/python/generated/max.experimental.nn.Embedding/)
+layer in `MaxGPT2LMHeadModel` allocates tensors when constructed. Without the
+lazy context, those allocations fill with random values and are immediately
+discarded when the checkpoint loads.
+[`F.lazy()`](https://docs.modular.com/max/api/python/generated/max.experimental.functional#max.experimental.functional.lazy)
+defers all allocation inside the block: layers are declared, but nothing is
+allocated until `compile()` runs.
 
-There's one complication: HuggingFace's GPT-2 uses `Conv1D` for its linear
-layers, which stores weights transposed relative to MAX's `Linear`
-(`[in, out]` instead of `[out, in]`). The `transposed_state` loop
-pre-transposes the affected layers (`c_attn`, `c_proj`, `c_fc`) before loading,
-so the weights land in the correct orientation without modifying the model's
-layer definitions.
+[`default_device()`](https://docs.modular.com/max/api/python/generated/max.experimental.tensor#max.experimental.tensor.default_device)
+and
+[`default_dtype()`](https://docs.modular.com/max/api/python/generated/max.experimental.tensor#max.experimental.tensor.default_dtype)
+set context variables that module construction code reads inside the lazy block,
+so layers pick up the right device and numeric type without being passed them
+explicitly.
 
-## Lazy initialization
+[`compile()`](https://docs.modular.com/max/api/python/generated/max.experimental.nn.Module#max.experimental.nn.Module.compile)
+runs outside the lazy block. Loading safetensors buffers inside
+[`F.lazy()`](https://docs.modular.com/max/api/python/generated/max.experimental.functional#max.experimental.functional.lazy)
+triggers the same memory alignment error that `_to_numpy()` in
+`weight_adapters.py` solves by copying into a fresh array. Passing
+`weights=state_dict` to `compile()` loads and compiles in one step after the
+lazy context closes:
 
-The model is constructed inside `F.lazy()`:
-
-```python
-with F.lazy():
-    max_model = MaxGPT2LMHeadModel(config)
-    max_model.load_state_dict(transposed_state)
+```python:model.py
+{{#include ../../gpt2_arch/model.py:load_model}}
 ```
 
-Without `F.lazy()`, the `Embedding` and `Linear` initializers would allocate
-random tensors immediately, only to discard them when `load_state_dict` replaces
-them. Inside the lazy context, those random initializations are deferred—they're
-never allocated or compiled. `load_state_dict` installs the real HuggingFace
-weights directly, saving both time and memory.
+## Execute a step
 
-## Compiling two heads
+`execute()` receives a `GPT2Inputs`, a dataclass with one field: `tokens`,
+a `[1, seq_len]` int64 `Buffer` containing all token IDs for the current
+sequence.
 
-The model is wrapped in `GPT2SamplingHead` and `GPT2GreedyHead` (from Section
-10), then each is compiled with `TensorType` inputs using symbolic dimensions:
+[`Tensor.from_dlpack()`](https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor#max.experimental.tensor.Tensor.from_dlpack)
+converts the driver `Buffer` to a MAX `Tensor` without copying. The compiled
+model returns `[1, seq_len, vocab_size]`: one logit vector per position. Only
+the final position's logits are needed to sample the next token, so the output
+is narrowed to `[1, vocab_size]` before being handed to MAX's serving
+infrastructure, which handles sampling: temperature scaling, top-p filtering,
+and token selection:
 
-```python
-token_type = TensorType(DType.int64, ("batch", "seqlen"), device=device)
-temp_type  = TensorType(dtype, [], device=device)
-
-compiled_sampler = sampling_head.compile(token_type, temp_type)
-compiled_greedy  = greedy_head.compile(token_type)
+```python:model.py
+{{#include ../../gpt2_arch/model.py:execute_method}}
 ```
 
-Symbolic dimensions (`"batch"`, `"seqlen"`) let the compiled model accept any
-sequence length without recompilation. Compilation takes a few seconds but only
-happens once per session.
+## Manage the token sequence
 
-## The full main function
+On the first step (prefill), `prepare_initial_token_inputs()` reads the full
+prompt from `ctx.tokens.all` and packages it as `GPT2Inputs`. On each decode
+step, `prepare_next_token_inputs()` appends the newly sampled token to the
+previous token array and returns the extended sequence.
 
-```python
-{{#include ../../gpt2.py:load_weights_and_run_model}}
+Because GPT-2 has no incremental KV cache, every decode step re-processes the
+full token history from position 0. Generating 30 tokens from a 10-token prompt
+means the 11th decode step processes 20 tokens, the 12th processes 21, and so
+on. The implementation stays simple at the cost of efficiency: compute grows
+linearly with sequence length.
+
+```python:model.py
+{{#include ../../gpt2_arch/model.py:token_inputs}}
 ```
 
-With `--prompt`, the model generates 20 tokens and exits. With `--chat`, it
-opens the rich terminal chat interface. Without flags, it starts an interactive
-prompt loop.
-
-## Running the model
-
-```bash
-pixi run gpt2
-pixi run gpt2 -- --prompt "Once upon a time"
-pixi run gpt2 -- --chat
-pixi run gpt2 -- --benchmark
-```
-
-**Next**: [Section 12](./step_12.md) walks through the streaming chat
-implementation—stop sequences, BPE boundary handling, and the `rich` live
-rendering that makes the `--chat` mode work.
+**Next**: [Architecture registration](./step_12.md) covers `arch.py` and
+`__init__.py`, the three-line contract that plugs the whole package into
+`max serve`.

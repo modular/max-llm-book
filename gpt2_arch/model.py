@@ -171,7 +171,7 @@ class GPT2PipelineModel(PipelineModelWithKVCache[TextContext]):
     def prepare_initial_token_inputs(
         self,
         replica_batches: Sequence[Sequence[TextContext]],
-        kv_cache_inputs: KVCacheInputs | None = None,
+        kv_cache_inputs: KVCacheInputs[Buffer, Buffer] | None = None,
         return_n_logits: int = 1,
     ) -> GPT2Inputs:
         _ = return_n_logits  # PipelineModel API; last-token logits only in `execute`.

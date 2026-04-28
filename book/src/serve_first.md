@@ -21,7 +21,7 @@ pixi run serve
 That command runs:
 
 ```sh
-max serve --custom-architectures gpt2_arch --model-path gpt2
+max serve --custom-architectures gpt2_arch --model gpt2
 ```
 
 On the first run, MAX downloads the pretrained GPT-2 weights from Hugging Face

@@ -11,12 +11,12 @@ build-book = { cmd = "cd book && mdbook build", depends-on = ["install-mdbook-pl
 book = { cmd = "cd book && mdbook serve --open", depends-on = ["build-book"] }
 
 # Serve GPT-2 via MAX's OpenAI-compatible API.
-serve = "max serve --custom-architectures gpt2_arch --model-path gpt2"
+serve = "max serve --custom-architectures gpt2_arch --model gpt2"
 
 [target.osx-arm64.tasks]
 # On macOS (Apple Silicon), force CPU: the Metal GPU backend produces incorrect
 # logits for sequence lengths > 3 due to a dynamic-shape compiler issue.
-serve = "max serve --custom-architectures gpt2_arch --model-path gpt2 --devices cpu"
+serve = "max serve --custom-architectures gpt2_arch --model gpt2 --devices cpu"
 
 # Format python
 fmt = "ruff format ."

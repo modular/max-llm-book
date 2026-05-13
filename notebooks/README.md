@@ -5,6 +5,11 @@ tutorial. It lets you run each GPT-2 component interactively, inspect real
 tensor shapes and activations, and generate text from pretrained HuggingFace
 weights — all alongside the narrative chapters.
 
+To browse the cell outputs without setting up an environment, open
+[`tutorial.rendered.ipynb`](tutorial.rendered.ipynb) — a frozen snapshot with
+all plots and printed values preserved. See
+[Rendered snapshot](#rendered-snapshot) below for how to regenerate it.
+
 ## Prerequisites
 
 - [pixi](https://pixi.sh/dev/) — install with
@@ -95,6 +100,25 @@ pixi run jupyter nbconvert \
 The command exits 0 on success. Open `/tmp/tutorial-executed.ipynb` in
 JupyterLab to review the outputs — the Step 12 cell should show an English
 continuation of "In the beginning".
+
+## Rendered snapshot
+
+`tutorial.rendered.ipynb` is a checked-in copy of the notebook with all
+outputs preserved so readers can browse plots, tensor shapes, and generated
+text directly on GitHub. It is a static artifact — edit `tutorial.ipynb`
+instead, then regenerate the snapshot:
+
+```bash
+pixi run jupyter nbconvert \
+  --to notebook \
+  --execute notebooks/tutorial.ipynb \
+  --output tutorial.rendered.ipynb \
+  --ExecutePreprocessor.timeout=1800 \
+  --ExecutePreprocessor.kernel_name=python3
+```
+
+Then re-add the "Rendered snapshot" banner as the first cell (date + MAX
+nightly version) so readers know what build produced the outputs.
 
 ## Read the book
 

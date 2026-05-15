@@ -197,20 +197,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <style>
-div.codeblock_filename_container + pre {
-  margin-top: 0;
-}
-
-span.codeblock_filename_inner {
-  border-radius: 0.4rem 0.4rem 0 0;
-  padding: 0.6rem 1rem 0.6rem 1rem;
-  font-family: var(--mono-font) !important;
-  font-size: var(--code-font-size);
-}
-
-</style>
-<h1 id="layer-normalization"><a class="header" href="#layer-normalization">Layer normalization</a></h1>
+                        <h1 id="layer-normalization"><a class="header" href="#layer-normalization">Layer normalization</a></h1>
 <div class="note">
 <p>Implement layer normalization to keep activations in a stable range throughout
 the network.</p>
@@ -233,7 +220,6 @@ pretrained weights were optimized assuming normalized inputs at each sublayer.
 Skipping it would cause activations to be in completely different ranges than
 what the model learned, producing poor or nonsensical output.</p>
 <h2 id="the-normalization-formula"><a class="header" href="#the-normalization-formula">The normalization formula</a></h2>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">math</span></div>
 <pre><code class="language-math">output = weight * (x - mean) / sqrt(variance + epsilon) + bias
 </code></pre>
 <p>The mean and variance are computed across all features in each example.
@@ -241,14 +227,13 @@ what the model learned, producing poor or nonsensical output.</p>
 learned <code>weight</code> scales the normalized result and <code>bias</code> shifts it, initialized
 to ones and zeros so the initial transformation is identity.</p>
 <h2 id="layernorm"><a class="header" href="#layernorm">LayerNorm</a></h2>
-<p><a href="https://docs.modular.com/max/api/python/experimental.functional#max.experimental.functional.layer_norm"><code>F.layer_norm</code></a>
+<p><a href="https://docs.modular.com/max/api/python/experimental.functional/#max.experimental.functional.layer_norm"><code>F.layer_norm</code></a>
 computes the normalization and applies the learned parameters in one call. The
 weight is initialized with
-<a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor#max.experimental.tensor.Tensor.ones"><code>Tensor.ones</code></a>
+<a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor/#max.experimental.tensor.Tensor.ones"><code>Tensor.ones</code></a>
 and the bias with
-<a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor#max.experimental.tensor.Tensor.zeros"><code>Tensor.zeros</code></a>:</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">gpt2.py</span></div>
-<pre><code class="language-python">class LayerNorm(Module):  # type: ignore[type-arg]
+<a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor/#max.experimental.tensor.Tensor.zeros"><code>Tensor.zeros</code></a>:</p>
+<pre><code class="language-python:gpt2.py">class LayerNorm(Module):  # type: ignore[type-arg]
     def __init__(self, dim: DimLike, *, eps: float = 1e-5) -&gt; None:
         self.eps = eps
         self.weight = Tensor.ones([dim])

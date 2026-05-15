@@ -197,20 +197,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <style>
-div.codeblock_filename_container + pre {
-  margin-top: 0;
-}
-
-span.codeblock_filename_inner {
-  border-radius: 0.4rem 0.4rem 0 0;
-  padding: 0.6rem 1rem 0.6rem 1rem;
-  font-family: var(--mono-font) !important;
-  font-size: var(--code-font-size);
-}
-
-</style>
-<h1 id="build-an-llm-from-scratch-in-max"><a class="header" href="#build-an-llm-from-scratch-in-max">Build an LLM from scratch in MAX</a></h1>
+                        <h1 id="build-an-llm-from-scratch-in-max"><a class="header" href="#build-an-llm-from-scratch-in-max">Build an LLM from scratch in MAX</a></h1>
 <p>Transformer models power today’s most impactful AI applications, from language
 models like ChatGPT to code generation tools like GitHub Copilot. If you want
 to understand what’s actually happening when you call an inference API, or you
@@ -250,6 +237,13 @@ environment.</p>
 you write a line of model code. From there, you’ll build the transformer block
 component by component, assemble those components into the full model, and
 finish by learning how inference and serving work with <code>max serve</code>.</p>
+<div class="note">
+<p><strong>Interactive companion notebook</strong> — prefer to learn by running code? Open
+<code>notebooks/tutorial.ipynb</code> with <code>pixi run notebook</code>. Each section maps to a
+chapter here: you can inspect real tensor shapes, see activation visualizations,
+and generate text from pretrained weights, all without leaving JupyterLab. Read
+the chapters for the why; run the notebook for the how.</p>
+</div>
 <div class="table-wrapper"><table><thead><tr><th>Chapter</th><th>What you’ll learn</th></tr></thead><tbody>
 <tr><td><a href="./setup.html">Project setup</a></td><td>Install MAX and clone the repository</td></tr>
 <tr><td><a href="./serve_first.html">Run the model</a></td><td>Serve GPT-2 and call the endpoint</td></tr>

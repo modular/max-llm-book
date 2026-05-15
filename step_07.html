@@ -197,20 +197,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <style>
-div.codeblock_filename_container + pre {
-  margin-top: 0;
-}
-
-span.codeblock_filename_inner {
-  border-radius: 0.4rem 0.4rem 0 0;
-  padding: 0.6rem 1rem 0.6rem 1rem;
-  font-family: var(--mono-font) !important;
-  font-size: var(--code-font-size);
-}
-
-</style>
-<h1 id="stack-transformer-blocks"><a class="header" href="#stack-transformer-blocks">Stack transformer blocks</a></h1>
+                        <h1 id="stack-transformer-blocks"><a class="header" href="#stack-transformer-blocks">Stack transformer blocks</a></h1>
 <div class="note">
 <p>Stack 12 transformer blocks with embeddings and final normalization to create
 the complete body of the GPT-2 model.</p>
@@ -240,7 +227,7 @@ chains the 12 transformer blocks in order, passing each block’s output to the
 next. The <code>*</code> in
 <code>Sequential(*(GPT2Block(config) for _ in range(config.n_layer)))</code> unpacks the
 generator as positional arguments.</p>
-<p><a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor#max.experimental.tensor.Tensor.arange"><code>Tensor.arange</code></a>
+<p><a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor/#max.experimental.tensor.Tensor.arange"><code>Tensor.arange</code></a>
 generates position indices <code>[0, 1, ..., seq_length-1]</code> matching the input’s
 dtype and device so they’re compatible for embedding lookup.</p>
 <p><a href="https://docs.modular.com/max/api/python/generated/max.experimental.nn.Embedding/"><code>Embedding(vocab_size, dim)</code></a>
@@ -248,8 +235,7 @@ is used for both token and position embeddings.</p>
 <h2 id="maxgpt2model"><a class="header" href="#maxgpt2model">MaxGPT2Model</a></h2>
 <p><code>MaxGPT2Model</code> combines token embeddings, position embeddings, 12 transformer
 blocks, and final layer normalization into the complete model body:</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">gpt2.py</span></div>
-<pre><code class="language-python">class MaxGPT2Model(Module):  # type: ignore[type-arg]
+<pre><code class="language-python:gpt2.py">class MaxGPT2Model(Module):  # type: ignore[type-arg]
     def __init__(
         self,
         config: GPT2Config,

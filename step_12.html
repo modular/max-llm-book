@@ -197,20 +197,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <style>
-div.codeblock_filename_container + pre {
-  margin-top: 0;
-}
-
-span.codeblock_filename_inner {
-  border-radius: 0.4rem 0.4rem 0 0;
-  padding: 0.6rem 1rem 0.6rem 1rem;
-  font-family: var(--mono-font) !important;
-  font-size: var(--code-font-size);
-}
-
-</style>
-<h1 id="architecture-registration"><a class="header" href="#architecture-registration">Architecture registration</a></h1>
+                        <h1 id="architecture-registration"><a class="header" href="#architecture-registration">Architecture registration</a></h1>
 <div class="note">
 <p>How <code>arch.py</code> and <code>__init__.py</code> plug the serving package into <code>max serve</code>,
 and what each field in <code>SupportedArchitecture</code> controls.</p>
@@ -220,8 +207,7 @@ the package and reads the <code>ARCHITECTURES</code> list, which adds GPT-2 to i
 registry.</p>
 <h2 id="the-package-entry-point"><a class="header" href="#the-package-entry-point">The package entry point</a></h2>
 <p><code>__init__.py</code> states the contract:</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">__init__.py</span></div>
-<pre><code class="language-python">from .arch import gpt2_arch
+<pre><code class="language-python:__init__.py">from .arch import gpt2_arch
 
 ARCHITECTURES = [gpt2_arch]
 
@@ -229,11 +215,10 @@ __all__ = ["ARCHITECTURES", "gpt2_arch"]
 </code></pre>
 <h2 id="the-architecture-declaration"><a class="header" href="#the-architecture-declaration">The architecture declaration</a></h2>
 <p><code>arch.py</code> assembles the
-<a href="https://docs.modular.com/max/api/python/generated/max.pipelines.lib.SupportedArchitecture/"><code>SupportedArchitecture</code></a>
+<a href="https://docs.modular.com/max/api/python/generated/max.pipelines.lib.registry.SupportedArchitecture/"><code>SupportedArchitecture</code></a>
 that MAX registers. Each field tells the serving layer something it needs before
 a request arrives:</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">arch.py</span></div>
-<pre><code class="language-python">from __future__ import annotations
+<pre><code class="language-python:arch.py">from __future__ import annotations
 
 from max.graph.weights import WeightsFormat
 from max.interfaces import PipelineTask
@@ -274,7 +259,7 @@ to a conversion function. When MAX loads the safetensors checkpoint, it calls
 <code>weight_adapters.convert_safetensor_state_dict</code> to produce the layout
 <code>MaxGPT2LMHeadModel</code> expects.</p>
 <p><strong><code>tokenizer</code>:</strong> is
-<a href="https://docs.modular.com/max/api/python/generated/max.pipelines.lib.TextTokenizer/"><code>TextTokenizer</code></a>,
+<a href="https://docs.modular.com/max/api/python/generated/max.pipelines.TextTokenizer/"><code>TextTokenizer</code></a>,
 which wraps the Hugging Face tokenizer for the model. Before any token is
 processed, <code>max serve</code> calls it to convert the prompt to token IDs and, after
 generation, decode the output IDs back to text.</p>
@@ -308,7 +293,7 @@ subclass</li>
 <a href="https://docs.modular.com/max/api/python/generated/max.pipelines.lib.PipelineModelWithKVCache/"><code>PipelineModelWithKVCache</code></a>
 subclass</li>
 <li>Register the package as a
-<a href="https://docs.modular.com/max/api/python/generated/max.pipelines.lib.SupportedArchitecture/"><code>SupportedArchitecture</code></a>
+<a href="https://docs.modular.com/max/api/python/generated/max.pipelines.lib.registry.SupportedArchitecture/"><code>SupportedArchitecture</code></a>
 and pass <code>--custom-architectures</code> to <code>max serve</code></li>
 </ol>
 <p>Modern LLMs build on these same components with targeted refinements:</p>

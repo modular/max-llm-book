@@ -197,20 +197,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <style>
-div.codeblock_filename_container + pre {
-  margin-top: 0;
-}
-
-span.codeblock_filename_inner {
-  border-radius: 0.4rem 0.4rem 0 0;
-  padding: 0.6rem 1rem 0.6rem 1rem;
-  font-family: var(--mono-font) !important;
-  font-size: var(--code-font-size);
-}
-
-</style>
-<h1 id="feed-forward-network-mlp"><a class="header" href="#feed-forward-network-mlp">Feed-forward network (MLP)</a></h1>
+                        <h1 id="feed-forward-network-mlp"><a class="header" href="#feed-forward-network-mlp">Feed-forward network (MLP)</a></h1>
 <div class="note">
 <p>Build the feed-forward network, also known as a multilayer perceptron (MLP),
 that processes information after attention in each transformer block.</p>
@@ -245,10 +232,9 @@ pretrained weights in the final step.</p>
 <h2 id="gpt2mlp"><a class="header" href="#gpt2mlp">GPT2MLP</a></h2>
 <p><a href="https://docs.modular.com/max/api/python/generated/max.experimental.nn.Linear/"><code>Linear(in_dim, out_dim, bias=True)</code></a>
 applies <code>y = xW^T + b</code>. Both layers include bias terms.
-<a href="https://docs.modular.com/max/api/python/experimental.functional#max.experimental.functional.gelu"><code>F.gelu</code></a>
+<a href="https://docs.modular.com/max/api/python/experimental.functional/#max.experimental.functional.gelu"><code>F.gelu</code></a>
 applies the activation between them:</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">gpt2.py</span></div>
-<pre><code class="language-python">class GPT2MLP(Module):  # type: ignore[type-arg]
+<pre><code class="language-python:gpt2.py">class GPT2MLP(Module):  # type: ignore[type-arg]
     """Exact HuggingFace GPT-2 MLP structure"""
 
     def __init__(self, intermediate_size: int, config: GPT2Config) -&gt; None:

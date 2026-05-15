@@ -197,20 +197,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <style>
-div.codeblock_filename_container + pre {
-  margin-top: 0;
-}
-
-span.codeblock_filename_inner {
-  border-radius: 0.4rem 0.4rem 0 0;
-  padding: 0.6rem 1rem 0.6rem 1rem;
-  font-family: var(--mono-font) !important;
-  font-size: var(--code-font-size);
-}
-
-</style>
-<h1 id="set-up-the-project"><a class="header" href="#set-up-the-project">Set up the project</a></h1>
+                        <h1 id="set-up-the-project"><a class="header" href="#set-up-the-project">Set up the project</a></h1>
 <p>This page walks you through cloning the repository and installing the
 dependencies you need to follow the tutorial.</p>
 <h2 id="prerequisites"><a class="header" href="#prerequisites">Prerequisites</a></h2>
@@ -221,21 +208,18 @@ dependencies you need to follow the tutorial.</p>
 explain the specifics).</li>
 </ul>
 <p>Check the
-<a href="https://docs.modular.com/max/packages#system-requirements">MAX system requirements</a>
+<a href="https://docs.modular.com/max/packages/#system-requirements">MAX system requirements</a>
 to confirm your platform is supported before continuing.</p>
 <h2 id="install"><a class="header" href="#install">Install</a></h2>
 <p>Clone <a href="https://github.com/modular/max-llm-book">the GitHub repository</a> and
 navigate to it:</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">sh</span></div>
 <pre><code class="language-sh">git clone https://github.com/modular/max-llm-book
 cd max-llm-book
 </code></pre>
 <p>Install <a href="https://pixi.sh/dev/">pixi</a>:</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">sh</span></div>
 <pre><code class="language-sh">curl -fsSL https://pixi.sh/install.sh | sh
 </code></pre>
 <p>Install the tutorial’s dependencies:</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">sh</span></div>
 <pre><code class="language-sh">pixi install
 </code></pre>
 <p><strong>Next</strong>: <a href="./serve_first.html">Run the model</a> serves GPT-2 and calls the

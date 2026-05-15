@@ -197,20 +197,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <style>
-div.codeblock_filename_container + pre {
-  margin-top: 0;
-}
-
-span.codeblock_filename_inner {
-  border-radius: 0.4rem 0.4rem 0 0;
-  padding: 0.6rem 1rem 0.6rem 1rem;
-  font-family: var(--mono-font) !important;
-  font-size: var(--code-font-size);
-}
-
-</style>
-<h1 id="language-model-head"><a class="header" href="#language-model-head">Language model head</a></h1>
+                        <h1 id="language-model-head"><a class="header" href="#language-model-head">Language model head</a></h1>
 <div class="note">
 <p>Add the final linear projection layer that converts hidden states to vocabulary
 logits for next-token prediction.</p>
@@ -247,8 +234,7 @@ highest-scoring token is the model’s top prediction.</p>
 <h2 id="maxgpt2lmheadmodel"><a class="header" href="#maxgpt2lmheadmodel">MaxGPT2LMHeadModel</a></h2>
 <p><code>MaxGPT2LMHeadModel</code> wraps <code>MaxGPT2Model</code> with a single linear projection from
 hidden states to vocabulary logits:</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">gpt2.py</span></div>
-<pre><code class="language-python">class MaxGPT2LMHeadModel(Module):  # type: ignore[type-arg]
+<pre><code class="language-python:gpt2.py">class MaxGPT2LMHeadModel(Module):  # type: ignore[type-arg]
     """Exact HuggingFace GPT-2 model structure"""
 
     def __init__(self, config: GPT2Config) -&gt; None:

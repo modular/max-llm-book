@@ -197,20 +197,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <style>
-div.codeblock_filename_container + pre {
-  margin-top: 0;
-}
-
-span.codeblock_filename_inner {
-  border-radius: 0.4rem 0.4rem 0 0;
-  padding: 0.6rem 1rem 0.6rem 1rem;
-  font-family: var(--mono-font) !important;
-  font-size: var(--code-font-size);
-}
-
-</style>
-<h1 id="model-configuration"><a class="header" href="#model-configuration">Model configuration</a></h1>
+                        <h1 id="model-configuration"><a class="header" href="#model-configuration">Model configuration</a></h1>
 <div class="note">
 <p>Define the GPT-2 model architecture parameters using a configuration class.</p>
 </div>
@@ -254,8 +241,7 @@ medium, large, XL), each scaling these parameters up.</p>
 <a href="https://docs.python.org/3/library/dataclasses.html"><code>@dataclass</code></a> decorator
 eliminates boilerplate. Instead of writing <code>__init__</code> manually, you declare
 fields with type hints and default values:</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">gpt2.py</span></div>
-<pre><code class="language-python">@dataclass
+<pre><code class="language-python:gpt2.py">@dataclass
 class GPT2Config:
     """GPT-2 configuration matching HuggingFace"""
 

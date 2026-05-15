@@ -197,20 +197,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <style>
-div.codeblock_filename_container + pre {
-  margin-top: 0;
-}
-
-span.codeblock_filename_inner {
-  border-radius: 0.4rem 0.4rem 0 0;
-  padding: 0.6rem 1rem 0.6rem 1rem;
-  font-family: var(--mono-font) !important;
-  font-size: var(--code-font-size);
-}
-
-</style>
-<h1 id="multi-head-attention"><a class="header" href="#multi-head-attention">Multi-head attention</a></h1>
+                        <h1 id="multi-head-attention"><a class="header" href="#multi-head-attention">Multi-head attention</a></h1>
 <div class="note">
 <p>Implement scaled dot-product
 <a href="https://docs.modular.com/glossary/ai/attention/">attention</a> with multiple
@@ -252,8 +239,7 @@ projection) match Hugging Face’s GPT-2 implementation for weight loading.</p>
 <p><code>GPT2MultiHeadAttention</code> combines the single <code>c_attn</code> projection, the split
 into Q/K/V heads, scaled dot-product attention with the causal mask, and the
 output projection <code>c_proj</code> into one class:</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">gpt2.py</span></div>
-<pre><code class="language-python">class GPT2MultiHeadAttention(Module):  # type: ignore[type-arg]
+<pre><code class="language-python:gpt2.py">class GPT2MultiHeadAttention(Module):  # type: ignore[type-arg]
     """Exact HuggingFace GPT-2 attention structure"""
 
     def __init__(self, config: GPT2Config) -&gt; None:

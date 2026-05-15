@@ -197,20 +197,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <style>
-div.codeblock_filename_container + pre {
-  margin-top: 0;
-}
-
-span.codeblock_filename_inner {
-  border-radius: 0.4rem 0.4rem 0 0;
-  padding: 0.6rem 1rem 0.6rem 1rem;
-  font-family: var(--mono-font) !important;
-  font-size: var(--code-font-size);
-}
-
-</style>
-<h1 id="pipeline-model"><a class="header" href="#pipeline-model">Pipeline model</a></h1>
+                        <h1 id="pipeline-model"><a class="header" href="#pipeline-model">Pipeline model</a></h1>
 <div class="note">
 <p>How <code>model.py</code> loads the compiled GPT-2 graph, runs it on each decode step,
 and manages the growing token sequence.</p>
@@ -227,24 +214,23 @@ and
 layer in <code>MaxGPT2LMHeadModel</code> allocates tensors when constructed. Without the
 lazy context, those allocations fill with random values and are immediately
 discarded when the checkpoint loads.
-<a href="https://docs.modular.com/max/api/python/generated/max.experimental.functional#max.experimental.functional.lazy"><code>F.lazy()</code></a>
+<a href="https://docs.modular.com/max/api/python/experimental.functional/#max.experimental.functional.lazy"><code>F.lazy()</code></a>
 defers all allocation inside the block: layers are declared, but nothing is
 allocated until <code>compile()</code> runs.</p>
-<p><a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor#max.experimental.tensor.default_device"><code>default_device()</code></a>
+<p><a href="https://docs.modular.com/max/api/python/experimental.tensor/#max.experimental.tensor.default_device"><code>default_device()</code></a>
 and
-<a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor#max.experimental.tensor.default_dtype"><code>default_dtype()</code></a>
+<a href="https://docs.modular.com/max/api/python/experimental.tensor/#max.experimental.tensor.default_dtype"><code>default_dtype()</code></a>
 set context variables that module construction code reads inside the lazy block,
 so layers pick up the right device and numeric type without being passed them
 explicitly.</p>
-<p><a href="https://docs.modular.com/max/api/python/generated/max.experimental.nn.Module#max.experimental.nn.Module.compile"><code>compile()</code></a>
+<p><a href="https://docs.modular.com/max/api/python/generated/max.experimental.nn.Module/#max.experimental.nn.Module.compile"><code>compile()</code></a>
 runs outside the lazy block. Loading safetensors buffers inside
-<a href="https://docs.modular.com/max/api/python/generated/max.experimental.functional#max.experimental.functional.lazy"><code>F.lazy()</code></a>
+<a href="https://docs.modular.com/max/api/python/experimental.functional/#max.experimental.functional.lazy"><code>F.lazy()</code></a>
 triggers the same memory alignment error that <code>_to_numpy()</code> in
 <code>weight_adapters.py</code> solves by copying into a fresh array. Passing
 <code>weights=state_dict</code> to <code>compile()</code> loads and compiles in one step after the
 lazy context closes:</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">model.py</span></div>
-<pre><code class="language-python">    def _load_model(
+<pre><code class="language-python:model.py">    def _load_model(
         self,
         weights: Weights,
         adapter: WeightsAdapter | None,
@@ -270,15 +256,14 @@ lazy context closes:</p>
 <p><code>execute()</code> receives a <code>GPT2Inputs</code>, a dataclass with one field: <code>tokens</code>,
 a <code>[1, seq_len]</code> int64 <code>Buffer</code> containing all token IDs for the current
 sequence.</p>
-<p><a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor#max.experimental.tensor.Tensor.from_dlpack"><code>Tensor.from_dlpack()</code></a>
+<p><a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor/#max.experimental.tensor.Tensor.from_dlpack"><code>Tensor.from_dlpack()</code></a>
 converts the driver <code>Buffer</code> to a MAX <code>Tensor</code> without copying. The compiled
 model returns <code>[1, seq_len, vocab_size]</code>: one logit vector per position. Only
 the final position’s logits are needed to sample the next token, so the output
 is narrowed to <code>[1, vocab_size]</code> before being handed to MAX’s serving
 infrastructure, which handles sampling: temperature scaling, top-p filtering,
 and token selection:</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">model.py</span></div>
-<pre><code class="language-python">    def execute(self, model_inputs: ModelInputs) -&gt; ModelOutputs:
+<pre><code class="language-python:model.py">    def execute(self, model_inputs: ModelInputs) -&gt; ModelOutputs:
         assert isinstance(model_inputs, GPT2Inputs)
 
         input_tensor = Tensor.from_dlpack(model_inputs.tokens).to(
@@ -304,8 +289,7 @@ full token history from position 0. Generating 30 tokens from a 10-token prompt
 means the 11th decode step processes 20 tokens, the 12th processes 21, and so
 on. The implementation stays simple at the cost of efficiency: compute grows
 linearly with sequence length.</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">model.py</span></div>
-<pre><code class="language-python">    def prepare_initial_token_inputs(
+<pre><code class="language-python:model.py">    def prepare_initial_token_inputs(
         self,
         replica_batches: Sequence[Sequence[TextContext]],
         kv_cache_inputs: KVCacheInputs[Buffer, Buffer] | None = None,

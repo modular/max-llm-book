@@ -198,20 +198,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <style>
-div.codeblock_filename_container + pre {
-  margin-top: 0;
-}
-
-span.codeblock_filename_inner {
-  border-radius: 0.4rem 0.4rem 0 0;
-  padding: 0.6rem 1rem 0.6rem 1rem;
-  font-family: var(--mono-font) !important;
-  font-size: var(--code-font-size);
-}
-
-</style>
-<h1 id="build-an-llm-from-scratch-in-max"><a class="header" href="#build-an-llm-from-scratch-in-max">Build an LLM from scratch in MAX</a></h1>
+                        <h1 id="build-an-llm-from-scratch-in-max"><a class="header" href="#build-an-llm-from-scratch-in-max">Build an LLM from scratch in MAX</a></h1>
 <p>Transformer models power today’s most impactful AI applications, from language
 models like ChatGPT to code generation tools like GitHub Copilot. If you want
 to understand what’s actually happening when you call an inference API, or you
@@ -251,6 +238,13 @@ environment.</p>
 you write a line of model code. From there, you’ll build the transformer block
 component by component, assemble those components into the full model, and
 finish by learning how inference and serving work with <code>max serve</code>.</p>
+<div class="note">
+<p><strong>Interactive companion notebook</strong> — prefer to learn by running code? Open
+<code>notebooks/tutorial.ipynb</code> with <code>pixi run notebook</code>. Each section maps to a
+chapter here: you can inspect real tensor shapes, see activation visualizations,
+and generate text from pretrained weights, all without leaving JupyterLab. Read
+the chapters for the why; run the notebook for the how.</p>
+</div>
 <div class="table-wrapper"><table><thead><tr><th>Chapter</th><th>What you’ll learn</th></tr></thead><tbody>
 <tr><td><a href="./setup.html">Project setup</a></td><td>Install MAX and clone the repository</td></tr>
 <tr><td><a href="./serve_first.html">Run the model</a></td><td>Serve GPT-2 and call the endpoint</td></tr>
@@ -270,20 +264,7 @@ finish by learning how inference and serving work with <code>max serve</code>.</
 </div>
 <p>The code is pre-written in the repository. Training is not in scope.</p>
 <p>Start with <a href="./setup.html">Project setup</a> to get your environment ready.</p>
-<div style="break-before: page; page-break-before: always;"></div><style>
-div.codeblock_filename_container + pre {
-  margin-top: 0;
-}
-
-span.codeblock_filename_inner {
-  border-radius: 0.4rem 0.4rem 0 0;
-  padding: 0.6rem 1rem 0.6rem 1rem;
-  font-family: var(--mono-font) !important;
-  font-size: var(--code-font-size);
-}
-
-</style>
-<h1 id="set-up-the-project"><a class="header" href="#set-up-the-project">Set up the project</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="set-up-the-project"><a class="header" href="#set-up-the-project">Set up the project</a></h1>
 <p>This page walks you through cloning the repository and installing the
 dependencies you need to follow the tutorial.</p>
 <h2 id="prerequisites"><a class="header" href="#prerequisites">Prerequisites</a></h2>
@@ -294,39 +275,23 @@ dependencies you need to follow the tutorial.</p>
 explain the specifics).</li>
 </ul>
 <p>Check the
-<a href="https://docs.modular.com/max/packages#system-requirements">MAX system requirements</a>
+<a href="https://docs.modular.com/max/packages/#system-requirements">MAX system requirements</a>
 to confirm your platform is supported before continuing.</p>
 <h2 id="install"><a class="header" href="#install">Install</a></h2>
 <p>Clone <a href="https://github.com/modular/max-llm-book">the GitHub repository</a> and
 navigate to it:</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">sh</span></div>
 <pre><code class="language-sh">git clone https://github.com/modular/max-llm-book
 cd max-llm-book
 </code></pre>
 <p>Install <a href="https://pixi.sh/dev/">pixi</a>:</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">sh</span></div>
 <pre><code class="language-sh">curl -fsSL https://pixi.sh/install.sh | sh
 </code></pre>
 <p>Install the tutorial’s dependencies:</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">sh</span></div>
 <pre><code class="language-sh">pixi install
 </code></pre>
 <p><strong>Next</strong>: <a href="./serve_first.html">Run the model</a> serves GPT-2 and calls the
 endpoint before you write a line of model code.</p>
-<div style="break-before: page; page-break-before: always;"></div><style>
-div.codeblock_filename_container + pre {
-  margin-top: 0;
-}
-
-span.codeblock_filename_inner {
-  border-radius: 0.4rem 0.4rem 0 0;
-  padding: 0.6rem 1rem 0.6rem 1rem;
-  font-family: var(--mono-font) !important;
-  font-size: var(--code-font-size);
-}
-
-</style>
-<h1 id="run-the-model"><a class="header" href="#run-the-model">Run the model</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="run-the-model"><a class="header" href="#run-the-model">Run the model</a></h1>
 <p>Before building GPT-2 from scratch, run it. The <code>max serve</code> command exposes an
 OpenAI-compatible HTTP API for models you run through it, including this
 tutorial’s custom GPT-2. That differs from wiring PyTorch or Hugging Face
@@ -337,25 +302,21 @@ compilation, and weight loading by hand.</p>
 explain every component that makes it work.</p>
 <h2 id="start-the-server"><a class="header" href="#start-the-server">Start the server</a></h2>
 <p>Start the server with:</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">sh</span></div>
 <pre><code class="language-sh">pixi run serve
 </code></pre>
 <p>That command runs:</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">sh</span></div>
 <pre><code class="language-sh">max serve --custom-architectures gpt2_arch --model gpt2
 </code></pre>
 <p>On the first run, MAX downloads the pretrained GPT-2 weights from Hugging Face
 (≈ 548 MB) and compiles the model. Your first run might take a minute or two;
 later runs use cached weights and start faster. When the server is ready you’ll
 see:</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">text</span></div>
 <pre><code class="language-text">Server ready on http://0.0.0.0:8000 (Press CTRL+C to quit)
 </code></pre>
 <h2 id="query-the-model"><a class="header" href="#query-the-model">Query the model</a></h2>
 <p>GPT-2 is a <em>completion</em> model, not a chat model. It continues text rather than
 answering questions: pass it the start of a sentence and it generates what
 comes next. Use the <code>/v1/completions</code> endpoint with a <code>prompt</code> field:</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">sh</span></div>
 <pre><code class="language-sh">curl -X POST http://localhost:8000/v1/completions \
   -H "Content-Type: application/json" \
   -d '{
@@ -369,7 +330,6 @@ comes next. Use the <code>/v1/completions</code> endpoint with a <code>prompt</c
 deterministic output. Try values between 0.7 and 1.0 for more varied
 completions. Or query with the Python <code>openai</code> client (requires
 <code>pip install openai</code>):</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">python</span></div>
 <pre><code class="language-python">from openai import OpenAI
 
 client = OpenAI(base_url="http://localhost:8000/v1", api_key="EMPTY")
@@ -389,7 +349,6 @@ print(response.choices[0].text)
 runs the token IDs through the compiled model graph, and samples the next token
 from the output logits. It repeats that until <code>max_tokens</code> is reached, then
 returns the detokenized completion.</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">text</span></div>
 <pre><code class="language-text">gpt2_arch/
 ├── __init__.py        # registers the architecture with max serve
 ├── arch.py            # declares the supported model name and config
@@ -403,20 +362,7 @@ returns the detokenized completion.</p>
 scratch, component by component: the model definition, weight loading, and the
 package that connects everything to <code>max serve</code>. Start with
 <a href="./step_01.html">Model configuration</a>.</p>
-<div style="break-before: page; page-break-before: always;"></div><style>
-div.codeblock_filename_container + pre {
-  margin-top: 0;
-}
-
-span.codeblock_filename_inner {
-  border-radius: 0.4rem 0.4rem 0 0;
-  padding: 0.6rem 1rem 0.6rem 1rem;
-  font-family: var(--mono-font) !important;
-  font-size: var(--code-font-size);
-}
-
-</style>
-<h1 id="model-configuration"><a class="header" href="#model-configuration">Model configuration</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="model-configuration"><a class="header" href="#model-configuration">Model configuration</a></h1>
 <div class="note">
 <p>Define the GPT-2 model architecture parameters using a configuration class.</p>
 </div>
@@ -460,8 +406,7 @@ medium, large, XL), each scaling these parameters up.</p>
 <a href="https://docs.python.org/3/library/dataclasses.html"><code>@dataclass</code></a> decorator
 eliminates boilerplate. Instead of writing <code>__init__</code> manually, you declare
 fields with type hints and default values:</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">gpt2.py</span></div>
-<pre><code class="language-python">@dataclass
+<pre><code class="language-python:gpt2.py">@dataclass
 class GPT2Config:
     """GPT-2 configuration matching HuggingFace"""
 
@@ -483,20 +428,7 @@ other components.</p>
 from this config at serving time to calculate KV cache dimensions.</p>
 <p><strong>Next</strong>: <a href="./step_02.html">Feed-forward network</a> implements the MLP
 that processes information after attention in each transformer block.</p>
-<div style="break-before: page; page-break-before: always;"></div><style>
-div.codeblock_filename_container + pre {
-  margin-top: 0;
-}
-
-span.codeblock_filename_inner {
-  border-radius: 0.4rem 0.4rem 0 0;
-  padding: 0.6rem 1rem 0.6rem 1rem;
-  font-family: var(--mono-font) !important;
-  font-size: var(--code-font-size);
-}
-
-</style>
-<h1 id="feed-forward-network-mlp"><a class="header" href="#feed-forward-network-mlp">Feed-forward network (MLP)</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="feed-forward-network-mlp"><a class="header" href="#feed-forward-network-mlp">Feed-forward network (MLP)</a></h1>
 <div class="note">
 <p>Build the feed-forward network, also known as a multilayer perceptron (MLP),
 that processes information after attention in each transformer block.</p>
@@ -531,10 +463,9 @@ pretrained weights in the final step.</p>
 <h2 id="gpt2mlp"><a class="header" href="#gpt2mlp">GPT2MLP</a></h2>
 <p><a href="https://docs.modular.com/max/api/python/generated/max.experimental.nn.Linear/"><code>Linear(in_dim, out_dim, bias=True)</code></a>
 applies <code>y = xW^T + b</code>. Both layers include bias terms.
-<a href="https://docs.modular.com/max/api/python/experimental.functional#max.experimental.functional.gelu"><code>F.gelu</code></a>
+<a href="https://docs.modular.com/max/api/python/experimental.functional/#max.experimental.functional.gelu"><code>F.gelu</code></a>
 applies the activation between them:</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">gpt2.py</span></div>
-<pre><code class="language-python">class GPT2MLP(Module):  # type: ignore[type-arg]
+<pre><code class="language-python:gpt2.py">class GPT2MLP(Module):  # type: ignore[type-arg]
     """Exact HuggingFace GPT-2 MLP structure"""
 
     def __init__(self, intermediate_size: int, config: GPT2Config) -&gt; None:
@@ -555,23 +486,10 @@ intermediate dimension exists only inside the MLP; the transformer block sees
 the same shape going in and coming out.</p>
 <p><strong>Next</strong>: <a href="./step_03.html">Causal masking</a> prevents tokens
 from attending to future positions during autoregressive generation.</p>
-<div style="break-before: page; page-break-before: always;"></div><style>
-div.codeblock_filename_container + pre {
-  margin-top: 0;
-}
-
-span.codeblock_filename_inner {
-  border-radius: 0.4rem 0.4rem 0 0;
-  padding: 0.6rem 1rem 0.6rem 1rem;
-  font-family: var(--mono-font) !important;
-  font-size: var(--code-font-size);
-}
-
-</style>
-<h1 id="causal-masking"><a class="header" href="#causal-masking">Causal masking</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="causal-masking"><a class="header" href="#causal-masking">Causal masking</a></h1>
 <div class="note">
 <p>Create attention masks to prevent the model from <em>seeing</em> future tokens during
-<a href="https://docs.modular.com/glossary/ai/autoregression">autoregressive</a>
+<a href="https://docs.modular.com/glossary/ai/autoregression/">autoregressive</a>
 generation.</p>
 </div>
 <p>Self-attention, without any constraint, lets every token attend to every other
@@ -619,8 +537,7 @@ graph operation that can be compiled and optimized.</p>
 mask shape, then uses <code>F.band_part</code> to zero out the upper triangle
 (<code>num_upper=0, exclude=True</code> keeps zeros on and below the diagonal, <code>-inf</code>
 above):</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">gpt2.py</span></div>
-<pre><code class="language-python">@F.functional
+<pre><code class="language-python:gpt2.py">@F.functional
 def causal_mask(
     sequence_length: DimLike,
     num_tokens: DimLike,
@@ -645,20 +562,7 @@ symbolic dimension arithmetic, which lets the compiled graph handle variable
 sequence lengths without recompilation.</p>
 <p><strong>Next</strong>: <a href="./step_04.html">Multi-head attention</a> uses this mask inside the
 attention mechanism.</p>
-<div style="break-before: page; page-break-before: always;"></div><style>
-div.codeblock_filename_container + pre {
-  margin-top: 0;
-}
-
-span.codeblock_filename_inner {
-  border-radius: 0.4rem 0.4rem 0 0;
-  padding: 0.6rem 1rem 0.6rem 1rem;
-  font-family: var(--mono-font) !important;
-  font-size: var(--code-font-size);
-}
-
-</style>
-<h1 id="multi-head-attention"><a class="header" href="#multi-head-attention">Multi-head attention</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="multi-head-attention"><a class="header" href="#multi-head-attention">Multi-head attention</a></h1>
 <div class="note">
 <p>Implement scaled dot-product
 <a href="https://docs.modular.com/glossary/ai/attention/">attention</a> with multiple
@@ -700,8 +604,7 @@ projection) match Hugging Face’s GPT-2 implementation for weight loading.</p>
 <p><code>GPT2MultiHeadAttention</code> combines the single <code>c_attn</code> projection, the split
 into Q/K/V heads, scaled dot-product attention with the causal mask, and the
 output projection <code>c_proj</code> into one class:</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">gpt2.py</span></div>
-<pre><code class="language-python">class GPT2MultiHeadAttention(Module):  # type: ignore[type-arg]
+<pre><code class="language-python:gpt2.py">class GPT2MultiHeadAttention(Module):  # type: ignore[type-arg]
     """Exact HuggingFace GPT-2 attention structure"""
 
     def __init__(self, config: GPT2Config) -&gt; None:
@@ -783,20 +686,7 @@ handle. The result is a <code>[batch, seq_length, 768]</code> tensor where every
 has attended to all earlier positions across all 12 heads simultaneously.</p>
 <p><strong>Next</strong>: <a href="./step_05.html">Layer normalization</a> normalizes activations before
 each sublayer in the transformer block.</p>
-<div style="break-before: page; page-break-before: always;"></div><style>
-div.codeblock_filename_container + pre {
-  margin-top: 0;
-}
-
-span.codeblock_filename_inner {
-  border-radius: 0.4rem 0.4rem 0 0;
-  padding: 0.6rem 1rem 0.6rem 1rem;
-  font-family: var(--mono-font) !important;
-  font-size: var(--code-font-size);
-}
-
-</style>
-<h1 id="layer-normalization"><a class="header" href="#layer-normalization">Layer normalization</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="layer-normalization"><a class="header" href="#layer-normalization">Layer normalization</a></h1>
 <div class="note">
 <p>Implement layer normalization to keep activations in a stable range throughout
 the network.</p>
@@ -819,7 +709,6 @@ pretrained weights were optimized assuming normalized inputs at each sublayer.
 Skipping it would cause activations to be in completely different ranges than
 what the model learned, producing poor or nonsensical output.</p>
 <h2 id="the-normalization-formula"><a class="header" href="#the-normalization-formula">The normalization formula</a></h2>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">math</span></div>
 <pre><code class="language-math">output = weight * (x - mean) / sqrt(variance + epsilon) + bias
 </code></pre>
 <p>The mean and variance are computed across all features in each example.
@@ -827,14 +716,13 @@ what the model learned, producing poor or nonsensical output.</p>
 learned <code>weight</code> scales the normalized result and <code>bias</code> shifts it, initialized
 to ones and zeros so the initial transformation is identity.</p>
 <h2 id="layernorm"><a class="header" href="#layernorm">LayerNorm</a></h2>
-<p><a href="https://docs.modular.com/max/api/python/experimental.functional#max.experimental.functional.layer_norm"><code>F.layer_norm</code></a>
+<p><a href="https://docs.modular.com/max/api/python/experimental.functional/#max.experimental.functional.layer_norm"><code>F.layer_norm</code></a>
 computes the normalization and applies the learned parameters in one call. The
 weight is initialized with
-<a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor#max.experimental.tensor.Tensor.ones"><code>Tensor.ones</code></a>
+<a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor/#max.experimental.tensor.Tensor.ones"><code>Tensor.ones</code></a>
 and the bias with
-<a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor#max.experimental.tensor.Tensor.zeros"><code>Tensor.zeros</code></a>:</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">gpt2.py</span></div>
-<pre><code class="language-python">class LayerNorm(Module):  # type: ignore[type-arg]
+<a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor/#max.experimental.tensor.Tensor.zeros"><code>Tensor.zeros</code></a>:</p>
+<pre><code class="language-python:gpt2.py">class LayerNorm(Module):  # type: ignore[type-arg]
     def __init__(self, dim: DimLike, *, eps: float = 1e-5) -&gt; None:
         self.eps = eps
         self.weight = Tensor.ones([dim])
@@ -852,20 +740,7 @@ bias parameters (one applied before attention, one before the MLP), so the
 model can adjust how aggressively it normalizes at each sublayer.</p>
 <p><strong>Next</strong>: <a href="./step_06.html">Transformer block</a> combines attention, MLP, layer
 normalization, and residual connections into a complete transformer block.</p>
-<div style="break-before: page; page-break-before: always;"></div><style>
-div.codeblock_filename_container + pre {
-  margin-top: 0;
-}
-
-span.codeblock_filename_inner {
-  border-radius: 0.4rem 0.4rem 0 0;
-  padding: 0.6rem 1rem 0.6rem 1rem;
-  font-family: var(--mono-font) !important;
-  font-size: var(--code-font-size);
-}
-
-</style>
-<h1 id="transformer-block"><a class="header" href="#transformer-block">Transformer block</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="transformer-block"><a class="header" href="#transformer-block">Transformer block</a></h1>
 <div class="note">
 <p>Combine attention, MLP, layer normalization, and residual connections into a
 complete transformer block.</p>
@@ -879,7 +754,6 @@ layers to abstract semantic understanding in later layers.</p>
 <h2 id="the-pre-norm-pattern"><a class="header" href="#the-pre-norm-pattern">The pre-norm pattern</a></h2>
 <p>Each sublayer follows the same structure: normalize first, apply the sublayer,
 then add the original input back:</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">text</span></div>
 <pre><code class="language-text">x = x + sublayer(layer_norm(x))
 </code></pre>
 <p>This is called pre-normalization. GPT-2 uses it because normalizing before each
@@ -901,8 +775,7 @@ exactly. This naming is required for loading pretrained weights.</p>
 <h2 id="gpt2block"><a class="header" href="#gpt2block">GPT2Block</a></h2>
 <p><code>GPT2Block</code> wires the four components (<code>ln_1</code>, <code>attn</code>, <code>ln_2</code>, <code>mlp</code>) with
 pre-norm and residual connections in two passes:</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">gpt2.py</span></div>
-<pre><code class="language-python">class GPT2Block(Module):  # type: ignore[type-arg]
+<pre><code class="language-python:gpt2.py">class GPT2Block(Module):  # type: ignore[type-arg]
     """Exact HuggingFace GPT-2 transformer block structure"""
 
     def __init__(self, config: GPT2Config) -&gt; None:
@@ -937,20 +810,7 @@ and output shapes are identical, which is what makes stacking 12 of them
 possible.</p>
 <p><strong>Next</strong>: <a href="./step_07.html">Stack transformer blocks</a> stacks 12 of these blocks
 with embeddings to create the main body of the GPT-2 model.</p>
-<div style="break-before: page; page-break-before: always;"></div><style>
-div.codeblock_filename_container + pre {
-  margin-top: 0;
-}
-
-span.codeblock_filename_inner {
-  border-radius: 0.4rem 0.4rem 0 0;
-  padding: 0.6rem 1rem 0.6rem 1rem;
-  font-family: var(--mono-font) !important;
-  font-size: var(--code-font-size);
-}
-
-</style>
-<h1 id="stack-transformer-blocks"><a class="header" href="#stack-transformer-blocks">Stack transformer blocks</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="stack-transformer-blocks"><a class="header" href="#stack-transformer-blocks">Stack transformer blocks</a></h1>
 <div class="note">
 <p>Stack 12 transformer blocks with embeddings and final normalization to create
 the complete body of the GPT-2 model.</p>
@@ -980,7 +840,7 @@ chains the 12 transformer blocks in order, passing each block’s output to the
 next. The <code>*</code> in
 <code>Sequential(*(GPT2Block(config) for _ in range(config.n_layer)))</code> unpacks the
 generator as positional arguments.</p>
-<p><a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor#max.experimental.tensor.Tensor.arange"><code>Tensor.arange</code></a>
+<p><a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor/#max.experimental.tensor.Tensor.arange"><code>Tensor.arange</code></a>
 generates position indices <code>[0, 1, ..., seq_length-1]</code> matching the input’s
 dtype and device so they’re compatible for embedding lookup.</p>
 <p><a href="https://docs.modular.com/max/api/python/generated/max.experimental.nn.Embedding/"><code>Embedding(vocab_size, dim)</code></a>
@@ -988,8 +848,7 @@ is used for both token and position embeddings.</p>
 <h2 id="maxgpt2model"><a class="header" href="#maxgpt2model">MaxGPT2Model</a></h2>
 <p><code>MaxGPT2Model</code> combines token embeddings, position embeddings, 12 transformer
 blocks, and final layer normalization into the complete model body:</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">gpt2.py</span></div>
-<pre><code class="language-python">class MaxGPT2Model(Module):  # type: ignore[type-arg]
+<pre><code class="language-python:gpt2.py">class MaxGPT2Model(Module):  # type: ignore[type-arg]
     def __init__(
         self,
         config: GPT2Config,
@@ -1020,20 +879,7 @@ the sequence length is needed to generate position indices. The output is a
 position, ready for the language model head to project into vocabulary logits.</p>
 <p><strong>Next</strong>: <a href="./step_08.html">Language model head</a> adds the final projection layer
 that maps these 768-dimensional hidden states to vocabulary logits.</p>
-<div style="break-before: page; page-break-before: always;"></div><style>
-div.codeblock_filename_container + pre {
-  margin-top: 0;
-}
-
-span.codeblock_filename_inner {
-  border-radius: 0.4rem 0.4rem 0 0;
-  padding: 0.6rem 1rem 0.6rem 1rem;
-  font-family: var(--mono-font) !important;
-  font-size: var(--code-font-size);
-}
-
-</style>
-<h1 id="language-model-head"><a class="header" href="#language-model-head">Language model head</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="language-model-head"><a class="header" href="#language-model-head">Language model head</a></h1>
 <div class="note">
 <p>Add the final linear projection layer that converts hidden states to vocabulary
 logits for next-token prediction.</p>
@@ -1070,8 +916,7 @@ highest-scoring token is the model’s top prediction.</p>
 <h2 id="maxgpt2lmheadmodel"><a class="header" href="#maxgpt2lmheadmodel">MaxGPT2LMHeadModel</a></h2>
 <p><code>MaxGPT2LMHeadModel</code> wraps <code>MaxGPT2Model</code> with a single linear projection from
 hidden states to vocabulary logits:</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">gpt2.py</span></div>
-<pre><code class="language-python">class MaxGPT2LMHeadModel(Module):  # type: ignore[type-arg]
+<pre><code class="language-python:gpt2.py">class MaxGPT2LMHeadModel(Module):  # type: ignore[type-arg]
     """Exact HuggingFace GPT-2 model structure"""
 
     def __init__(self, config: GPT2Config) -&gt; None:
@@ -1092,20 +937,7 @@ but the name reflects its origin.</p>
 <code>MaxGPT2LMHeadModel</code> you’ve just read is what <code>max serve</code> runs.</p>
 <p><strong>Next</strong>: <a href="./step_09.html">Weight adaptation</a> covers the three mappings that
 load GPT-2’s Hugging Face checkpoint into MAX’s typed parameter interface.</p>
-<div style="break-before: page; page-break-before: always;"></div><style>
-div.codeblock_filename_container + pre {
-  margin-top: 0;
-}
-
-span.codeblock_filename_inner {
-  border-radius: 0.4rem 0.4rem 0 0;
-  padding: 0.6rem 1rem 0.6rem 1rem;
-  font-family: var(--mono-font) !important;
-  font-size: var(--code-font-size);
-}
-
-</style>
-<h1 id="weight-adaptation"><a class="header" href="#weight-adaptation">Weight adaptation</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="weight-adaptation"><a class="header" href="#weight-adaptation">Weight adaptation</a></h1>
 <div class="note">
 <p>How MAX’s typed parameter interface works, and the three mappings that load
 GPT-2’s Hugging Face checkpoint into it.</p>
@@ -1166,8 +998,7 @@ parameters. The model computes its own causal mask at runtime from
 <h2 id="the-adapter"><a class="header" href="#the-adapter">The adapter</a></h2>
 <p><code>convert_safetensor_state_dict()</code> applies all three operations in a single
 pass over the checkpoint keys:</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">weight_adapters.py</span></div>
-<pre><code class="language-python">from __future__ import annotations
+<pre><code class="language-python:weight_adapters.py">from __future__ import annotations
 
 import numpy as np
 from max.graph.weights import WeightData, Weights
@@ -1228,20 +1059,7 @@ matrices do.</p>
 <p><strong>Next</strong>: <a href="./step_10.html">KV cache configuration</a> covers <code>model_config.py</code>,
 which tells the serving layer how much cache to allocate before the first
 token runs.</p>
-<div style="break-before: page; page-break-before: always;"></div><style>
-div.codeblock_filename_container + pre {
-  margin-top: 0;
-}
-
-span.codeblock_filename_inner {
-  border-radius: 0.4rem 0.4rem 0 0;
-  padding: 0.6rem 1rem 0.6rem 1rem;
-  font-family: var(--mono-font) !important;
-  font-size: var(--code-font-size);
-}
-
-</style>
-<h1 id="kv-cache-configuration"><a class="header" href="#kv-cache-configuration">KV cache configuration</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="kv-cache-configuration"><a class="header" href="#kv-cache-configuration">KV cache configuration</a></h1>
 <div class="note">
 <p>What the serving layer needs to know about GPT-2’s attention layout before
 the first token runs, and how <code>model_config.py</code> provides it.</p>
@@ -1300,8 +1118,7 @@ context window is 1,024 tokens (<code>n_positions</code>).</p>
 <a href="https://docs.modular.com/max/api/python/generated/max.pipelines.lib.interfaces.ArchConfigWithAttentionKVCache/"><code>ArchConfigWithAttentionKVCache</code></a>,
 which handles the cache allocation machinery. The subclass reads each dimension
 from the Hugging Face config object:</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">model_config.py</span></div>
-<pre><code class="language-python">from __future__ import annotations
+<pre><code class="language-python:model_config.py">from __future__ import annotations
 
 from dataclasses import dataclass
 
@@ -1334,20 +1151,7 @@ class GPT2ArchConfig(ArchConfigWithAttentionKVCache):
 </code></pre>
 <p><strong>Next</strong>: <a href="./step_11.html">Pipeline model</a> covers <code>model.py</code>, which loads the
 compiled model, runs it, and manages the token sequence between decode steps.</p>
-<div style="break-before: page; page-break-before: always;"></div><style>
-div.codeblock_filename_container + pre {
-  margin-top: 0;
-}
-
-span.codeblock_filename_inner {
-  border-radius: 0.4rem 0.4rem 0 0;
-  padding: 0.6rem 1rem 0.6rem 1rem;
-  font-family: var(--mono-font) !important;
-  font-size: var(--code-font-size);
-}
-
-</style>
-<h1 id="pipeline-model"><a class="header" href="#pipeline-model">Pipeline model</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="pipeline-model"><a class="header" href="#pipeline-model">Pipeline model</a></h1>
 <div class="note">
 <p>How <code>model.py</code> loads the compiled GPT-2 graph, runs it on each decode step,
 and manages the growing token sequence.</p>
@@ -1364,24 +1168,23 @@ and
 layer in <code>MaxGPT2LMHeadModel</code> allocates tensors when constructed. Without the
 lazy context, those allocations fill with random values and are immediately
 discarded when the checkpoint loads.
-<a href="https://docs.modular.com/max/api/python/generated/max.experimental.functional#max.experimental.functional.lazy"><code>F.lazy()</code></a>
+<a href="https://docs.modular.com/max/api/python/experimental.functional/#max.experimental.functional.lazy"><code>F.lazy()</code></a>
 defers all allocation inside the block: layers are declared, but nothing is
 allocated until <code>compile()</code> runs.</p>
-<p><a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor#max.experimental.tensor.default_device"><code>default_device()</code></a>
+<p><a href="https://docs.modular.com/max/api/python/experimental.tensor/#max.experimental.tensor.default_device"><code>default_device()</code></a>
 and
-<a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor#max.experimental.tensor.default_dtype"><code>default_dtype()</code></a>
+<a href="https://docs.modular.com/max/api/python/experimental.tensor/#max.experimental.tensor.default_dtype"><code>default_dtype()</code></a>
 set context variables that module construction code reads inside the lazy block,
 so layers pick up the right device and numeric type without being passed them
 explicitly.</p>
-<p><a href="https://docs.modular.com/max/api/python/generated/max.experimental.nn.Module#max.experimental.nn.Module.compile"><code>compile()</code></a>
+<p><a href="https://docs.modular.com/max/api/python/generated/max.experimental.nn.Module/#max.experimental.nn.Module.compile"><code>compile()</code></a>
 runs outside the lazy block. Loading safetensors buffers inside
-<a href="https://docs.modular.com/max/api/python/generated/max.experimental.functional#max.experimental.functional.lazy"><code>F.lazy()</code></a>
+<a href="https://docs.modular.com/max/api/python/experimental.functional/#max.experimental.functional.lazy"><code>F.lazy()</code></a>
 triggers the same memory alignment error that <code>_to_numpy()</code> in
 <code>weight_adapters.py</code> solves by copying into a fresh array. Passing
 <code>weights=state_dict</code> to <code>compile()</code> loads and compiles in one step after the
 lazy context closes:</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">model.py</span></div>
-<pre><code class="language-python">    def _load_model(
+<pre><code class="language-python:model.py">    def _load_model(
         self,
         weights: Weights,
         adapter: WeightsAdapter | None,
@@ -1407,15 +1210,14 @@ lazy context closes:</p>
 <p><code>execute()</code> receives a <code>GPT2Inputs</code>, a dataclass with one field: <code>tokens</code>,
 a <code>[1, seq_len]</code> int64 <code>Buffer</code> containing all token IDs for the current
 sequence.</p>
-<p><a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor#max.experimental.tensor.Tensor.from_dlpack"><code>Tensor.from_dlpack()</code></a>
+<p><a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor/#max.experimental.tensor.Tensor.from_dlpack"><code>Tensor.from_dlpack()</code></a>
 converts the driver <code>Buffer</code> to a MAX <code>Tensor</code> without copying. The compiled
 model returns <code>[1, seq_len, vocab_size]</code>: one logit vector per position. Only
 the final position’s logits are needed to sample the next token, so the output
 is narrowed to <code>[1, vocab_size]</code> before being handed to MAX’s serving
 infrastructure, which handles sampling: temperature scaling, top-p filtering,
 and token selection:</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">model.py</span></div>
-<pre><code class="language-python">    def execute(self, model_inputs: ModelInputs) -&gt; ModelOutputs:
+<pre><code class="language-python:model.py">    def execute(self, model_inputs: ModelInputs) -&gt; ModelOutputs:
         assert isinstance(model_inputs, GPT2Inputs)
 
         input_tensor = Tensor.from_dlpack(model_inputs.tokens).to(
@@ -1441,8 +1243,7 @@ full token history from position 0. Generating 30 tokens from a 10-token prompt
 means the 11th decode step processes 20 tokens, the 12th processes 21, and so
 on. The implementation stays simple at the cost of efficiency: compute grows
 linearly with sequence length.</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">model.py</span></div>
-<pre><code class="language-python">    def prepare_initial_token_inputs(
+<pre><code class="language-python:model.py">    def prepare_initial_token_inputs(
         self,
         replica_batches: Sequence[Sequence[TextContext]],
         kv_cache_inputs: KVCacheInputs[Buffer, Buffer] | None = None,
@@ -1473,20 +1274,7 @@ linearly with sequence length.</p>
 <p><strong>Next</strong>: <a href="./step_12.html">Architecture registration</a> covers <code>arch.py</code> and
 <code>__init__.py</code>, the three-line contract that plugs the whole package into
 <code>max serve</code>.</p>
-<div style="break-before: page; page-break-before: always;"></div><style>
-div.codeblock_filename_container + pre {
-  margin-top: 0;
-}
-
-span.codeblock_filename_inner {
-  border-radius: 0.4rem 0.4rem 0 0;
-  padding: 0.6rem 1rem 0.6rem 1rem;
-  font-family: var(--mono-font) !important;
-  font-size: var(--code-font-size);
-}
-
-</style>
-<h1 id="architecture-registration"><a class="header" href="#architecture-registration">Architecture registration</a></h1>
+<div style="break-before: page; page-break-before: always;"></div><h1 id="architecture-registration"><a class="header" href="#architecture-registration">Architecture registration</a></h1>
 <div class="note">
 <p>How <code>arch.py</code> and <code>__init__.py</code> plug the serving package into <code>max serve</code>,
 and what each field in <code>SupportedArchitecture</code> controls.</p>
@@ -1496,8 +1284,7 @@ the package and reads the <code>ARCHITECTURES</code> list, which adds GPT-2 to i
 registry.</p>
 <h2 id="the-package-entry-point"><a class="header" href="#the-package-entry-point">The package entry point</a></h2>
 <p><code>__init__.py</code> states the contract:</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">__init__.py</span></div>
-<pre><code class="language-python">from .arch import gpt2_arch
+<pre><code class="language-python:__init__.py">from .arch import gpt2_arch
 
 ARCHITECTURES = [gpt2_arch]
 
@@ -1505,11 +1292,10 @@ __all__ = ["ARCHITECTURES", "gpt2_arch"]
 </code></pre>
 <h2 id="the-architecture-declaration"><a class="header" href="#the-architecture-declaration">The architecture declaration</a></h2>
 <p><code>arch.py</code> assembles the
-<a href="https://docs.modular.com/max/api/python/generated/max.pipelines.lib.SupportedArchitecture/"><code>SupportedArchitecture</code></a>
+<a href="https://docs.modular.com/max/api/python/generated/max.pipelines.lib.registry.SupportedArchitecture/"><code>SupportedArchitecture</code></a>
 that MAX registers. Each field tells the serving layer something it needs before
 a request arrives:</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">arch.py</span></div>
-<pre><code class="language-python">from __future__ import annotations
+<pre><code class="language-python:arch.py">from __future__ import annotations
 
 from max.graph.weights import WeightsFormat
 from max.interfaces import PipelineTask
@@ -1550,7 +1336,7 @@ to a conversion function. When MAX loads the safetensors checkpoint, it calls
 <code>weight_adapters.convert_safetensor_state_dict</code> to produce the layout
 <code>MaxGPT2LMHeadModel</code> expects.</p>
 <p><strong><code>tokenizer</code>:</strong> is
-<a href="https://docs.modular.com/max/api/python/generated/max.pipelines.lib.TextTokenizer/"><code>TextTokenizer</code></a>,
+<a href="https://docs.modular.com/max/api/python/generated/max.pipelines.TextTokenizer/"><code>TextTokenizer</code></a>,
 which wraps the Hugging Face tokenizer for the model. Before any token is
 processed, <code>max serve</code> calls it to convert the prompt to token IDs and, after
 generation, decode the output IDs back to text.</p>
@@ -1584,7 +1370,7 @@ subclass</li>
 <a href="https://docs.modular.com/max/api/python/generated/max.pipelines.lib.PipelineModelWithKVCache/"><code>PipelineModelWithKVCache</code></a>
 subclass</li>
 <li>Register the package as a
-<a href="https://docs.modular.com/max/api/python/generated/max.pipelines.lib.SupportedArchitecture/"><code>SupportedArchitecture</code></a>
+<a href="https://docs.modular.com/max/api/python/generated/max.pipelines.lib.registry.SupportedArchitecture/"><code>SupportedArchitecture</code></a>
 and pass <code>--custom-architectures</code> to <code>max serve</code></li>
 </ol>
 <p>Modern LLMs build on these same components with targeted refinements:</p>

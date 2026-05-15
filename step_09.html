@@ -197,20 +197,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <style>
-div.codeblock_filename_container + pre {
-  margin-top: 0;
-}
-
-span.codeblock_filename_inner {
-  border-radius: 0.4rem 0.4rem 0 0;
-  padding: 0.6rem 1rem 0.6rem 1rem;
-  font-family: var(--mono-font) !important;
-  font-size: var(--code-font-size);
-}
-
-</style>
-<h1 id="weight-adaptation"><a class="header" href="#weight-adaptation">Weight adaptation</a></h1>
+                        <h1 id="weight-adaptation"><a class="header" href="#weight-adaptation">Weight adaptation</a></h1>
 <div class="note">
 <p>How MAX’s typed parameter interface works, and the three mappings that load
 GPT-2’s Hugging Face checkpoint into it.</p>
@@ -271,8 +258,7 @@ parameters. The model computes its own causal mask at runtime from
 <h2 id="the-adapter"><a class="header" href="#the-adapter">The adapter</a></h2>
 <p><code>convert_safetensor_state_dict()</code> applies all three operations in a single
 pass over the checkpoint keys:</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">weight_adapters.py</span></div>
-<pre><code class="language-python">from __future__ import annotations
+<pre><code class="language-python:weight_adapters.py">from __future__ import annotations
 
 import numpy as np
 from max.graph.weights import WeightData, Weights

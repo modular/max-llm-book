@@ -197,20 +197,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <style>
-div.codeblock_filename_container + pre {
-  margin-top: 0;
-}
-
-span.codeblock_filename_inner {
-  border-radius: 0.4rem 0.4rem 0 0;
-  padding: 0.6rem 1rem 0.6rem 1rem;
-  font-family: var(--mono-font) !important;
-  font-size: var(--code-font-size);
-}
-
-</style>
-<h1 id="transformer-block"><a class="header" href="#transformer-block">Transformer block</a></h1>
+                        <h1 id="transformer-block"><a class="header" href="#transformer-block">Transformer block</a></h1>
 <div class="note">
 <p>Combine attention, MLP, layer normalization, and residual connections into a
 complete transformer block.</p>
@@ -224,7 +211,6 @@ layers to abstract semantic understanding in later layers.</p>
 <h2 id="the-pre-norm-pattern"><a class="header" href="#the-pre-norm-pattern">The pre-norm pattern</a></h2>
 <p>Each sublayer follows the same structure: normalize first, apply the sublayer,
 then add the original input back:</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">text</span></div>
 <pre><code class="language-text">x = x + sublayer(layer_norm(x))
 </code></pre>
 <p>This is called pre-normalization. GPT-2 uses it because normalizing before each
@@ -246,8 +232,7 @@ exactly. This naming is required for loading pretrained weights.</p>
 <h2 id="gpt2block"><a class="header" href="#gpt2block">GPT2Block</a></h2>
 <p><code>GPT2Block</code> wires the four components (<code>ln_1</code>, <code>attn</code>, <code>ln_2</code>, <code>mlp</code>) with
 pre-norm and residual connections in two passes:</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">gpt2.py</span></div>
-<pre><code class="language-python">class GPT2Block(Module):  # type: ignore[type-arg]
+<pre><code class="language-python:gpt2.py">class GPT2Block(Module):  # type: ignore[type-arg]
     """Exact HuggingFace GPT-2 transformer block structure"""
 
     def __init__(self, config: GPT2Config) -&gt; None:

@@ -197,23 +197,10 @@
 
                 <div id="content" class="content">
                     <main>
-                        <style>
-div.codeblock_filename_container + pre {
-  margin-top: 0;
-}
-
-span.codeblock_filename_inner {
-  border-radius: 0.4rem 0.4rem 0 0;
-  padding: 0.6rem 1rem 0.6rem 1rem;
-  font-family: var(--mono-font) !important;
-  font-size: var(--code-font-size);
-}
-
-</style>
-<h1 id="causal-masking"><a class="header" href="#causal-masking">Causal masking</a></h1>
+                        <h1 id="causal-masking"><a class="header" href="#causal-masking">Causal masking</a></h1>
 <div class="note">
 <p>Create attention masks to prevent the model from <em>seeing</em> future tokens during
-<a href="https://docs.modular.com/glossary/ai/autoregression">autoregressive</a>
+<a href="https://docs.modular.com/glossary/ai/autoregression/">autoregressive</a>
 generation.</p>
 </div>
 <p>Self-attention, without any constraint, lets every token attend to every other
@@ -261,8 +248,7 @@ graph operation that can be compiled and optimized.</p>
 mask shape, then uses <code>F.band_part</code> to zero out the upper triangle
 (<code>num_upper=0, exclude=True</code> keeps zeros on and below the diagonal, <code>-inf</code>
 above):</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">gpt2.py</span></div>
-<pre><code class="language-python">@F.functional
+<pre><code class="language-python:gpt2.py">@F.functional
 def causal_mask(
     sequence_length: DimLike,
     num_tokens: DimLike,

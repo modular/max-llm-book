@@ -197,20 +197,7 @@
 
                 <div id="content" class="content">
                     <main>
-                        <style>
-div.codeblock_filename_container + pre {
-  margin-top: 0;
-}
-
-span.codeblock_filename_inner {
-  border-radius: 0.4rem 0.4rem 0 0;
-  padding: 0.6rem 1rem 0.6rem 1rem;
-  font-family: var(--mono-font) !important;
-  font-size: var(--code-font-size);
-}
-
-</style>
-<h1 id="kv-cache-configuration"><a class="header" href="#kv-cache-configuration">KV cache configuration</a></h1>
+                        <h1 id="kv-cache-configuration"><a class="header" href="#kv-cache-configuration">KV cache configuration</a></h1>
 <div class="note">
 <p>What the serving layer needs to know about GPT-2’s attention layout before
 the first token runs, and how <code>model_config.py</code> provides it.</p>
@@ -269,8 +256,7 @@ context window is 1,024 tokens (<code>n_positions</code>).</p>
 <a href="https://docs.modular.com/max/api/python/generated/max.pipelines.lib.interfaces.ArchConfigWithAttentionKVCache/"><code>ArchConfigWithAttentionKVCache</code></a>,
 which handles the cache allocation machinery. The subclass reads each dimension
 from the Hugging Face config object:</p>
-<div class="codeblock_filename_container"><span class="codeblock_filename_inner hljs">model_config.py</span></div>
-<pre><code class="language-python">from __future__ import annotations
+<pre><code class="language-python:model_config.py">from __future__ import annotations
 
 from dataclasses import dataclass
 

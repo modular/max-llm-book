@@ -29,7 +29,7 @@ def test_architecture_name() -> None:
 
 def test_architecture_task() -> None:
     from gpt2_arch import ARCHITECTURES
-    from max.interfaces import PipelineTask
+    from max.pipelines.modeling.types import PipelineTask
 
     assert ARCHITECTURES[0].task == PipelineTask.TEXT_GENERATION
 

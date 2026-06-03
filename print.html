@@ -1256,20 +1256,6 @@ linearly with sequence length.</p>
         inputs.kv_cache_inputs = kv_cache_inputs
         return inputs
 
-    def prepare_next_token_inputs(
-        self,
-        next_tokens: Buffer,
-        prev_model_inputs: ModelInputs,
-    ) -&gt; GPT2Inputs:
-        assert isinstance(prev_model_inputs, GPT2Inputs)
-        prev_np: np.ndarray = np.from_dlpack(prev_model_inputs.tokens.to(CPU()))
-        new_token_np: np.ndarray = np.from_dlpack(next_tokens.to(CPU()))
-        new_token = int(new_token_np.ravel()[0])
-        extended = np.concatenate([prev_np.ravel(), [new_token]])[np.newaxis, :]
-        inputs = _make_gpt2_inputs(extended.ravel().tolist(), self.devices[0])
-        inputs.kv_cache_inputs = prev_model_inputs.kv_cache_inputs
-        return inputs
-
 </code></pre>
 <p><strong>Next</strong>: <a href="./step_12.html">Architecture registration</a> covers <code>arch.py</code> and
 <code>__init__.py</code>, the three-line contract that plugs the whole package into

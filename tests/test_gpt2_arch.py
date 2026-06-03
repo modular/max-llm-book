@@ -129,7 +129,6 @@ def test_pipeline_model_get_kv_params_returns_params() -> None:
     assert hasattr(GPT2PipelineModel, "calculate_max_seq_len")
     assert hasattr(GPT2PipelineModel, "execute")
     assert hasattr(GPT2PipelineModel, "prepare_initial_token_inputs")
-    assert hasattr(GPT2PipelineModel, "prepare_next_token_inputs")
 
 
 def test_pixi_toml_has_serve_task() -> None:

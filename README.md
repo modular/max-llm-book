@@ -43,7 +43,7 @@ Then query it:
 ```bash
 curl -X POST http://localhost:8000/v1/completions \
   -H "Content-Type: application/json" \
-  -d '{"model":"gpt2","prompt":"In the beginning","max_tokens":30,"temperature":0}'
+  -d '{"model":"openai-community/gpt2","prompt":"In the beginning","max_tokens":30,"temperature":0}'
 ```
 
 ### Run the notebook

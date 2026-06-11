@@ -5,6 +5,14 @@ platforms = ["linux-64", "osx-arm64"]
 version = "0.1.1"
 license = "Apache-2.0"
 
+[activation.env]
+# The experimental `max.nn.Module.compile()` path used by `gpt2_arch` resolves
+# MAX's built-in kernel packages (`.mojoc`) through this import path. Unlike the
+# stock engine, it is not auto-discovered from `MODULAR_HOME`, so point it at the
+# packages shipped in the conda env. Without this, `max serve` fails with
+# "failed to resolve built-in kernel package paths".
+MODULAR_MOJO_MAX_IMPORT_PATH = "$CONDA_PREFIX/lib/mojo"
+
 [tasks]
 build-book = "cd book && mdbook build"
 book = { cmd = "cd book && mdbook serve --open", depends-on = ["build-book"] }
@@ -13,12 +21,18 @@ book = { cmd = "cd book && mdbook serve --open", depends-on = ["build-book"] }
 notebook = "cd notebooks && jupyter lab tutorial.ipynb"
 
 # Serve GPT-2 via MAX's OpenAI-compatible API.
-serve = "max serve --custom-architectures gpt2_arch --model gpt2"
+# The trailing flags pin the simple text-generation path this teaching model
+# targets: recent nightlies auto-enable the overlap scheduler and device graph
+# capture for GPU text-gen architectures, but the model's eager
+# `max.nn.Module.compile()` path (full-sequence, 2-D tokens, no `capture()`)
+# supports neither. `--force` is required because the overlap scheduler is
+# re-enabled during config resolution unless force is set.
+serve = "max serve --custom-architectures gpt2_arch --model openai-community/gpt2 --no-enable-overlap-scheduler --no-device-graph-capture --force"
 
 [target.osx-arm64.tasks]
 # On macOS (Apple Silicon), force CPU: the Metal GPU backend produces incorrect
 # logits for sequence lengths > 3 due to a dynamic-shape compiler issue.
-serve = "max serve --custom-architectures gpt2_arch --model gpt2 --devices cpu"
+serve = "max serve --custom-architectures gpt2_arch --model openai-community/gpt2 --devices cpu --no-enable-overlap-scheduler --no-device-graph-capture --force"
 
 # Format python
 fmt = "ruff format ."

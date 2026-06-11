@@ -16,7 +16,7 @@ following context in mind:
 - Training is not in scope
 - The model components (Steps 01–08) live in `gpt2_arch/gpt2.py`; the full serving package is `gpt2_arch/`
 - Tests run with `pixi run test` (pytest tests/ -v)
-- The model serves via `pixi run serve` (max serve --custom-architectures gpt2_arch --model gpt2)
+- The model serves via `pixi run serve` (max serve --custom-architectures gpt2_arch --model openai-community/gpt2 --no-enable-overlap-scheduler --no-device-graph-capture --force)
 
 **MAX framework specifics:**
 - `gpt2_arch/gpt2.py` uses `max.experimental.nn.Module` as the base class

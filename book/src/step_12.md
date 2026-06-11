@@ -31,9 +31,9 @@ a request arrives:
 ```
 
 **`name`:** must match the `"architectures"` field in Hugging Face's
-`config.json` exactly. When you run `max serve --model gpt2`, MAX downloads
-the model, reads `config.json`, and looks up that name in its registry. A
-mismatch means the package never loads.
+`config.json` exactly. When you run `max serve --model openai-community/gpt2`,
+MAX downloads the model, reads `config.json`, and looks up that name in its
+registry. A mismatch means the package never loads.
 
 **`weight_adapters`:** maps each
 [`WeightsFormat`](https://docs.modular.com/max/api/python/generated/max.graph.weights.WeightsFormat/)
@@ -55,6 +55,16 @@ dimensions covered in [KV cache configuration](./step_10.md).
 caching for this model. GPT-2 passes the full token sequence on every decode
 step rather than using an incremental KV cache, so prefix caching doesn't
 apply.
+
+Two more constraints live on the `max serve` command line rather than in
+`required_arguments` — that's why the [`serve` command](./serve_first.md) ends
+with `--no-enable-overlap-scheduler --no-device-graph-capture --force`. For
+text-generation models on GPU, MAX enables the overlap scheduler and device
+graph capture by default to raise throughput, but both expect the standard
+incremental-decode path. Because this model replays the full sequence on every
+step (the same reason prefix caching doesn't apply), the serve command disables
+them. `--force` is required because MAX otherwise re-enables the overlap
+scheduler during startup.
 
 ## What you've built
 

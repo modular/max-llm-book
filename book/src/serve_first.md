@@ -21,8 +21,19 @@ pixi run serve
 That command runs:
 
 ```sh
-max serve --custom-architectures gpt2_arch --model gpt2
+max serve --custom-architectures gpt2_arch --model openai-community/gpt2 \
+  --no-enable-overlap-scheduler --no-device-graph-capture --force
 ```
+
+The trailing flags pin GPT-2 to the simple serving path this tutorial targets.
+For text-generation models on GPU, MAX enables two throughput optimizations by
+default — the overlap scheduler and device graph capture — that both assume the
+standard incremental-decode execution path. This teaching model deliberately
+replays the full token sequence on every step (see
+[Pipeline model](./step_11.md)), so it turns both off; `--force` is needed
+because MAX otherwise re-enables the overlap scheduler during startup.
+[Architecture registration](./step_12.md) covers the serving contract these
+flags interact with.
 
 On the first run, MAX downloads the pretrained GPT-2 weights from Hugging Face
 (≈ 548 MB) and compiles the model. Your first run might take a minute or two;
@@ -43,7 +54,7 @@ comes next. Use the `/v1/completions` endpoint with a `prompt` field:
 curl -X POST http://localhost:8000/v1/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "gpt2",
+    "model": "openai-community/gpt2",
     "prompt": "In the beginning",
     "max_tokens": 30,
     "temperature": 0
@@ -61,7 +72,7 @@ from openai import OpenAI
 client = OpenAI(base_url="http://localhost:8000/v1", api_key="EMPTY")
 
 response = client.completions.create(
-    model="gpt2",
+    model="openai-community/gpt2",
     prompt="In the beginning",
     max_tokens=30,
     temperature=0,

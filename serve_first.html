@@ -211,8 +211,18 @@ explain every component that makes it work.</p>
 <pre><code class="language-sh">pixi run serve
 </code></pre>
 <p>That command runs:</p>
-<pre><code class="language-sh">max serve --custom-architectures gpt2_arch --model gpt2
+<pre><code class="language-sh">max serve --custom-architectures gpt2_arch --model openai-community/gpt2 \
+  --no-enable-overlap-scheduler --no-device-graph-capture --force
 </code></pre>
+<p>The trailing flags pin GPT-2 to the simple serving path this tutorial targets.
+For text-generation models on GPU, MAX enables two throughput optimizations by
+default — the overlap scheduler and device graph capture — that both assume the
+standard incremental-decode execution path. This teaching model deliberately
+replays the full token sequence on every step (see
+<a href="./step_11.html">Pipeline model</a>), so it turns both off; <code>--force</code> is needed
+because MAX otherwise re-enables the overlap scheduler during startup.
+<a href="./step_12.html">Architecture registration</a> covers the serving contract these
+flags interact with.</p>
 <p>On the first run, MAX downloads the pretrained GPT-2 weights from Hugging Face
 (≈ 548 MB) and compiles the model. Your first run might take a minute or two;
 later runs use cached weights and start faster. When the server is ready you’ll
@@ -226,7 +236,7 @@ comes next. Use the <code>/v1/completions</code> endpoint with a <code>prompt</c
 <pre><code class="language-sh">curl -X POST http://localhost:8000/v1/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "gpt2",
+    "model": "openai-community/gpt2",
     "prompt": "In the beginning",
     "max_tokens": 30,
     "temperature": 0
@@ -241,7 +251,7 @@ completions. Or query with the Python <code>openai</code> client (requires
 client = OpenAI(base_url="http://localhost:8000/v1", api_key="EMPTY")
 
 response = client.completions.create(
-    model="gpt2",
+    model="openai-community/gpt2",
     prompt="In the beginning",
     max_tokens=30,
     temperature=0,

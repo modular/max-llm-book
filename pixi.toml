@@ -29,16 +29,16 @@ notebook = "cd notebooks && jupyter lab tutorial.ipynb"
 # re-enabled during config resolution unless force is set.
 serve = "max serve --custom-architectures gpt2_arch --model openai-community/gpt2 --no-enable-overlap-scheduler --no-device-graph-capture --force"
 
-[target.osx-arm64.tasks]
-# On macOS (Apple Silicon), force CPU: the Metal GPU backend produces incorrect
-# logits for sequence lengths > 3 due to a dynamic-shape compiler issue.
-serve = "max serve --custom-architectures gpt2_arch --model openai-community/gpt2 --devices cpu --no-enable-overlap-scheduler --no-device-graph-capture --force"
-
 # Format python
 fmt = "ruff format ."
 
 # Run tests
 test = "pytest tests/ -v"
+
+[target.osx-arm64.tasks]
+# On macOS (Apple Silicon), force CPU: the Metal GPU backend produces incorrect
+# logits for sequence lengths > 3 due to a dynamic-shape compiler issue.
+serve = "max serve --custom-architectures gpt2_arch --model openai-community/gpt2 --devices cpu --no-enable-overlap-scheduler --no-device-graph-capture --force"
 
 [dependencies]
 modular = ">=26.4.0.dev2026050805"

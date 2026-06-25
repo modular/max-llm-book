@@ -249,9 +249,7 @@ blocks, and final layer normalization into the complete model body:</p>
         _, seq_length = input_ids.shape
         tok_embeds = self.wte(input_ids)
         pos_embeds = self.wpe(
-            Tensor.arange(
-                seq_length, dtype=input_ids.dtype, device=input_ids.device
-            )
+            Tensor.arange(seq_length, dtype=input_ids.dtype, device=input_ids.device)
         )
         x = tok_embeds + pos_embeds
         x = self.h(x)

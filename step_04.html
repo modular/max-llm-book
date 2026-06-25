@@ -278,9 +278,7 @@ output projection <code>c_proj</code> into one class:</p>
         """Split the last dimension into (num_heads, head_size)"""
         new_shape = list(tensor.shape[:-1]) + [num_heads, attn_head_size]
         tensor = tensor.reshape(new_shape)
-        return tensor.transpose(
-            -3, -2
-        )  # (batch, head, seq_length, head_features)
+        return tensor.transpose(-3, -2)  # (batch, head, seq_length, head_features)
 
     def _merge_heads(
         self, tensor: Tensor | TensorValue, num_heads: int, attn_head_size: int
@@ -305,9 +303,7 @@ output projection <code>c_proj</code> into one class:</p>
         value = self._split_heads(value, self.num_heads, self.head_dim)
 
         attn_output = self._attn(query, key, value)
-        attn_output = self._merge_heads(
-            attn_output, self.num_heads, self.head_dim
-        )
+        attn_output = self._merge_heads(attn_output, self.num_heads, self.head_dim)
         attn_output = self.c_proj(cast(Tensor, attn_output))
 
         return cast(Tensor, attn_output)

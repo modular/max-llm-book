@@ -246,9 +246,7 @@ lazy context closes:</p>
             gpt2_module = MaxGPT2LMHeadModel(hf_config)
             gpt2_module.to(device)
 
-        token_type = TensorType(
-            DType.int64, ("batch", "seq_len"), device=device
-        )
+        token_type = TensorType(DType.int64, ("batch", "seq_len"), device=device)
         return gpt2_module.compile(token_type, weights=state_dict)
 
 </code></pre>
@@ -266,9 +264,7 @@ and token selection:</p>
 <pre><code class="language-python:model.py">    def execute(self, model_inputs: ModelInputs) -&gt; ModelOutputs:
         assert isinstance(model_inputs, GPT2Inputs)
 
-        input_tensor = Tensor.from_dlpack(model_inputs.tokens).to(
-            self.devices[0]
-        )
+        input_tensor = Tensor.from_dlpack(model_inputs.tokens).to(self.devices[0])
 
         all_logits: Tensor = self.model(input_tensor)
 

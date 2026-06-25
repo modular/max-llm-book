@@ -287,15 +287,13 @@ def convert_safetensor_state_dict(
         if any(key.endswith(suffix) for suffix in _SKIP_SUFFIXES):
             continue
 
-        mapped_key = (
-            key if key.startswith("transformer.") else f"transformer.{key}"
-        )
+        mapped_key = key if key.startswith("transformer.") else f"transformer.{key}"
         arr = _to_numpy(value.data())
 
         # Conv1D stores [in, out]; MAX Linear expects [out, in].
-        if any(
-            layer in mapped_key for layer in _CONV1D_LAYERS
-        ) and mapped_key.endswith(".weight"):
+        if any(layer in mapped_key for layer in _CONV1D_LAYERS) and mapped_key.endswith(
+            ".weight"
+        ):
             arr = np.ascontiguousarray(arr.T)
 
         result[mapped_key] = WeightData.from_numpy(arr, mapped_key)
@@ -304,9 +302,7 @@ def convert_safetensor_state_dict(
     wte_key = "transformer.wte.weight"
     if "lm_head.weight" not in result and wte_key in result:
         wte_arr = np.array(result[wte_key].data)
-        result["lm_head.weight"] = WeightData.from_numpy(
-            wte_arr, "lm_head.weight"
-        )
+        result["lm_head.weight"] = WeightData.from_numpy(wte_arr, "lm_head.weight")
 
     return result
 

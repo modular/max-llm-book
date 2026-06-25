@@ -653,9 +653,7 @@ output projection <code>c_proj</code> into one class:</p>
         """Split the last dimension into (num_heads, head_size)"""
         new_shape = list(tensor.shape[:-1]) + [num_heads, attn_head_size]
         tensor = tensor.reshape(new_shape)
-        return tensor.transpose(
-            -3, -2
-        )  # (batch, head, seq_length, head_features)
+        return tensor.transpose(-3, -2)  # (batch, head, seq_length, head_features)
 
     def _merge_heads(
         self, tensor: Tensor | TensorValue, num_heads: int, attn_head_size: int
@@ -680,9 +678,7 @@ output projection <code>c_proj</code> into one class:</p>
         value = self._split_heads(value, self.num_heads, self.head_dim)
 
         attn_output = self._attn(query, key, value)
-        attn_output = self._merge_heads(
-            attn_output, self.num_heads, self.head_dim
-        )
+        attn_output = self._merge_heads(attn_output, self.num_heads, self.head_dim)
         attn_output = self.c_proj(cast(Tensor, attn_output))
 
         return cast(Tensor, attn_output)
@@ -739,9 +735,7 @@ and the bias with
         self.bias = Tensor.zeros([dim])
 
     def forward(self, x: Tensor) -&gt; Tensor:
-        return F.layer_norm(
-            x, gamma=self.weight, beta=self.bias, epsilon=self.eps
-        )
+        return F.layer_norm(x, gamma=self.weight, beta=self.bias, epsilon=self.eps)
 
 
 </code></pre>
@@ -790,9 +784,7 @@ pre-norm and residual connections in two passes:</p>
 
     def __init__(self, config: GPT2Config) -&gt; None:
         hidden_size = config.n_embd
-        inner_dim = (
-            config.n_inner if config.n_inner is not None else 4 * hidden_size
-        )
+        inner_dim = config.n_inner if config.n_inner is not None else 4 * hidden_size
 
         self.ln_1 = LayerNorm(hidden_size, eps=config.layer_norm_epsilon)
         self.attn = GPT2MultiHeadAttention(config)
@@ -872,9 +864,7 @@ blocks, and final layer normalization into the complete model body:</p>
         _, seq_length = input_ids.shape
         tok_embeds = self.wte(input_ids)
         pos_embeds = self.wpe(
-            Tensor.arange(
-                seq_length, dtype=input_ids.dtype, device=input_ids.device
-            )
+            Tensor.arange(seq_length, dtype=input_ids.dtype, device=input_ids.device)
         )
         x = tok_embeds + pos_embeds
         x = self.h(x)
@@ -1037,15 +1027,13 @@ def convert_safetensor_state_dict(
         if any(key.endswith(suffix) for suffix in _SKIP_SUFFIXES):
             continue
 
-        mapped_key = (
-            key if key.startswith("transformer.") else f"transformer.{key}"
-        )
+        mapped_key = key if key.startswith("transformer.") else f"transformer.{key}"
         arr = _to_numpy(value.data())
 
         # Conv1D stores [in, out]; MAX Linear expects [out, in].
-        if any(
-            layer in mapped_key for layer in _CONV1D_LAYERS
-        ) and mapped_key.endswith(".weight"):
+        if any(layer in mapped_key for layer in _CONV1D_LAYERS) and mapped_key.endswith(
+            ".weight"
+        ):
             arr = np.ascontiguousarray(arr.T)
 
         result[mapped_key] = WeightData.from_numpy(arr, mapped_key)
@@ -1054,9 +1042,7 @@ def convert_safetensor_state_dict(
     wte_key = "transformer.wte.weight"
     if "lm_head.weight" not in result and wte_key in result:
         wte_arr = np.array(result[wte_key].data)
-        result["lm_head.weight"] = WeightData.from_numpy(
-            wte_arr, "lm_head.weight"
-        )
+        result["lm_head.weight"] = WeightData.from_numpy(wte_arr, "lm_head.weight")
 
     return result
 
@@ -1210,9 +1196,7 @@ lazy context closes:</p>
             gpt2_module = MaxGPT2LMHeadModel(hf_config)
             gpt2_module.to(device)
 
-        token_type = TensorType(
-            DType.int64, ("batch", "seq_len"), device=device
-        )
+        token_type = TensorType(DType.int64, ("batch", "seq_len"), device=device)
         return gpt2_module.compile(token_type, weights=state_dict)
 
 </code></pre>
@@ -1230,9 +1214,7 @@ and token selection:</p>
 <pre><code class="language-python:model.py">    def execute(self, model_inputs: ModelInputs) -&gt; ModelOutputs:
         assert isinstance(model_inputs, GPT2Inputs)
 
-        input_tensor = Tensor.from_dlpack(model_inputs.tokens).to(
-            self.devices[0]
-        )
+        input_tensor = Tensor.from_dlpack(model_inputs.tokens).to(self.devices[0])
 
         all_logits: Tensor = self.model(input_tensor)
 

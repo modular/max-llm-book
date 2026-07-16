@@ -25,6 +25,7 @@ Pure shape/mask tests do not exercise the buggy kernel path and run
 straight on Metal without an xfail marker.
 """
 
+import os
 from collections.abc import Callable
 
 import max.experimental.functional as F
@@ -40,6 +41,7 @@ from gpt2_arch.gpt2 import (
     MaxGPT2Model,
     causal_mask,
 )
+from max._interpreter_ops import GC_FAMILIES, adopted_from_manifest
 from max.driver import CPU, Accelerator, accelerator_api, accelerator_count
 from max.dtype import DType
 from max.experimental.nn import Module
@@ -87,6 +89,26 @@ def _gpu() -> Accelerator:
     # when the probe succeeded. Narrows the Optional for the type checker.
     assert GPU is not None, "GPU should be set when tests run"
     return GPU
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _require_warm_adoption() -> None:
+    """Fail if the eager-GC warm cache didn't adopt.
+
+    The forward-pass tests pass whether the warm adopts or silently cold-
+    compiles, so this asserts adoption directly, as in test_interp_warm_cache
+    and test_interpreter_ops_gpu.
+    """
+    if _SKIP_REASON is not None or not os.environ.get("XARCH_WARM_RLOCATION"):
+        return
+    unadopted = [
+        f.name for f in GC_FAMILIES if not adopted_from_manifest(f.name)
+    ]
+    if unadopted:
+        raise RuntimeError(
+            f"eager-GC warm is wired but {unadopted} did not adopt from the"
+            " manifest; a silent cold-compile fallback."
+        )
 
 
 # ----- Metal backend known-bug guard ---------------------------------------

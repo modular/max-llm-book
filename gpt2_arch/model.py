@@ -83,6 +83,7 @@ class GPT2PipelineModel(PipelineModelWithKVCache[TextContext]):
         adapter: WeightsAdapter | None,
         return_logits: ReturnLogits,
         return_hidden_states: ReturnHiddenStates = ReturnHiddenStates.NONE,
+        max_batch_size: int = 1,
     ) -> None:
         super().__init__(
             pipeline_config=pipeline_config,
@@ -93,6 +94,7 @@ class GPT2PipelineModel(PipelineModelWithKVCache[TextContext]):
             adapter=adapter,
             return_logits=return_logits,
             return_hidden_states=return_hidden_states,
+            max_batch_size=max_batch_size,
         )
         self.model = self._load_model(weights, adapter)
 

@@ -8,33 +8,33 @@ and manages the growing token sequence.
 </div>
 
 To extend a pipeline and connect it to a serving layer, you'll need to subclass
-[`PipelineModelWithKVCache`](https://docs.modular.com/max/api/python/generated/max.pipelines.lib.PipelineModelWithKVCache/)
+[`PipelineModelWithKVCache`](https://docs.modular.com/api/python/generated/max.pipelines.lib.PipelineModelWithKVCache/)
 and tell it how to load your model, run each decode step, and manage the token
 sequence.
 
 ## Load the model
 
 Every
-[`Linear`](https://docs.modular.com/max/api/python/generated/max.experimental.nn.Linear/)
+[`Linear`](https://docs.modular.com/api/python/generated/max.experimental.nn.Linear/)
 and
-[`Embedding`](https://docs.modular.com/max/api/python/generated/max.experimental.nn.Embedding/)
+[`Embedding`](https://docs.modular.com/api/python/generated/max.experimental.nn.Embedding/)
 layer in `MaxGPT2LMHeadModel` allocates tensors when constructed. Without the
 lazy context, those allocations fill with random values and are immediately
 discarded when the checkpoint loads.
-[`F.lazy()`](https://docs.modular.com/max/api/python/experimental.functional/#max.experimental.functional.lazy)
+[`F.lazy()`](https://docs.modular.com/api/python/experimental.functional/#max.experimental.functional.lazy)
 defers all allocation inside the block: layers are declared, but nothing is
 allocated until `compile()` runs.
 
-[`default_device()`](https://docs.modular.com/max/api/python/experimental.tensor/#max.experimental.tensor.default_device)
+[`default_device()`](https://docs.modular.com/api/python/experimental.tensor/#max.experimental.tensor.default_device)
 and
-[`default_dtype()`](https://docs.modular.com/max/api/python/experimental.tensor/#max.experimental.tensor.default_dtype)
+[`default_dtype()`](https://docs.modular.com/api/python/experimental.tensor/#max.experimental.tensor.default_dtype)
 set context variables that module construction code reads inside the lazy block,
 so layers pick up the right device and numeric type without being passed them
 explicitly.
 
-[`compile()`](https://docs.modular.com/max/api/python/generated/max.experimental.nn.Module/#max.experimental.nn.Module.compile)
+[`compile()`](https://docs.modular.com/api/python/generated/max.experimental.nn.Module/#max.experimental.nn.Module.compile)
 runs outside the lazy block. Loading safetensors buffers inside
-[`F.lazy()`](https://docs.modular.com/max/api/python/experimental.functional/#max.experimental.functional.lazy)
+[`F.lazy()`](https://docs.modular.com/api/python/experimental.functional/#max.experimental.functional.lazy)
 triggers the same memory alignment error that `_to_numpy()` in
 `weight_adapters.py` solves by copying into a fresh array. Passing
 `weights=state_dict` to `compile()` loads and compiles in one step after the
@@ -50,7 +50,7 @@ lazy context closes:
 a `[1, seq_len]` int64 `Buffer` containing all token IDs for the current
 sequence.
 
-[`Tensor.from_dlpack()`](https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor/#max.experimental.tensor.Tensor.from_dlpack)
+[`Tensor.from_dlpack()`](https://docs.modular.com/api/python/generated/max.experimental.tensor.Tensor/#max.experimental.tensor.Tensor.from_dlpack)
 converts the driver `Buffer` to a MAX `Tensor` without copying. The compiled
 model returns `[1, seq_len, vocab_size]`: one logit vector per position. Only
 the final position's logits are needed to sample the next token, so the output

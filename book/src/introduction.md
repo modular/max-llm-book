@@ -7,7 +7,7 @@ need to adapt one of these models for your own work, building one from scratch
 is the fastest path to that understanding.
 
 This guide walks you through a complete GPT-2 implementation using the
-[MAX Python API](https://docs.modular.com/max/api/python/). You'll start by
+[MAX Python API](https://docs.modular.com/api/python/). You'll start by
 running a working model, then build it component by component: embeddings,
 attention, feed-forward layers, and the serving layer that connects it all.
 Everything runs from the

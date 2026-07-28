@@ -41,12 +41,12 @@ to ones and zeros so the initial transformation is identity.
 
 ## LayerNorm
 
-[`F.layer_norm`](https://docs.modular.com/max/api/python/experimental.functional/#max.experimental.functional.layer_norm)
+[`F.layer_norm`](https://docs.modular.com/api/python/experimental.functional/#max.experimental.functional.layer_norm)
 computes the normalization and applies the learned parameters in one call. The
 weight is initialized with
-[`Tensor.ones`](https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor/#max.experimental.tensor.Tensor.ones)
+[`Tensor.ones`](https://docs.modular.com/api/python/generated/max.experimental.tensor.Tensor/#max.experimental.tensor.Tensor.ones)
 and the bias with
-[`Tensor.zeros`](https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor/#max.experimental.tensor.Tensor.zeros):
+[`Tensor.zeros`](https://docs.modular.com/api/python/generated/max.experimental.tensor.Tensor/#max.experimental.tensor.Tensor.zeros):
 
 ```python:gpt2.py
 {{#include ../../gpt2_arch/gpt2.py:layer_normalization}}

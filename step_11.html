@@ -203,29 +203,29 @@
 and manages the growing token sequence.</p>
 </div>
 <p>To extend a pipeline and connect it to a serving layer, you’ll need to subclass
-<a href="https://docs.modular.com/max/api/python/generated/max.pipelines.lib.PipelineModelWithKVCache/"><code>PipelineModelWithKVCache</code></a>
+<a href="https://docs.modular.com/api/python/generated/max.pipelines.lib.PipelineModelWithKVCache/"><code>PipelineModelWithKVCache</code></a>
 and tell it how to load your model, run each decode step, and manage the token
 sequence.</p>
 <h2 id="load-the-model"><a class="header" href="#load-the-model">Load the model</a></h2>
 <p>Every
-<a href="https://docs.modular.com/max/api/python/generated/max.experimental.nn.Linear/"><code>Linear</code></a>
+<a href="https://docs.modular.com/api/python/generated/max.experimental.nn.Linear/"><code>Linear</code></a>
 and
-<a href="https://docs.modular.com/max/api/python/generated/max.experimental.nn.Embedding/"><code>Embedding</code></a>
+<a href="https://docs.modular.com/api/python/generated/max.experimental.nn.Embedding/"><code>Embedding</code></a>
 layer in <code>MaxGPT2LMHeadModel</code> allocates tensors when constructed. Without the
 lazy context, those allocations fill with random values and are immediately
 discarded when the checkpoint loads.
-<a href="https://docs.modular.com/max/api/python/experimental.functional/#max.experimental.functional.lazy"><code>F.lazy()</code></a>
+<a href="https://docs.modular.com/api/python/experimental.functional/#max.experimental.functional.lazy"><code>F.lazy()</code></a>
 defers all allocation inside the block: layers are declared, but nothing is
 allocated until <code>compile()</code> runs.</p>
-<p><a href="https://docs.modular.com/max/api/python/experimental.tensor/#max.experimental.tensor.default_device"><code>default_device()</code></a>
+<p><a href="https://docs.modular.com/api/python/experimental.tensor/#max.experimental.tensor.default_device"><code>default_device()</code></a>
 and
-<a href="https://docs.modular.com/max/api/python/experimental.tensor/#max.experimental.tensor.default_dtype"><code>default_dtype()</code></a>
+<a href="https://docs.modular.com/api/python/experimental.tensor/#max.experimental.tensor.default_dtype"><code>default_dtype()</code></a>
 set context variables that module construction code reads inside the lazy block,
 so layers pick up the right device and numeric type without being passed them
 explicitly.</p>
-<p><a href="https://docs.modular.com/max/api/python/generated/max.experimental.nn.Module/#max.experimental.nn.Module.compile"><code>compile()</code></a>
+<p><a href="https://docs.modular.com/api/python/generated/max.experimental.nn.Module/#max.experimental.nn.Module.compile"><code>compile()</code></a>
 runs outside the lazy block. Loading safetensors buffers inside
-<a href="https://docs.modular.com/max/api/python/experimental.functional/#max.experimental.functional.lazy"><code>F.lazy()</code></a>
+<a href="https://docs.modular.com/api/python/experimental.functional/#max.experimental.functional.lazy"><code>F.lazy()</code></a>
 triggers the same memory alignment error that <code>_to_numpy()</code> in
 <code>weight_adapters.py</code> solves by copying into a fresh array. Passing
 <code>weights=state_dict</code> to <code>compile()</code> loads and compiles in one step after the
@@ -254,7 +254,7 @@ lazy context closes:</p>
 <p><code>execute()</code> receives a <code>GPT2Inputs</code>, a dataclass with one field: <code>tokens</code>,
 a <code>[1, seq_len]</code> int64 <code>Buffer</code> containing all token IDs for the current
 sequence.</p>
-<p><a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor/#max.experimental.tensor.Tensor.from_dlpack"><code>Tensor.from_dlpack()</code></a>
+<p><a href="https://docs.modular.com/api/python/generated/max.experimental.tensor.Tensor/#max.experimental.tensor.Tensor.from_dlpack"><code>Tensor.from_dlpack()</code></a>
 converts the driver <code>Buffer</code> to a MAX <code>Tensor</code> without copying. The compiled
 model returns <code>[1, seq_len, vocab_size]</code>: one logit vector per position. Only
 the final position’s logits are needed to sample the next token, so the output

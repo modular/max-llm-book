@@ -215,7 +215,7 @@ __all__ = ["ARCHITECTURES", "gpt2_arch"]
 </code></pre>
 <h2 id="the-architecture-declaration"><a class="header" href="#the-architecture-declaration">The architecture declaration</a></h2>
 <p><code>arch.py</code> assembles the
-<a href="https://docs.modular.com/max/api/python/generated/max.pipelines.lib.registry.SupportedArchitecture/"><code>SupportedArchitecture</code></a>
+<a href="https://docs.modular.com/api/python/generated/max.pipelines.lib.registry.SupportedArchitecture/"><code>SupportedArchitecture</code></a>
 that MAX registers. Each field tells the serving layer something it needs before
 a request arrives:</p>
 <pre><code class="language-python:arch.py">from __future__ import annotations
@@ -253,12 +253,12 @@ gpt2_arch = SupportedArchitecture(
 MAX downloads the model, reads <code>config.json</code>, and looks up that name in its
 registry. A mismatch means the package never loads.</p>
 <p><strong><code>weight_adapters</code>:</strong> maps each
-<a href="https://docs.modular.com/max/api/python/generated/max.graph.weights.WeightsFormat/"><code>WeightsFormat</code></a>
+<a href="https://docs.modular.com/api/python/generated/max.graph.weights.WeightsFormat/"><code>WeightsFormat</code></a>
 to a conversion function. When MAX loads the safetensors checkpoint, it calls
 <code>weight_adapters.convert_safetensor_state_dict</code> to produce the layout
 <code>MaxGPT2LMHeadModel</code> expects.</p>
 <p><strong><code>tokenizer</code>:</strong> is
-<a href="https://docs.modular.com/max/api/python/generated/max.pipelines.TextTokenizer/"><code>TextTokenizer</code></a>,
+<a href="https://docs.modular.com/api/python/generated/max.pipelines.TextTokenizer/"><code>TextTokenizer</code></a>,
 which wraps the Hugging Face tokenizer for the model. Before any token is
 processed, <code>max serve</code> calls it to convert the prompt to token IDs and, after
 generation, decode the output IDs back to text.</p>
@@ -292,16 +292,16 @@ weights to a live endpoint:</p>
 <ol>
 <li>Implement the model with <code>max.experimental.nn</code></li>
 <li>Adapt the weights with a
-<a href="https://docs.modular.com/max/api/python/generated/max.graph.weights.WeightsFormat/"><code>WeightsFormat</code></a>
+<a href="https://docs.modular.com/api/python/generated/max.graph.weights.WeightsFormat/"><code>WeightsFormat</code></a>
 converter</li>
 <li>Expose cache dimensions with an
-<a href="https://docs.modular.com/max/api/python/generated/max.pipelines.lib.interfaces.ArchConfigWithAttentionKVCache/"><code>ArchConfigWithAttentionKVCache</code></a>
+<a href="https://docs.modular.com/api/python/generated/max.pipelines.lib.interfaces.ArchConfigWithAttentionKVCache/"><code>ArchConfigWithAttentionKVCache</code></a>
 subclass</li>
 <li>Wrap execution in a
-<a href="https://docs.modular.com/max/api/python/generated/max.pipelines.lib.PipelineModelWithKVCache/"><code>PipelineModelWithKVCache</code></a>
+<a href="https://docs.modular.com/api/python/generated/max.pipelines.lib.PipelineModelWithKVCache/"><code>PipelineModelWithKVCache</code></a>
 subclass</li>
 <li>Register the package as a
-<a href="https://docs.modular.com/max/api/python/generated/max.pipelines.lib.registry.SupportedArchitecture/"><code>SupportedArchitecture</code></a>
+<a href="https://docs.modular.com/api/python/generated/max.pipelines.lib.registry.SupportedArchitecture/"><code>SupportedArchitecture</code></a>
 and pass <code>--custom-architectures</code> to <code>max serve</code></li>
 </ol>
 <p>Modern LLMs build on these same components with targeted refinements:</p>

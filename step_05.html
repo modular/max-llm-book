@@ -227,12 +227,12 @@ what the model learned, producing poor or nonsensical output.</p>
 learned <code>weight</code> scales the normalized result and <code>bias</code> shifts it, initialized
 to ones and zeros so the initial transformation is identity.</p>
 <h2 id="layernorm"><a class="header" href="#layernorm">LayerNorm</a></h2>
-<p><a href="https://docs.modular.com/max/api/python/experimental.functional/#max.experimental.functional.layer_norm"><code>F.layer_norm</code></a>
+<p><a href="https://docs.modular.com/api/python/experimental.functional/#max.experimental.functional.layer_norm"><code>F.layer_norm</code></a>
 computes the normalization and applies the learned parameters in one call. The
 weight is initialized with
-<a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor/#max.experimental.tensor.Tensor.ones"><code>Tensor.ones</code></a>
+<a href="https://docs.modular.com/api/python/generated/max.experimental.tensor.Tensor/#max.experimental.tensor.Tensor.ones"><code>Tensor.ones</code></a>
 and the bias with
-<a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor/#max.experimental.tensor.Tensor.zeros"><code>Tensor.zeros</code></a>:</p>
+<a href="https://docs.modular.com/api/python/generated/max.experimental.tensor.Tensor/#max.experimental.tensor.Tensor.zeros"><code>Tensor.zeros</code></a>:</p>
 <pre><code class="language-python:gpt2.py">class LayerNorm(Module):  # type: ignore[type-arg]
     def __init__(self, dim: DimLike, *, eps: float = 1e-5) -&gt; None:
         self.eps = eps

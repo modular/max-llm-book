@@ -222,15 +222,15 @@ remaining trainable. Early layers tend to capture surface-level patterns like
 word shapes and punctuation; later layers capture higher-level semantic
 patterns. The representations from all layers contribute to the final output.</p>
 <h2 id="module-composition"><a class="header" href="#module-composition">Module composition</a></h2>
-<p><a href="https://docs.modular.com/max/api/python/generated/max.experimental.nn.Sequential/"><code>Sequential</code></a>
+<p><a href="https://docs.modular.com/api/python/generated/max.experimental.nn.Sequential/"><code>Sequential</code></a>
 chains the 12 transformer blocks in order, passing each block’s output to the
 next. The <code>*</code> in
 <code>Sequential(*(GPT2Block(config) for _ in range(config.n_layer)))</code> unpacks the
 generator as positional arguments.</p>
-<p><a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor/#max.experimental.tensor.Tensor.arange"><code>Tensor.arange</code></a>
+<p><a href="https://docs.modular.com/api/python/generated/max.experimental.tensor.Tensor/#max.experimental.tensor.Tensor.arange"><code>Tensor.arange</code></a>
 generates position indices <code>[0, 1, ..., seq_length-1]</code> matching the input’s
 dtype and device so they’re compatible for embedding lookup.</p>
-<p><a href="https://docs.modular.com/max/api/python/generated/max.experimental.nn.Embedding/"><code>Embedding(vocab_size, dim)</code></a>
+<p><a href="https://docs.modular.com/api/python/generated/max.experimental.nn.Embedding/"><code>Embedding(vocab_size, dim)</code></a>
 is used for both token and position embeddings.</p>
 <h2 id="maxgpt2model"><a class="header" href="#maxgpt2model">MaxGPT2Model</a></h2>
 <p><code>MaxGPT2Model</code> combines token embeddings, position embeddings, 12 transformer

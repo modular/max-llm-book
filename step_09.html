@@ -219,10 +219,10 @@ contains a list of <code>MaxGPT2Block</code> layers under <code>h</code>, each w
 this hierarchy to construct the expected parameter names:
 <code>transformer.h.0.attn.c_attn.weight</code>, <code>transformer.h.0.ln_1.weight</code>,
 <code>lm_head.weight</code>.</p>
-<p><a href="https://docs.modular.com/max/api/python/generated/max.graph.weights.WeightData/"><code>WeightData.from_numpy(arr, name)</code></a>
+<p><a href="https://docs.modular.com/api/python/generated/max.graph.weights.WeightData/"><code>WeightData.from_numpy(arr, name)</code></a>
 binds an array to one of those names. The adapter builds the output dict by
 producing one
-<a href="https://docs.modular.com/max/api/python/generated/max.graph.weights.WeightData/"><code>WeightData</code></a>
+<a href="https://docs.modular.com/api/python/generated/max.graph.weights.WeightData/"><code>WeightData</code></a>
 per parameter, with the name MAX expects and an array in the shape MAX expects.
 That’s the entire contract: name and shape.</p>
 <p>For any model you bring up in MAX, this is the same pattern: declare your

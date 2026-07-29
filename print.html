@@ -205,7 +205,7 @@ to understand what’s actually happening when you call an inference API, or you
 need to adapt one of these models for your own work, building one from scratch
 is the fastest path to that understanding.</p>
 <p>This guide walks you through a complete GPT-2 implementation using the
-<a href="https://docs.modular.com/max/api/python/">MAX Python API</a>. You’ll start by
+<a href="https://docs.modular.com/api/python/">MAX Python API</a>. You’ll start by
 running a working model, then build it component by component: embeddings,
 attention, feed-forward layers, and the serving layer that connects it all.
 Everything runs from the
@@ -471,9 +471,9 @@ connections.</li>
 Face’s GPT-2 checkpoint structure. This naming is essential for loading
 pretrained weights in the final step.</p>
 <h2 id="gpt2mlp"><a class="header" href="#gpt2mlp">GPT2MLP</a></h2>
-<p><a href="https://docs.modular.com/max/api/python/generated/max.experimental.nn.Linear/"><code>Linear(in_dim, out_dim, bias=True)</code></a>
+<p><a href="https://docs.modular.com/api/python/generated/max.experimental.nn.Linear/"><code>Linear(in_dim, out_dim, bias=True)</code></a>
 applies <code>y = xW^T + b</code>. Both layers include bias terms.
-<a href="https://docs.modular.com/max/api/python/experimental.functional/#max.experimental.functional.gelu"><code>F.gelu</code></a>
+<a href="https://docs.modular.com/api/python/experimental.functional/#max.experimental.functional.gelu"><code>F.gelu</code></a>
 applies the activation between them:</p>
 <pre><code class="language-python:gpt2.py">class GPT2MLP(Module):  # type: ignore[type-arg]
     """Exact HuggingFace GPT-2 MLP structure"""
@@ -722,12 +722,12 @@ what the model learned, producing poor or nonsensical output.</p>
 learned <code>weight</code> scales the normalized result and <code>bias</code> shifts it, initialized
 to ones and zeros so the initial transformation is identity.</p>
 <h2 id="layernorm"><a class="header" href="#layernorm">LayerNorm</a></h2>
-<p><a href="https://docs.modular.com/max/api/python/experimental.functional/#max.experimental.functional.layer_norm"><code>F.layer_norm</code></a>
+<p><a href="https://docs.modular.com/api/python/experimental.functional/#max.experimental.functional.layer_norm"><code>F.layer_norm</code></a>
 computes the normalization and applies the learned parameters in one call. The
 weight is initialized with
-<a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor/#max.experimental.tensor.Tensor.ones"><code>Tensor.ones</code></a>
+<a href="https://docs.modular.com/api/python/generated/max.experimental.tensor.Tensor/#max.experimental.tensor.Tensor.ones"><code>Tensor.ones</code></a>
 and the bias with
-<a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor/#max.experimental.tensor.Tensor.zeros"><code>Tensor.zeros</code></a>:</p>
+<a href="https://docs.modular.com/api/python/generated/max.experimental.tensor.Tensor/#max.experimental.tensor.Tensor.zeros"><code>Tensor.zeros</code></a>:</p>
 <pre><code class="language-python:gpt2.py">class LayerNorm(Module):  # type: ignore[type-arg]
     def __init__(self, dim: DimLike, *, eps: float = 1e-5) -&gt; None:
         self.eps = eps
@@ -837,15 +837,15 @@ remaining trainable. Early layers tend to capture surface-level patterns like
 word shapes and punctuation; later layers capture higher-level semantic
 patterns. The representations from all layers contribute to the final output.</p>
 <h2 id="module-composition"><a class="header" href="#module-composition">Module composition</a></h2>
-<p><a href="https://docs.modular.com/max/api/python/generated/max.experimental.nn.Sequential/"><code>Sequential</code></a>
+<p><a href="https://docs.modular.com/api/python/generated/max.experimental.nn.Sequential/"><code>Sequential</code></a>
 chains the 12 transformer blocks in order, passing each block’s output to the
 next. The <code>*</code> in
 <code>Sequential(*(GPT2Block(config) for _ in range(config.n_layer)))</code> unpacks the
 generator as positional arguments.</p>
-<p><a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor/#max.experimental.tensor.Tensor.arange"><code>Tensor.arange</code></a>
+<p><a href="https://docs.modular.com/api/python/generated/max.experimental.tensor.Tensor/#max.experimental.tensor.Tensor.arange"><code>Tensor.arange</code></a>
 generates position indices <code>[0, 1, ..., seq_length-1]</code> matching the input’s
 dtype and device so they’re compatible for embedding lookup.</p>
-<p><a href="https://docs.modular.com/max/api/python/generated/max.experimental.nn.Embedding/"><code>Embedding(vocab_size, dim)</code></a>
+<p><a href="https://docs.modular.com/api/python/generated/max.experimental.nn.Embedding/"><code>Embedding(vocab_size, dim)</code></a>
 is used for both token and position embeddings.</p>
 <h2 id="maxgpt2model"><a class="header" href="#maxgpt2model">MaxGPT2Model</a></h2>
 <p><code>MaxGPT2Model</code> combines token embeddings, position embeddings, 12 transformer
@@ -959,10 +959,10 @@ contains a list of <code>MaxGPT2Block</code> layers under <code>h</code>, each w
 this hierarchy to construct the expected parameter names:
 <code>transformer.h.0.attn.c_attn.weight</code>, <code>transformer.h.0.ln_1.weight</code>,
 <code>lm_head.weight</code>.</p>
-<p><a href="https://docs.modular.com/max/api/python/generated/max.graph.weights.WeightData/"><code>WeightData.from_numpy(arr, name)</code></a>
+<p><a href="https://docs.modular.com/api/python/generated/max.graph.weights.WeightData/"><code>WeightData.from_numpy(arr, name)</code></a>
 binds an array to one of those names. The adapter builds the output dict by
 producing one
-<a href="https://docs.modular.com/max/api/python/generated/max.graph.weights.WeightData/"><code>WeightData</code></a>
+<a href="https://docs.modular.com/api/python/generated/max.graph.weights.WeightData/"><code>WeightData</code></a>
 per parameter, with the name MAX expects and an array in the shape MAX expects.
 That’s the entire contract: name and shape.</p>
 <p>For any model you bring up in MAX, this is the same pattern: declare your
@@ -1063,7 +1063,7 @@ the first token runs, and how <code>model_config.py</code> provides it.</p>
 <p>GPT-2 doesn’t use a KV cache. Every decode step re-processes the full token
 sequence from position 0, so there’s nothing to cache between steps. The
 serving interface requires cache dimensions regardless.</p>
-<p><a href="https://docs.modular.com/max/api/python/generated/max.pipelines.lib.PipelineModelWithKVCache/"><code>PipelineModelWithKVCache</code></a>,
+<p><a href="https://docs.modular.com/api/python/generated/max.pipelines.lib.PipelineModelWithKVCache/"><code>PipelineModelWithKVCache</code></a>,
 the base class <code>GPT2PipelineModel</code> extends, requires an architecture config that
 exposes cache dimensions regardless. MAX uses those dimensions to allocate cache
 space as part of its serving infrastructure. <code>GPT2ArchConfig</code> satisfies that
@@ -1081,7 +1081,7 @@ it. Each new step processes only the one new token.</p>
 token runs, the framework allocates cache storage for the entire model: one slot
 per layer, per head, per position up to the maximum sequence length. To do that
 it needs the cache dimensions upfront. That’s exactly what
-<a href="https://docs.modular.com/max/api/python/generated/max.pipelines.lib.interfaces.ArchConfigWithAttentionKVCache/"><code>ArchConfigWithAttentionKVCache</code></a>
+<a href="https://docs.modular.com/api/python/generated/max.pipelines.lib.interfaces.ArchConfigWithAttentionKVCache/"><code>ArchConfigWithAttentionKVCache</code></a>
 requires your config to provide: how many layers, how many KV heads, how large
 each head is, and the maximum sequence length.</p>
 <p>For GPT-2 here, the cache is allocated but never used. The forward pass
@@ -1092,7 +1092,7 @@ more expensive as context grows and limits how many requests the server can
 handle concurrently.</p>
 <p>When you bring up a model that uses an incremental KV cache, you’d keep the same
 config structure and add cache reads and writes to the forward pass.
-<a href="https://docs.modular.com/max/api/python/generated/max.nn.kv_cache.KVCacheInputs/"><code>KVCacheInputs</code></a>
+<a href="https://docs.modular.com/api/python/generated/max.nn.kv_cache.KVCacheInputs/"><code>KVCacheInputs</code></a>
 are passed into each decode step, and the framework manages cache lifetimes
 across requests. When your forward pass reads and writes that cache, each step
 processes only the one new token. The four properties below are the same in both
@@ -1111,7 +1111,7 @@ but only 8 KV heads; fewer KV heads means a smaller cache.</p>
 context window is 1,024 tokens (<code>n_positions</code>).</p>
 <h2 id="the-configuration-class"><a class="header" href="#the-configuration-class">The configuration class</a></h2>
 <p><code>GPT2ArchConfig</code> extends
-<a href="https://docs.modular.com/max/api/python/generated/max.pipelines.lib.interfaces.ArchConfigWithAttentionKVCache/"><code>ArchConfigWithAttentionKVCache</code></a>,
+<a href="https://docs.modular.com/api/python/generated/max.pipelines.lib.interfaces.ArchConfigWithAttentionKVCache/"><code>ArchConfigWithAttentionKVCache</code></a>,
 which handles the cache allocation machinery. The subclass reads each dimension
 from the Hugging Face config object:</p>
 <pre><code class="language-python:model_config.py">from __future__ import annotations
@@ -1153,29 +1153,29 @@ compiled model, runs it, and manages the token sequence between decode steps.</p
 and manages the growing token sequence.</p>
 </div>
 <p>To extend a pipeline and connect it to a serving layer, you’ll need to subclass
-<a href="https://docs.modular.com/max/api/python/generated/max.pipelines.lib.PipelineModelWithKVCache/"><code>PipelineModelWithKVCache</code></a>
+<a href="https://docs.modular.com/api/python/generated/max.pipelines.lib.PipelineModelWithKVCache/"><code>PipelineModelWithKVCache</code></a>
 and tell it how to load your model, run each decode step, and manage the token
 sequence.</p>
 <h2 id="load-the-model"><a class="header" href="#load-the-model">Load the model</a></h2>
 <p>Every
-<a href="https://docs.modular.com/max/api/python/generated/max.experimental.nn.Linear/"><code>Linear</code></a>
+<a href="https://docs.modular.com/api/python/generated/max.experimental.nn.Linear/"><code>Linear</code></a>
 and
-<a href="https://docs.modular.com/max/api/python/generated/max.experimental.nn.Embedding/"><code>Embedding</code></a>
+<a href="https://docs.modular.com/api/python/generated/max.experimental.nn.Embedding/"><code>Embedding</code></a>
 layer in <code>MaxGPT2LMHeadModel</code> allocates tensors when constructed. Without the
 lazy context, those allocations fill with random values and are immediately
 discarded when the checkpoint loads.
-<a href="https://docs.modular.com/max/api/python/experimental.functional/#max.experimental.functional.lazy"><code>F.lazy()</code></a>
+<a href="https://docs.modular.com/api/python/experimental.functional/#max.experimental.functional.lazy"><code>F.lazy()</code></a>
 defers all allocation inside the block: layers are declared, but nothing is
 allocated until <code>compile()</code> runs.</p>
-<p><a href="https://docs.modular.com/max/api/python/experimental.tensor/#max.experimental.tensor.default_device"><code>default_device()</code></a>
+<p><a href="https://docs.modular.com/api/python/experimental.tensor/#max.experimental.tensor.default_device"><code>default_device()</code></a>
 and
-<a href="https://docs.modular.com/max/api/python/experimental.tensor/#max.experimental.tensor.default_dtype"><code>default_dtype()</code></a>
+<a href="https://docs.modular.com/api/python/experimental.tensor/#max.experimental.tensor.default_dtype"><code>default_dtype()</code></a>
 set context variables that module construction code reads inside the lazy block,
 so layers pick up the right device and numeric type without being passed them
 explicitly.</p>
-<p><a href="https://docs.modular.com/max/api/python/generated/max.experimental.nn.Module/#max.experimental.nn.Module.compile"><code>compile()</code></a>
+<p><a href="https://docs.modular.com/api/python/generated/max.experimental.nn.Module/#max.experimental.nn.Module.compile"><code>compile()</code></a>
 runs outside the lazy block. Loading safetensors buffers inside
-<a href="https://docs.modular.com/max/api/python/experimental.functional/#max.experimental.functional.lazy"><code>F.lazy()</code></a>
+<a href="https://docs.modular.com/api/python/experimental.functional/#max.experimental.functional.lazy"><code>F.lazy()</code></a>
 triggers the same memory alignment error that <code>_to_numpy()</code> in
 <code>weight_adapters.py</code> solves by copying into a fresh array. Passing
 <code>weights=state_dict</code> to <code>compile()</code> loads and compiles in one step after the
@@ -1204,7 +1204,7 @@ lazy context closes:</p>
 <p><code>execute()</code> receives a <code>GPT2Inputs</code>, a dataclass with one field: <code>tokens</code>,
 a <code>[1, seq_len]</code> int64 <code>Buffer</code> containing all token IDs for the current
 sequence.</p>
-<p><a href="https://docs.modular.com/max/api/python/generated/max.experimental.tensor.Tensor/#max.experimental.tensor.Tensor.from_dlpack"><code>Tensor.from_dlpack()</code></a>
+<p><a href="https://docs.modular.com/api/python/generated/max.experimental.tensor.Tensor/#max.experimental.tensor.Tensor.from_dlpack"><code>Tensor.from_dlpack()</code></a>
 converts the driver <code>Buffer</code> to a MAX <code>Tensor</code> without copying. The compiled
 model returns <code>[1, seq_len, vocab_size]</code>: one logit vector per position. Only
 the final position’s logits are needed to sample the next token, so the output
@@ -1270,7 +1270,7 @@ __all__ = ["ARCHITECTURES", "gpt2_arch"]
 </code></pre>
 <h2 id="the-architecture-declaration"><a class="header" href="#the-architecture-declaration">The architecture declaration</a></h2>
 <p><code>arch.py</code> assembles the
-<a href="https://docs.modular.com/max/api/python/generated/max.pipelines.lib.registry.SupportedArchitecture/"><code>SupportedArchitecture</code></a>
+<a href="https://docs.modular.com/api/python/generated/max.pipelines.lib.registry.SupportedArchitecture/"><code>SupportedArchitecture</code></a>
 that MAX registers. Each field tells the serving layer something it needs before
 a request arrives:</p>
 <pre><code class="language-python:arch.py">from __future__ import annotations
@@ -1308,12 +1308,12 @@ gpt2_arch = SupportedArchitecture(
 MAX downloads the model, reads <code>config.json</code>, and looks up that name in its
 registry. A mismatch means the package never loads.</p>
 <p><strong><code>weight_adapters</code>:</strong> maps each
-<a href="https://docs.modular.com/max/api/python/generated/max.graph.weights.WeightsFormat/"><code>WeightsFormat</code></a>
+<a href="https://docs.modular.com/api/python/generated/max.graph.weights.WeightsFormat/"><code>WeightsFormat</code></a>
 to a conversion function. When MAX loads the safetensors checkpoint, it calls
 <code>weight_adapters.convert_safetensor_state_dict</code> to produce the layout
 <code>MaxGPT2LMHeadModel</code> expects.</p>
 <p><strong><code>tokenizer</code>:</strong> is
-<a href="https://docs.modular.com/max/api/python/generated/max.pipelines.TextTokenizer/"><code>TextTokenizer</code></a>,
+<a href="https://docs.modular.com/api/python/generated/max.pipelines.TextTokenizer/"><code>TextTokenizer</code></a>,
 which wraps the Hugging Face tokenizer for the model. Before any token is
 processed, <code>max serve</code> calls it to convert the prompt to token IDs and, after
 generation, decode the output IDs back to text.</p>
@@ -1347,16 +1347,16 @@ weights to a live endpoint:</p>
 <ol>
 <li>Implement the model with <code>max.experimental.nn</code></li>
 <li>Adapt the weights with a
-<a href="https://docs.modular.com/max/api/python/generated/max.graph.weights.WeightsFormat/"><code>WeightsFormat</code></a>
+<a href="https://docs.modular.com/api/python/generated/max.graph.weights.WeightsFormat/"><code>WeightsFormat</code></a>
 converter</li>
 <li>Expose cache dimensions with an
-<a href="https://docs.modular.com/max/api/python/generated/max.pipelines.lib.interfaces.ArchConfigWithAttentionKVCache/"><code>ArchConfigWithAttentionKVCache</code></a>
+<a href="https://docs.modular.com/api/python/generated/max.pipelines.lib.interfaces.ArchConfigWithAttentionKVCache/"><code>ArchConfigWithAttentionKVCache</code></a>
 subclass</li>
 <li>Wrap execution in a
-<a href="https://docs.modular.com/max/api/python/generated/max.pipelines.lib.PipelineModelWithKVCache/"><code>PipelineModelWithKVCache</code></a>
+<a href="https://docs.modular.com/api/python/generated/max.pipelines.lib.PipelineModelWithKVCache/"><code>PipelineModelWithKVCache</code></a>
 subclass</li>
 <li>Register the package as a
-<a href="https://docs.modular.com/max/api/python/generated/max.pipelines.lib.registry.SupportedArchitecture/"><code>SupportedArchitecture</code></a>
+<a href="https://docs.modular.com/api/python/generated/max.pipelines.lib.registry.SupportedArchitecture/"><code>SupportedArchitecture</code></a>
 and pass <code>--custom-architectures</code> to <code>max serve</code></li>
 </ol>
 <p>Modern LLMs build on these same components with targeted refinements:</p>

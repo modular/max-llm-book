@@ -15,7 +15,7 @@ all plots and printed values preserved. See
 - [pixi](https://pixi.sh/dev/) — install with
   `curl -fsSL https://pixi.sh/install.sh | sh`
 - A platform supported by MAX. See the
-  [MAX system requirements](https://docs.modular.com/max/packages#system-requirements).
+  [MAX system requirements](https://docs.modular.com/packages#system-requirements).
 - About 1 GB of free disk for the HuggingFace cache and pixi env (first run
   only).
 

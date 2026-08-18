@@ -31,17 +31,17 @@ patterns. The representations from all layers contribute to the final output.
 
 ## Module composition
 
-[`Sequential`](https://docs.modular.com/api/python/generated/max.experimental.nn.Sequential/)
+[`Sequential`](https://max.modular.com/api/python/generated/max.experimental.nn.Sequential/)
 chains the 12 transformer blocks in order, passing each block's output to the
 next. The `*` in
 `Sequential(*(GPT2Block(config) for _ in range(config.n_layer)))` unpacks the
 generator as positional arguments.
 
-[`Tensor.arange`](https://docs.modular.com/api/python/generated/max.experimental.tensor.Tensor/#max.experimental.tensor.Tensor.arange)
+[`Tensor.arange`](https://max.modular.com/api/python/generated/max.experimental.tensor.Tensor/#max.experimental.tensor.Tensor.arange)
 generates position indices `[0, 1, ..., seq_length-1]` matching the input's
 dtype and device so they're compatible for embedding lookup.
 
-[`Embedding(vocab_size, dim)`](https://docs.modular.com/api/python/generated/max.experimental.nn.Embedding/)
+[`Embedding(vocab_size, dim)`](https://max.modular.com/api/python/generated/max.experimental.nn.Embedding/)
 is used for both token and position embeddings.
 
 ## MaxGPT2Model

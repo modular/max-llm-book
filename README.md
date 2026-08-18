@@ -20,7 +20,7 @@ it does and why — from model configuration through serving with `max serve`.
 - [Pixi](https://pixi.sh/) package manager
 - Basic understanding of neural networks
 - You'll need to meet the
-  [MAX system requirements](https://docs.modular.com/packages#system-requirements)
+  [MAX system requirements](https://max.modular.com/packages#system-requirements)
 
 ### Installation
 
@@ -112,7 +112,7 @@ max-llm-book/
 
 ## Learning resources
 
-- **MAX documentation**: [docs.modular.com](https://docs.modular.com/)
+- **MAX documentation**: [max.modular.com](https://max.modular.com/)
 - **Hugging Face GPT-2**: [huggingface.co/gpt2](https://huggingface.co/gpt2)
 - **Attention Is All You Need**:
   [arxiv.org/abs/1706.03762](https://arxiv.org/abs/1706.03762)

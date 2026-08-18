@@ -12,7 +12,7 @@ This tutorial assumes the following:
   explain the specifics).
 
 Check the
-[MAX system requirements](https://docs.modular.com/packages/#system-requirements)
+[MAX system requirements](https://max.modular.com/packages/#system-requirements)
 to confirm your platform is supported before continuing.
 
 ## Install

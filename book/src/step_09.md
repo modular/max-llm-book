@@ -28,10 +28,10 @@ this hierarchy to construct the expected parameter names:
 `transformer.h.0.attn.c_attn.weight`, `transformer.h.0.ln_1.weight`,
 `lm_head.weight`.
 
-[`WeightData.from_numpy(arr, name)`](https://docs.modular.com/api/python/generated/max.graph.weights.WeightData/)
+[`WeightData.from_numpy(arr, name)`](https://max.modular.com/api/python/generated/max.graph.weights.WeightData/)
 binds an array to one of those names. The adapter builds the output dict by
 producing one
-[`WeightData`](https://docs.modular.com/api/python/generated/max.graph.weights.WeightData/)
+[`WeightData`](https://max.modular.com/api/python/generated/max.graph.weights.WeightData/)
 per parameter, with the name MAX expects and an array in the shape MAX expects.
 That's the entire contract: name and shape.
 

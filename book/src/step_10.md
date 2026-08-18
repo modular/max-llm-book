@@ -11,7 +11,7 @@ GPT-2 doesn't use a KV cache. Every decode step re-processes the full token
 sequence from position 0, so there's nothing to cache between steps. The
 serving interface requires cache dimensions regardless.
 
-[`PipelineModelWithKVCache`](https://docs.modular.com/api/python/generated/max.pipelines.lib.PipelineModelWithKVCache/),
+[`PipelineModelWithKVCache`](https://max.modular.com/api/python/generated/max.pipelines.lib.PipelineModelWithKVCache/),
 the base class `GPT2PipelineModel` extends, requires an architecture config that
 exposes cache dimensions regardless. MAX uses those dimensions to allocate cache
 space as part of its serving infrastructure. `GPT2ArchConfig` satisfies that
@@ -32,7 +32,7 @@ it. Each new step processes only the one new token.
 token runs, the framework allocates cache storage for the entire model: one slot
 per layer, per head, per position up to the maximum sequence length. To do that
 it needs the cache dimensions upfront. That's exactly what
-[`ArchConfigWithAttentionKVCache`](https://docs.modular.com/api/python/generated/max.pipelines.lib.interfaces.ArchConfigWithAttentionKVCache/)
+[`ArchConfigWithAttentionKVCache`](https://max.modular.com/api/python/generated/max.pipelines.lib.interfaces.ArchConfigWithAttentionKVCache/)
 requires your config to provide: how many layers, how many KV heads, how large
 each head is, and the maximum sequence length.
 
@@ -45,7 +45,7 @@ handle concurrently.
 
 When you bring up a model that uses an incremental KV cache, you'd keep the same
 config structure and add cache reads and writes to the forward pass.
-[`KVCacheInputs`](https://docs.modular.com/api/python/generated/max.nn.kv_cache.KVCacheInputs/)
+[`KVCacheInputs`](https://max.modular.com/api/python/generated/max.nn.kv_cache.KVCacheInputs/)
 are passed into each decode step, and the framework manages cache lifetimes
 across requests. When your forward pass reads and writes that cache, each step
 processes only the one new token. The four properties below are the same in both
@@ -71,7 +71,7 @@ context window is 1,024 tokens (`n_positions`).
 ## The configuration class
 
 `GPT2ArchConfig` extends
-[`ArchConfigWithAttentionKVCache`](https://docs.modular.com/api/python/generated/max.pipelines.lib.interfaces.ArchConfigWithAttentionKVCache/),
+[`ArchConfigWithAttentionKVCache`](https://max.modular.com/api/python/generated/max.pipelines.lib.interfaces.ArchConfigWithAttentionKVCache/),
 which handles the cache allocation machinery. The subclass reads each dimension
 from the Hugging Face config object:
 

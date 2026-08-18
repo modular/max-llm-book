@@ -22,7 +22,7 @@ registry.
 ## The architecture declaration
 
 `arch.py` assembles the
-[`SupportedArchitecture`](https://docs.modular.com/api/python/generated/max.pipelines.lib.registry.SupportedArchitecture/)
+[`SupportedArchitecture`](https://max.modular.com/api/python/generated/max.pipelines.lib.registry.SupportedArchitecture/)
 that MAX registers. Each field tells the serving layer something it needs before
 a request arrives:
 
@@ -36,13 +36,13 @@ MAX downloads the model, reads `config.json`, and looks up that name in its
 registry. A mismatch means the package never loads.
 
 **`weight_adapters`:** maps each
-[`WeightsFormat`](https://docs.modular.com/api/python/generated/max.graph.weights.WeightsFormat/)
+[`WeightsFormat`](https://max.modular.com/api/python/generated/max.graph.weights.WeightsFormat/)
 to a conversion function. When MAX loads the safetensors checkpoint, it calls
 `weight_adapters.convert_safetensor_state_dict` to produce the layout
 `MaxGPT2LMHeadModel` expects.
 
 **`tokenizer`:** is
-[`TextTokenizer`](https://docs.modular.com/api/python/generated/max.pipelines.TextTokenizer/),
+[`TextTokenizer`](https://max.modular.com/api/python/generated/max.pipelines.TextTokenizer/),
 which wraps the Hugging Face tokenizer for the model. Before any token is
 processed, `max serve` calls it to convert the prompt to token IDs and, after
 generation, decode the output IDs back to text.
@@ -83,16 +83,16 @@ weights to a live endpoint:
 
 1. Implement the model with `max.experimental.nn`
 2. Adapt the weights with a
-   [`WeightsFormat`](https://docs.modular.com/api/python/generated/max.graph.weights.WeightsFormat/)
+   [`WeightsFormat`](https://max.modular.com/api/python/generated/max.graph.weights.WeightsFormat/)
    converter
 3. Expose cache dimensions with an
-   [`ArchConfigWithAttentionKVCache`](https://docs.modular.com/api/python/generated/max.pipelines.lib.interfaces.ArchConfigWithAttentionKVCache/)
+   [`ArchConfigWithAttentionKVCache`](https://max.modular.com/api/python/generated/max.pipelines.lib.interfaces.ArchConfigWithAttentionKVCache/)
    subclass
 4. Wrap execution in a
-   [`PipelineModelWithKVCache`](https://docs.modular.com/api/python/generated/max.pipelines.lib.PipelineModelWithKVCache/)
+   [`PipelineModelWithKVCache`](https://max.modular.com/api/python/generated/max.pipelines.lib.PipelineModelWithKVCache/)
    subclass
 5. Register the package as a
-   [`SupportedArchitecture`](https://docs.modular.com/api/python/generated/max.pipelines.lib.registry.SupportedArchitecture/)
+   [`SupportedArchitecture`](https://max.modular.com/api/python/generated/max.pipelines.lib.registry.SupportedArchitecture/)
    and pass `--custom-architectures` to `max serve`
 
 Modern LLMs build on these same components with targeted refinements:

@@ -41,9 +41,9 @@ pretrained weights in the final step.
 
 ## GPT2MLP
 
-[`Linear(in_dim, out_dim, bias=True)`](https://docs.modular.com/api/python/generated/max.experimental.nn.Linear/)
+[`Linear(in_dim, out_dim, bias=True)`](https://max.modular.com/api/python/generated/max.experimental.nn.Linear/)
 applies `y = xW^T + b`. Both layers include bias terms.
-[`F.gelu`](https://docs.modular.com/api/python/experimental.functional/#max.experimental.functional.gelu)
+[`F.gelu`](https://max.modular.com/api/python/experimental.functional/#max.experimental.functional.gelu)
 applies the activation between them:
 
 ```python:gpt2.py

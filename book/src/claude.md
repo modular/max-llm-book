@@ -108,7 +108,7 @@ pixi run test 2>&1 | claude chat "Here's my check output. What's failing and why
 
 ## Resources
 
-- [MAX documentation](https://docs.modular.com/)
+- [MAX documentation](https://max.modular.com/)
 - [Tutorial Repository](https://github.com/modular/max-llm-book)
 - [GPT-2 Paper](https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf)
 - [Attention Is All You Need](https://arxiv.org/abs/1706.03762) (original

@@ -46,7 +46,6 @@ from max.pipelines.lib import (
     ModelOutputs,
     PipelineConfig,
     PipelineModelWithKVCache,
-    upper_bounded_default,
 )
 from max.pipelines.lib.utils import parse_state_dict_from_weights
 
@@ -114,18 +113,6 @@ class GPT2PipelineModel(PipelineModelWithKVCache[TextContext]):
             data_parallel_degree=pipeline_config.model.data_parallel_degree,
         )
 
-    @classmethod
-    def calculate_max_seq_len(
-        cls,
-        pipeline_config: PipelineConfig,
-        huggingface_config: Any,
-    ) -> int:
-        return upper_bounded_default(
-            upper_bound=huggingface_config.n_positions,
-            default=pipeline_config.model.max_length,
-        )
-
-    # ANCHOR: load_model
     def _load_model(
         self,
         weights: Weights,

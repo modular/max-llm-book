@@ -65,8 +65,10 @@ but only 8 KV heads; fewer KV heads means a smaller cache.
 **`head_dim`:** is the feature size of each head: `n_embd // n_head` = 768 ÷
 12 = 64. This is the depth of each cached key and value tensor.
 
-**`model_max_seq_len`:** is the upper bound on token sequence length. GPT-2's
-context window is 1,024 tokens (`n_positions`).
+**`calculate_max_seq_len`:** is the architecture's sequence-length policy:
+the user's `max_length` when set, bounded by GPT-2's 1,024-token context
+window (`n_positions`). It runs once when the pipeline configuration is
+constructed; memory planning sizes the cache from the resolved value.
 
 ## The configuration class
 

@@ -230,25 +230,7 @@ triggers the same memory alignment error that <code>_to_numpy()</code> in
 <code>weight_adapters.py</code> solves by copying into a fresh array. Passing
 <code>weights=state_dict</code> to <code>compile()</code> loads and compiles in one step after the
 lazy context closes:</p>
-<pre><code class="language-python:model.py">    def _load_model(
-        self,
-        weights: Weights,
-        adapter: WeightsAdapter | None,
-    ) -&gt; Any:
-        hf_config = self.huggingface_config
-        device = self.devices[0]
-
-        state_dict = parse_state_dict_from_weights(
-            self.pipeline_config, weights, adapter
-        )
-
-        with F.lazy(), default_device(device), default_dtype(self.dtype):
-            gpt2_module = MaxGPT2LMHeadModel(hf_config)
-            gpt2_module.to(device)
-
-        token_type = TensorType(DType.int64, ("batch", "seq_len"), device=device)
-        return gpt2_module.compile(token_type, weights=state_dict)
-
+<pre><code class="language-python:model.py">
 </code></pre>
 <h2 id="execute-a-step"><a class="header" href="#execute-a-step">Execute a step</a></h2>
 <p><code>execute()</code> receives a <code>GPT2Inputs</code>, a dataclass with one field: <code>tokens</code>,

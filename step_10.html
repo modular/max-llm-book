@@ -249,8 +249,10 @@ attention (GQA) return a smaller number here. LLaMA 3.1 8B has 32 query heads
 but only 8 KV heads; fewer KV heads means a smaller cache.</p>
 <p><strong><code>head_dim</code>:</strong> is the feature size of each head: <code>n_embd // n_head</code> = 768 ÷
 12 = 64. This is the depth of each cached key and value tensor.</p>
-<p><strong><code>model_max_seq_len</code>:</strong> is the upper bound on token sequence length. GPT-2’s
-context window is 1,024 tokens (<code>n_positions</code>).</p>
+<p><strong><code>calculate_max_seq_len</code>:</strong> is the architecture’s sequence-length policy:
+the user’s <code>max_length</code> when set, bounded by GPT-2’s 1,024-token context
+window (<code>n_positions</code>). It runs once when the pipeline configuration is
+constructed; memory planning sizes the cache from the resolved value.</p>
 <h2 id="the-configuration-class"><a class="header" href="#the-configuration-class">The configuration class</a></h2>
 <p><code>GPT2ArchConfig</code> extends
 <a href="https://max.modular.com/api/python/generated/max.pipelines.lib.interfaces.ArchConfigWithAttentionKVCache/"><code>ArchConfigWithAttentionKVCache</code></a>,
@@ -260,9 +262,12 @@ from the Hugging Face config object:</p>
 
 from dataclasses import dataclass
 
+from max.pipelines.lib import MAXModelConfig, PipelineConfig
 from max.pipelines.lib.interfaces.arch_config import (
     ArchConfigWithAttentionKVCache,
 )
+from max.pipelines.lib.utils import upper_bounded_default
+from transformers import AutoConfig
 
 
 @dataclass
@@ -281,9 +286,19 @@ class GPT2ArchConfig(ArchConfigWithAttentionKVCache):
     def num_layers(self) -&gt; int:
         return self.huggingface_config.n_layer  # type: ignore[union-attr]
 
-    @property
-    def model_max_seq_len(self) -&gt; int:
-        return self.huggingface_config.n_positions  # type: ignore[union-attr]
+    @classmethod
+    def calculate_max_seq_len(
+        cls,
+        pipeline_config: PipelineConfig,
+        huggingface_config: AutoConfig,
+        model_config: MAXModelConfig | None = None,
+    ) -&gt; int:
+        """The user's max_length, bounded by GPT-2's position count."""
+        model_config = model_config or pipeline_config.model
+        return upper_bounded_default(
+            upper_bound=huggingface_config.n_positions,
+            default=model_config.max_length,
+        )
 
 
 </code></pre>

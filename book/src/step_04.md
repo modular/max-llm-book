@@ -3,7 +3,7 @@
 <div class="note">
 
 Implement scaled dot-product
-[attention](https://docs.modular.com/glossary/ai/attention/) with multiple
+[attention](https://max.modular.com/glossary/ai/attention/) with multiple
 heads, enabling the model to attend to different representation subspaces.
 
 </div>

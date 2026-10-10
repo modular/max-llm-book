@@ -3,7 +3,7 @@
 <div class="note">
 
 Create attention masks to prevent the model from _seeing_ future tokens during
-[autoregressive](https://docs.modular.com/glossary/ai/autoregression/)
+[autoregressive](https://max.modular.com/glossary/ai/autoregression/)
 generation.
 
 </div>
@@ -24,7 +24,7 @@ GPT-2 architecture has no KV cache, so the full growing sequence is reprocessed
 on every step and the mask is applied on every forward pass.
 
 The `causal_mask()` function creates a
-[mask matrix](https://docs.modular.com/glossary/ai/attention-mask/) that sets
+[mask matrix](https://max.modular.com/glossary/ai/attention-mask/) that sets
 attention scores to `-inf` for future positions. After softmax, `-inf` becomes
 zero probability, blocking information flow from later tokens.
 
@@ -49,7 +49,7 @@ tokens, but not anything to its right:
 
 The mask shape is `(sequence_length, sequence_length + num_tokens)`. The extra
 `num_tokens` dimension is for
-[KV cache](https://docs.modular.com/glossary/ai/kv-cache/) compatibility: during
+[KV cache](https://max.modular.com/glossary/ai/kv-cache/) compatibility: during
 generation, cached keys and values from earlier tokens can be attended to
 without recomputing them.
 

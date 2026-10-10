@@ -37,16 +37,16 @@ from max.experimental.tensor import (
 )
 from max.graph import DeviceRef
 from max.graph.weights import Weights, WeightsAdapter
-from max.nn.kv_cache import KVCacheInputsInterface, KVCacheParams
+from max.nn.kv_cache import KVCacheInputs, KVCacheParams
 from max.nn.transformer import ReturnHiddenStates, ReturnLogits
 from max.pipelines.context import TextContext
 from max.pipelines.lib import (
     KVCacheConfig,
+    MemoryPlan,
     ModelInputs,
     ModelOutputs,
     PipelineConfig,
     PipelineModelWithKVCache,
-    upper_bounded_default,
 )
 from max.pipelines.lib.utils import parse_state_dict_from_weights
 
@@ -82,6 +82,8 @@ class GPT2PipelineModel(PipelineModelWithKVCache[TextContext]):
         weights: Weights,
         adapter: WeightsAdapter | None,
         return_logits: ReturnLogits,
+        *,
+        memory_plan: MemoryPlan,
         return_hidden_states: ReturnHiddenStates = ReturnHiddenStates.NONE,
         max_batch_size: int = 1,
     ) -> None:
@@ -95,6 +97,7 @@ class GPT2PipelineModel(PipelineModelWithKVCache[TextContext]):
             return_logits=return_logits,
             return_hidden_states=return_hidden_states,
             max_batch_size=max_batch_size,
+            memory_plan=memory_plan,
         )
         self.model = self._load_model(weights, adapter)
 
@@ -116,18 +119,6 @@ class GPT2PipelineModel(PipelineModelWithKVCache[TextContext]):
             data_parallel_degree=pipeline_config.model.data_parallel_degree,
         )
 
-    @classmethod
-    def calculate_max_seq_len(
-        cls,
-        pipeline_config: PipelineConfig,
-        huggingface_config: Any,
-    ) -> int:
-        return upper_bounded_default(
-            upper_bound=huggingface_config.n_positions,
-            default=pipeline_config.model.max_length,
-        )
-
-    # ANCHOR: load_model
     def _load_model(
         self,
         weights: Weights,
@@ -173,7 +164,7 @@ class GPT2PipelineModel(PipelineModelWithKVCache[TextContext]):
     def prepare_initial_token_inputs(
         self,
         replica_batches: Sequence[Sequence[TextContext]],
-        kv_cache_inputs: KVCacheInputsInterface[Buffer, Buffer] | None = None,
+        kv_cache_inputs: KVCacheInputs[Buffer, Buffer] | None = None,
         return_n_logits: int = 1,
     ) -> GPT2Inputs:
         _ = return_n_logits  # PipelineModel API; last-token logits only in `execute`.

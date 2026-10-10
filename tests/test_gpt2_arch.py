@@ -124,9 +124,11 @@ def test_pipeline_model_is_pipeline_model_with_kv_cache() -> None:
 def test_pipeline_model_get_kv_params_returns_params() -> None:
     """get_kv_params is a classmethod; test it can be imported and has right signature."""
     from gpt2_arch.model import GPT2PipelineModel
+    from gpt2_arch.model_config import GPT2ArchConfig
 
     assert hasattr(GPT2PipelineModel, "get_kv_params")
-    assert hasattr(GPT2PipelineModel, "calculate_max_seq_len")
+    # The sequence-length policy lives on the arch config, not the model.
+    assert hasattr(GPT2ArchConfig, "calculate_max_seq_len")
     assert hasattr(GPT2PipelineModel, "execute")
     assert hasattr(GPT2PipelineModel, "prepare_initial_token_inputs")
 

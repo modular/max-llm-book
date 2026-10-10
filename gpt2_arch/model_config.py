@@ -18,9 +18,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from max.pipelines.lib import MAXModelConfig
 from max.pipelines.lib.interfaces.arch_config import (
     ArchConfigWithAttentionKVCache,
 )
+from max.pipelines.lib.utils import upper_bounded_default
+from transformers import AutoConfig
 
 
 @dataclass
@@ -39,9 +42,17 @@ class GPT2ArchConfig(ArchConfigWithAttentionKVCache):
     def num_layers(self) -> int:
         return self.huggingface_config.n_layer  # type: ignore[union-attr]
 
-    @property
-    def model_max_seq_len(self) -> int:
-        return self.huggingface_config.n_positions  # type: ignore[union-attr]
+    @classmethod
+    def calculate_max_seq_len(
+        cls,
+        huggingface_config: AutoConfig,
+        model_config: MAXModelConfig,
+    ) -> int:
+        """The user's max_length, bounded by GPT-2's position count."""
+        return upper_bounded_default(
+            upper_bound=huggingface_config.n_positions,
+            default=model_config.max_length,
+        )
 
 
 # ANCHOR_END: book

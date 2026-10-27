@@ -45,7 +45,7 @@ handle concurrently.
 
 When you bring up a model that uses an incremental KV cache, you'd keep the same
 config structure and add cache reads and writes to the forward pass.
-[`KVCacheInputs`](https://max.modular.com/api/python/generated/max.nn.kv_cache.KVCacheInputs/)
+[`KVCacheInputs`](https://max.modular.com/api/python/generated/max.nn.legacy.kv_cache.KVCacheInputs/)
 are passed into each decode step, and the framework manages cache lifetimes
 across requests. When your forward pass reads and writes that cache, each step
 processes only the one new token. The four properties below are the same in both

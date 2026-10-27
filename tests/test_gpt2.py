@@ -41,7 +41,7 @@ def _tiny_config() -> GPT2Config:
     )
 
 
-from max.experimental.tensor import Tensor
+from max.tensor import Tensor
 
 
 class TestGPT2Config:

@@ -88,7 +88,7 @@ def test_gpt2_lm_head_model_imports() -> None:
 def test_gpt2_lm_head_model_has_expected_submodules() -> None:
     import types
 
-    import max.experimental.functional as F
+    import max.functional as F
     from gpt2_arch.gpt2 import MaxGPT2LMHeadModel
 
     cfg = types.SimpleNamespace(

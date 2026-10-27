@@ -26,12 +26,12 @@ import math
 from dataclasses import dataclass
 from typing import cast
 
-import max.experimental.functional as F
+import max.functional as F
 from max.driver import Device
 from max.dtype import DType
-from max.experimental.tensor import Tensor
 from max.graph import Dim, DimLike, TensorValue
 from max.nn import Embedding, Linear, Module, Sequential
+from max.tensor import Tensor
 
 
 # ANCHOR: model_configuration

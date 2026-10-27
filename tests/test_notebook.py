@@ -103,8 +103,8 @@ class TestCodeCellSyntax:
         code_cells = _code_cells(notebook)
         assert code_cells, "No code cells found"
         first_code = code_cells[0].source
-        assert "max.experimental.functional" in first_code, (
-            "Setup cell should import max.experimental.functional"
+        assert "max.functional" in first_code, (
+            "Setup cell should import max.functional"
         )
         assert "GPT2Config" in first_code, (
             "Setup cell should import GPT2Config from gpt2_arch.gpt2"

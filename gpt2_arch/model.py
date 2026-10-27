@@ -24,17 +24,11 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any
 
-import max.experimental.functional as F
+import max.functional as F
 import numpy as np
 from max.driver import CPU, Buffer, Device
 from max.dtype import DType
 from max.engine import InferenceSession
-from max.experimental.tensor import (
-    Tensor,
-    TensorType,
-    default_device,
-    default_dtype,
-)
 from max.graph import DeviceRef
 from max.graph.weights import Weights, WeightsAdapter
 from max.nn.legacy.kv_cache import KVCacheInputs, KVCacheParams
@@ -49,6 +43,12 @@ from max.pipelines.lib import (
     PipelineModelWithKVCache,
 )
 from max.pipelines.lib.utils import parse_state_dict_from_weights
+from max.tensor.tensor import (
+    Tensor,
+    TensorType,
+    default_device,
+    default_dtype,
+)
 
 from .gpt2 import MaxGPT2LMHeadModel
 

@@ -28,7 +28,7 @@ straight on Metal without an xfail marker.
 import os
 from collections.abc import Callable
 
-import max.experimental.functional as F
+import max.functional as F
 import numpy as np
 import pytest
 from gpt2_arch.gpt2 import (
@@ -44,8 +44,8 @@ from gpt2_arch.gpt2 import (
 from max._interpreter_ops import GC_FAMILIES, adopted_from_store
 from max.driver import CPU, Accelerator, accelerator_api, accelerator_count
 from max.dtype import DType
-from max.experimental.tensor import Tensor, default_device, default_dtype
 from max.nn import Module
+from max.tensor import Tensor, default_device, default_dtype
 
 
 def _probe_accelerator() -> Accelerator:

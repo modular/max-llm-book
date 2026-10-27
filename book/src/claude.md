@@ -21,7 +21,7 @@ following context in mind:
 **MAX framework specifics:**
 - `gpt2_arch/gpt2.py` uses `max.nn.Module` as the base class
 - Functions use `@F.functional` for compiled graph definitions
-- Tensor operations use `max.experimental.functional` and `max.experimental.tensor`
+- Tensor operations use `max.functional` and `max.tensor.tensor`
 - Linear layers use `max.nn.Linear`
 - `gpt2_arch/model.py` imports `MaxGPT2LMHeadModel` from `gpt2_arch/gpt2.py` and wraps it in `PipelineModelWithKVCache` for `max serve`, using `max.nn` throughout
 

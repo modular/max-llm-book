@@ -10,7 +10,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ===----------------------------------------------------------------------=== #
-"""GPT-2 model implementation using max.experimental.nn.
+"""GPT-2 model implementation using max.nn.
 
 This module defines the full GPT-2 model hierarchy:
   GPT2Config → GPT2MLP, GPT2MultiHeadAttention, LayerNorm
@@ -29,9 +29,9 @@ from typing import cast
 import max.experimental.functional as F
 from max.driver import Device
 from max.dtype import DType
-from max.experimental.nn import Embedding, Linear, Module, Sequential
 from max.experimental.tensor import Tensor
 from max.graph import Dim, DimLike, TensorValue
+from max.nn import Embedding, Linear, Module, Sequential
 
 
 # ANCHOR: model_configuration

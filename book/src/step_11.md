@@ -14,10 +14,9 @@ sequence.
 
 ## Load the model
 
-Every
-[`Linear`](https://max.modular.com/api/python/generated/max.experimental.nn.Linear/)
+Every [`Linear`](https://max.modular.com/api/python/generated/max.nn.Linear/)
 and
-[`Embedding`](https://max.modular.com/api/python/generated/max.experimental.nn.Embedding/)
+[`Embedding`](https://max.modular.com/api/python/generated/max.nn.Embedding/)
 layer in `MaxGPT2LMHeadModel` allocates tensors when constructed. Without the
 lazy context, those allocations fill with random values and are immediately
 discarded when the checkpoint loads.
@@ -32,7 +31,7 @@ set context variables that module construction code reads inside the lazy block,
 so layers pick up the right device and numeric type without being passed them
 explicitly.
 
-[`compile()`](https://max.modular.com/api/python/generated/max.experimental.nn.Module/#max.experimental.nn.Module.compile)
+[`compile()`](https://max.modular.com/api/python/generated/max.nn.Module/#max.nn.Module.compile)
 runs outside the lazy block. Loading safetensors buffers inside
 [`F.lazy()`](https://max.modular.com/api/python/experimental.functional/#max.experimental.functional.lazy)
 triggers the same memory alignment error that `_to_numpy()` in

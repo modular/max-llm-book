@@ -68,7 +68,7 @@ class GPT2Inputs(ModelInputs):
 class GPT2PipelineModel(PipelineModelWithKVCache[TextContext]):
     """GPT-2 pipeline model for max serve.
 
-    Uses max.experimental.nn — the same API as the tutorial's gpt2.py.
+    Uses max.nn — the same API as the tutorial's gpt2.py.
     Passes the full token sequence on every step (no incremental KV cache).
     This keeps the implementation simple and readable for tutorial purposes.
     """

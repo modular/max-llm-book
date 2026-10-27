@@ -78,10 +78,10 @@ layout, a config class that tells the serving layer how much KV cache to
 allocate, and a pipeline model that loads, compiles, and executes the graph on
 demand.
 
-Any `max.experimental.nn.Module` follows the same pattern to get from model
+Any `max.nn.Module` follows the same pattern to get from model
 weights to a live endpoint:
 
-1. Implement the model with `max.experimental.nn`
+1. Implement the model with `max.nn`
 2. Adapt the weights with a
    [`WeightsFormat`](https://max.modular.com/api/python/generated/max.graph.weights.WeightsFormat/)
    converter

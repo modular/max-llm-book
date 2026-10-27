@@ -44,8 +44,8 @@ from gpt2_arch.gpt2 import (
 from max._interpreter_ops import GC_FAMILIES, adopted_from_store
 from max.driver import CPU, Accelerator, accelerator_api, accelerator_count
 from max.dtype import DType
-from max.experimental.nn import Module
 from max.experimental.tensor import Tensor, default_device, default_dtype
+from max.nn import Module
 
 
 def _probe_accelerator() -> Accelerator:

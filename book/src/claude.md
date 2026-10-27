@@ -19,11 +19,11 @@ following context in mind:
 - The model serves via `pixi run serve` (max serve --custom-architectures gpt2_arch --model openai-community/gpt2 --no-enable-overlap-scheduler --no-device-graph-capture --force)
 
 **MAX framework specifics:**
-- `gpt2_arch/gpt2.py` uses `max.experimental.nn.Module` as the base class
+- `gpt2_arch/gpt2.py` uses `max.nn.Module` as the base class
 - Functions use `@F.functional` for compiled graph definitions
 - Tensor operations use `max.experimental.functional` and `max.experimental.tensor`
-- Linear layers use `max.experimental.nn.Linear`
-- `gpt2_arch/model.py` imports `MaxGPT2LMHeadModel` from `gpt2_arch/gpt2.py` and wraps it in `PipelineModelWithKVCache` for `max serve`, using `max.experimental.nn` throughout
+- Linear layers use `max.nn.Linear`
+- `gpt2_arch/model.py` imports `MaxGPT2LMHeadModel` from `gpt2_arch/gpt2.py` and wraps it in `PipelineModelWithKVCache` for `max serve`, using `max.nn` throughout
 
 **How to help me:**
 1. When I ask about a section, reference the ANCHOR markers in `gpt2_arch/gpt2.py`
@@ -61,7 +61,7 @@ I'm reading step 04 (multi-head attention). Here's what I don't understand:
 
 - "What does @mo.graph do and why do we need it?"
 - "How does session.load() map Hugging Face weights to my model?"
-- "Explain the difference between max.experimental.nn.Linear and max.ops.linear"
+- "Explain the difference between max.nn.Linear and max.ops.linear"
 
 ### Code review
 

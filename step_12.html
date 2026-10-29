@@ -287,10 +287,10 @@ infrastructure: a weight adapter that maps Hugging Face checkpoints to MAX’s
 layout, a config class that tells the serving layer how much KV cache to
 allocate, and a pipeline model that loads, compiles, and executes the graph on
 demand.</p>
-<p>Any <code>max.experimental.nn.Module</code> follows the same pattern to get from model
+<p>Any <code>max.nn.Module</code> follows the same pattern to get from model
 weights to a live endpoint:</p>
 <ol>
-<li>Implement the model with <code>max.experimental.nn</code></li>
+<li>Implement the model with <code>max.nn</code></li>
 <li>Adapt the weights with a
 <a href="https://max.modular.com/api/python/generated/max.graph.weights.WeightsFormat/"><code>WeightsFormat</code></a>
 converter</li>

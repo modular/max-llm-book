@@ -275,7 +275,7 @@ dependencies you need to follow the tutorial.</p>
 explain the specifics).</li>
 </ul>
 <p>Check the
-<a href="https://max.modular.com/packages/#system-requirements">MAX system requirements</a>
+<a href="https://max.modular.com/system-requirements/">MAX system requirements</a>
 to confirm your platform is supported before continuing.</p>
 <h2 id="install"><a class="header" href="#install">Install</a></h2>
 <p>Clone <a href="https://github.com/modular/max-llm-book">the GitHub repository</a> and
@@ -471,9 +471,9 @@ connections.</li>
 Face’s GPT-2 checkpoint structure. This naming is essential for loading
 pretrained weights in the final step.</p>
 <h2 id="gpt2mlp"><a class="header" href="#gpt2mlp">GPT2MLP</a></h2>
-<p><a href="https://max.modular.com/api/python/generated/max.experimental.nn.Linear/"><code>Linear(in_dim, out_dim, bias=True)</code></a>
+<p><a href="https://max.modular.com/api/python/generated/max.nn.Linear/"><code>Linear(in_dim, out_dim, bias=True)</code></a>
 applies <code>y = xW^T + b</code>. Both layers include bias terms.
-<a href="https://max.modular.com/api/python/experimental.functional/#max.experimental.functional.gelu"><code>F.gelu</code></a>
+<a href="https://max.modular.com/api/python/functional/#max.functional.gelu"><code>F.gelu</code></a>
 applies the activation between them:</p>
 <pre><code class="language-python:gpt2.py">class GPT2MLP(Module):  # type: ignore[type-arg]
     """Exact HuggingFace GPT-2 MLP structure"""
@@ -722,12 +722,12 @@ what the model learned, producing poor or nonsensical output.</p>
 learned <code>weight</code> scales the normalized result and <code>bias</code> shifts it, initialized
 to ones and zeros so the initial transformation is identity.</p>
 <h2 id="layernorm"><a class="header" href="#layernorm">LayerNorm</a></h2>
-<p><a href="https://max.modular.com/api/python/experimental.functional/#max.experimental.functional.layer_norm"><code>F.layer_norm</code></a>
+<p><a href="https://max.modular.com/api/python/functional/#max.functional.layer_norm"><code>F.layer_norm</code></a>
 computes the normalization and applies the learned parameters in one call. The
 weight is initialized with
-<a href="https://max.modular.com/api/python/generated/max.experimental.tensor.Tensor/#max.experimental.tensor.Tensor.ones"><code>Tensor.ones</code></a>
+<a href="https://max.modular.com/api/python/generated/max.tensor.Tensor/#max.tensor.Tensor.ones"><code>Tensor.ones</code></a>
 and the bias with
-<a href="https://max.modular.com/api/python/generated/max.experimental.tensor.Tensor/#max.experimental.tensor.Tensor.zeros"><code>Tensor.zeros</code></a>:</p>
+<a href="https://max.modular.com/api/python/generated/max.tensor.Tensor/#max.tensor.Tensor.zeros"><code>Tensor.zeros</code></a>:</p>
 <pre><code class="language-python:gpt2.py">class LayerNorm(Module):  # type: ignore[type-arg]
     def __init__(self, dim: DimLike, *, eps: float = 1e-5) -&gt; None:
         self.eps = eps
@@ -837,15 +837,15 @@ remaining trainable. Early layers tend to capture surface-level patterns like
 word shapes and punctuation; later layers capture higher-level semantic
 patterns. The representations from all layers contribute to the final output.</p>
 <h2 id="module-composition"><a class="header" href="#module-composition">Module composition</a></h2>
-<p><a href="https://max.modular.com/api/python/generated/max.experimental.nn.Sequential/"><code>Sequential</code></a>
+<p><a href="https://max.modular.com/api/python/generated/max.nn.Sequential/"><code>Sequential</code></a>
 chains the 12 transformer blocks in order, passing each block’s output to the
 next. The <code>*</code> in
 <code>Sequential(*(GPT2Block(config) for _ in range(config.n_layer)))</code> unpacks the
 generator as positional arguments.</p>
-<p><a href="https://max.modular.com/api/python/generated/max.experimental.tensor.Tensor/#max.experimental.tensor.Tensor.arange"><code>Tensor.arange</code></a>
+<p><a href="https://max.modular.com/api/python/generated/max.tensor.Tensor/#max.tensor.Tensor.arange"><code>Tensor.arange</code></a>
 generates position indices <code>[0, 1, ..., seq_length-1]</code> matching the input’s
 dtype and device so they’re compatible for embedding lookup.</p>
-<p><a href="https://max.modular.com/api/python/generated/max.experimental.nn.Embedding/"><code>Embedding(vocab_size, dim)</code></a>
+<p><a href="https://max.modular.com/api/python/generated/max.nn.Embedding/"><code>Embedding(vocab_size, dim)</code></a>
 is used for both token and position embeddings.</p>
 <h2 id="maxgpt2model"><a class="header" href="#maxgpt2model">MaxGPT2Model</a></h2>
 <p><code>MaxGPT2Model</code> combines token embeddings, position embeddings, 12 transformer
@@ -1170,25 +1170,24 @@ and manages the growing token sequence.</p>
 and tell it how to load your model, run each decode step, and manage the token
 sequence.</p>
 <h2 id="load-the-model"><a class="header" href="#load-the-model">Load the model</a></h2>
-<p>Every
-<a href="https://max.modular.com/api/python/generated/max.experimental.nn.Linear/"><code>Linear</code></a>
+<p>Every <a href="https://max.modular.com/api/python/generated/max.nn.Linear/"><code>Linear</code></a>
 and
-<a href="https://max.modular.com/api/python/generated/max.experimental.nn.Embedding/"><code>Embedding</code></a>
+<a href="https://max.modular.com/api/python/generated/max.nn.Embedding/"><code>Embedding</code></a>
 layer in <code>MaxGPT2LMHeadModel</code> allocates tensors when constructed. Without the
 lazy context, those allocations fill with random values and are immediately
 discarded when the checkpoint loads.
-<a href="https://max.modular.com/api/python/experimental.functional/#max.experimental.functional.lazy"><code>F.lazy()</code></a>
+<a href="https://max.modular.com/api/python/functional/#max.functional.lazy"><code>F.lazy()</code></a>
 defers all allocation inside the block: layers are declared, but nothing is
 allocated until <code>compile()</code> runs.</p>
-<p><a href="https://max.modular.com/api/python/experimental.tensor/#max.experimental.tensor.default_device"><code>default_device()</code></a>
+<p><a href="https://max.modular.com/api/python/tensor.tensor/#max.tensor.default_device"><code>default_device()</code></a>
 and
-<a href="https://max.modular.com/api/python/experimental.tensor/#max.experimental.tensor.default_dtype"><code>default_dtype()</code></a>
+<a href="https://max.modular.com/api/python/tensor.tensor/#max.tensor.default_dtype"><code>default_dtype()</code></a>
 set context variables that module construction code reads inside the lazy block,
 so layers pick up the right device and numeric type without being passed them
 explicitly.</p>
-<p><a href="https://max.modular.com/api/python/generated/max.experimental.nn.Module/#max.experimental.nn.Module.compile"><code>compile()</code></a>
+<p><a href="https://max.modular.com/api/python/generated/max.nn.Module/#max.nn.Module.compile"><code>compile()</code></a>
 runs outside the lazy block. Loading safetensors buffers inside
-<a href="https://max.modular.com/api/python/experimental.functional/#max.experimental.functional.lazy"><code>F.lazy()</code></a>
+<a href="https://max.modular.com/api/python/functional/#max.functional.lazy"><code>F.lazy()</code></a>
 triggers the same memory alignment error that <code>_to_numpy()</code> in
 <code>weight_adapters.py</code> solves by copying into a fresh array. Passing
 <code>weights=state_dict</code> to <code>compile()</code> loads and compiles in one step after the
@@ -1199,7 +1198,7 @@ lazy context closes:</p>
 <p><code>execute()</code> receives a <code>GPT2Inputs</code>, a dataclass with one field: <code>tokens</code>,
 a <code>[1, seq_len]</code> int64 <code>Buffer</code> containing all token IDs for the current
 sequence.</p>
-<p><a href="https://max.modular.com/api/python/generated/max.experimental.tensor.Tensor/#max.experimental.tensor.Tensor.from_dlpack"><code>Tensor.from_dlpack()</code></a>
+<p><a href="https://max.modular.com/api/python/generated/max.tensor.Tensor/#max.tensor.Tensor.from_dlpack"><code>Tensor.from_dlpack()</code></a>
 converts the driver <code>Buffer</code> to a MAX <code>Tensor</code> without copying. The compiled
 model returns <code>[1, seq_len, vocab_size]</code>: one logit vector per position. Only
 the final position’s logits are needed to sample the next token, so the output
@@ -1337,10 +1336,10 @@ infrastructure: a weight adapter that maps Hugging Face checkpoints to MAX’s
 layout, a config class that tells the serving layer how much KV cache to
 allocate, and a pipeline model that loads, compiles, and executes the graph on
 demand.</p>
-<p>Any <code>max.experimental.nn.Module</code> follows the same pattern to get from model
+<p>Any <code>max.nn.Module</code> follows the same pattern to get from model
 weights to a live endpoint:</p>
 <ol>
-<li>Implement the model with <code>max.experimental.nn</code></li>
+<li>Implement the model with <code>max.nn</code></li>
 <li>Adapt the weights with a
 <a href="https://max.modular.com/api/python/generated/max.graph.weights.WeightsFormat/"><code>WeightsFormat</code></a>
 converter</li>

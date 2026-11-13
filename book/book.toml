@@ -1,7 +1,7 @@
 [book]
-title = "Build an LLM from scratch with MAX"
+title = "Build and serve an LLM with MAX"
 authors = ["Modular <hello@modular.com>"]
-description = "This guide walks you through implementing GPT-2 using Modular’s MAX framework."
+description = "Go from zero to serving: run a small LLM with MAX, rebuild it from scratch with max.nn and max.functional, then add sampling, a KV cache, batching and your own server."
 src = "src"
 language = "en"
 text-direction = "ltr"
@@ -16,6 +16,7 @@ additional-js = [
     "theme/sidebar.js",
     "theme/init-amplitude.js",
     "theme/warning.js",
+    "theme/plotly-figures.js",
 ]
 default-theme = "light"
 preferred-dark-theme = "ayu"
@@ -49,13 +50,9 @@ heading-split-level = 3
 [output.html.fold]
 enable = false
 
-[output.html.math]
-mode = "katex"
-
 [build]
 build-dir = "html"
-create-missing = true
-extra-files = ["logo"]
+create-missing = false
 
 [preprocessor.index]
 index = false

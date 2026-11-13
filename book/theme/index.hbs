@@ -122,12 +122,6 @@
                 theme = newTheme
                 localStorage.setItem('mdbook-theme', theme);
             }, false);
-            document.addEventListener('click', function() {
-                if (!event.target.matches('.log-in')) return;
-                event.preventDefault();
-                window.amplitude.logEvent('LoginClickedFromGPT2Tutorial');
-                window.open('https://developer.modular.com', '_blank');
-            });
         </script>
 
         <div class="page-header">

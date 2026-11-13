@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "minillm"
+version = "0.2.0"
+description = "The small LLM you build in the MAX LLM book (llm.modular.com)."
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.10"
+# MAX itself is installed separately: the notebooks' setup cell pulls the
+# nightly wheel from whl.modular.com, which pip cannot express here. NumPy
+# comes with MAX; pinning it here could force a runtime restart on Colab.
+dependencies = ["openai", "plotly>=5", "torch"]
+
+[tool.setuptools.packages.find]
+include = ["minillm*"]

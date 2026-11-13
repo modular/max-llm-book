@@ -2,46 +2,60 @@
 channels = ["https://conda.modular.com/max-nightly", "conda-forge"]
 name = "max-llm-book"
 platforms = ["linux-64", "osx-arm64"]
-version = "0.1.1"
+version = "0.2.0"
 license = "Apache-2.0"
 
 [activation.env]
-# The experimental `max.nn.Module.compile()` path used by `gpt2_arch` resolves
-# MAX's built-in kernel packages (`.mojoc`) through this import path. Unlike the
-# stock engine, it is not auto-discovered from `MODULAR_HOME`, so point it at the
-# packages shipped in the conda env. Without this, `max serve` fails with
-# "failed to resolve built-in kernel package paths".
+# `max.nn.Module.compile()` resolves MAX's built-in kernel packages (`.mojoc`)
+# through this import path. Unlike the stock engine, it is not auto-discovered
+# from `MODULAR_HOME`, so point it at the packages shipped in the conda env.
+# Without this, `max serve` fails with "failed to resolve built-in kernel
+# package paths".
 MODULAR_MOJO_MAX_IMPORT_PATH = "$CONDA_PREFIX/lib/mojo"
+# MAX finds its package root by searching up from the working directory. Pin
+# it to this environment so that a checkout inside another MAX installation
+# (such as the monorepo) cannot link against that installation's libraries.
+MODULAR_MAX_PACKAGE_ROOT = "$CONDA_PREFIX"
+MODULAR_MOJO_MAX_PACKAGE_ROOT = "$CONDA_PREFIX"
 
 [tasks]
+# Build the website from the committed pages in book/src. Runs offline; the
+# publish workflow calls this task.
 build-book = "cd book && mdbook build"
 book = { cmd = "cd book && mdbook serve --open", depends-on = ["build-book"] }
 
-# Open the interactive Jupyter notebook companion.
-notebook = "cd notebooks && jupyter lab tutorial.ipynb"
+# The notebooks are the source of truth. These tasks derive the rest:
+# - bootstrap: copy notebooks/_bootstrap.py into each notebook's first cell
+# - export: write the `# export:` cells into the minillm package
+# - render: run every notebook and write its page, with outputs, to book/src
+bootstrap = "python tools/nb2book.py bootstrap"
+export = "python tools/nb2book.py export"
+render = { cmd = "python tools/nb2book.py render --execute", depends-on = [
+    "bootstrap",
+    "export",
+] }
 
-# Serve GPT-2 via MAX's OpenAI-compatible API.
-# The trailing flags pin the simple text-generation path this teaching model
-# targets: recent nightlies auto-enable the overlap scheduler and device graph
-# capture for GPU text-gen architectures, but the model's eager
-# `max.nn.Module.compile()` path (full-sequence, 2-D tokens, no `capture()`)
-# supports neither. `--force` is required because the overlap scheduler is
-# re-enabled during config resolution unless force is set.
-serve = "max serve --custom-architectures gpt2_arch --model openai-community/gpt2 --no-enable-overlap-scheduler --no-device-graph-capture --force"
+# Open the chapter notebooks in Jupyter.
+notebook = "jupyter lab notebooks"
 
-# Format python
+# Serve the built-in SmolLM2 with MAX's OpenAI-compatible API (section 1.1),
+# on MAX's default device. float32 works on every device, CPU included.
+serve = "max serve --model HuggingFaceTB/SmolLM2-135M-Instruct --quantization-encoding float32"
+
 fmt = "ruff format ."
 
-# Run tests
-test = "pytest tests/ -v"
-
-[target.osx-arm64.tasks]
-# On macOS (Apple Silicon), force CPU: the Metal GPU backend produces incorrect
-# logits for sequence lengths > 3 due to a dynamic-shape compiler issue.
-serve = "max serve --custom-architectures gpt2_arch --model openai-community/gpt2 --devices cpu --no-enable-overlap-scheduler --no-device-graph-capture --force"
+# Unit tests, plus checks that the generated files match the notebooks.
+test = "pytest tests/ -v -m 'not notebooks'"
+# Run every notebook top to bottom with papermill. Each notebook asserts its
+# own results, so this verifies the whole book on this machine's default
+# device (downloads models; takes a while).
+test-notebooks = "pytest tests/notebooks -v -m notebooks"
+# A quick subset of the notebooks for CI.
+test-notebooks-smoke = "pytest tests/notebooks -v -m 'notebooks and smoke'"
 
 [dependencies]
-modular = ">=26.4.0.dev2026050805"
+modular = ">=26.8.0.dev2026111105"
+python = "3.12.*"
 transformers = "*" # Use MAX's version constraint
 pytorch = ">=2.8.0,<3"
 numpy = ">=2.3.3,<3"
@@ -50,5 +64,12 @@ ruff = ">=0.14.1,<0.15"
 pytest = ">=8.0.0,<9"
 jupyter = ">=1.0.0"
 ipykernel = ">=6.0.0"
-matplotlib = ">=3.7.0"
 nbformat = ">=5.9.0"
+nbclient = ">=0.10"
+papermill = ">=2.6"
+openai = ">=1.0"
+setuptools = ">=68"
+plotly = ">=6"
+
+[pypi-dependencies]
+minillm = { path = ".", editable = true }

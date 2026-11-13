@@ -1,0 +1,67 @@
+# The book's chapters and sections, in reading order. `tools/nb2book.py`
+# builds the sidebar (SUMMARY.md) from this file. A section whose notebook,
+# notebooks/<slug>.ipynb, exists links to its page; a planned section shows
+# in the sidebar as a draft without a link.
+
+[[chapter]]
+page = "ch01.md"
+sections = [
+  "01_01_run_and_serve",
+  "01_02_tensors_and_eager",
+  "01_03_tokens_and_weights",
+  "01_04_building_blocks",
+  "01_05_attention",
+  "01_06_full_model",
+  "01_07_sampling",
+  "01_08_kv_cache",
+]
+
+[[chapter]]
+page = "ch02.md"
+sections = [
+  "02_01_distributed_tensors|2.1 Distributed tensors",
+  "02_02_tensor_parallel|2.2 A tensor-parallel model",
+]
+
+[[chapter]]
+page = "ch03.md"
+sections = [
+  "03_01_custom_ops|3.1 Your first custom op",
+  "03_02_graph_api|3.2 Under the hood: the graph API",
+]
+
+[[chapter]]
+page = "ch04.md"
+sections = [
+  "04_01_layer_tests|4.1 Testing layers against references",
+  "04_02_logit_verification|4.2 Verifying a model's logits",
+  "04_03_kernel_benchmarks|4.3 Testing and benchmarking kernels",
+  "04_04_profiling|4.4 Profiling",
+]
+
+[[chapter]]
+page = "ch05.md"
+sections = [
+  "05_01_request_lifecycle|5.1 The life of a request",
+  "05_02_continuous_batching|5.2 Continuous batching",
+  "05_03_paged_kv_cache|5.3 A paged KV cache",
+  "05_04_prefix_caching|5.4 Prefix caching",
+  "05_05_speculative_decoding|5.5 Speculative decoding",
+]
+
+[[chapter]]
+page = "ch06.md"
+sections = [
+  "06_01_qwen3|6.1 Qwen3: normalized queries and keys",
+  "06_02_gemma3|6.2 Gemma 3: sliding-window attention",
+  "06_03_mixture_of_experts|6.3 Mixture of experts",
+]
+
+[[chapter]]
+page = "ch07.md"
+sections = [
+  "07_01_serve_your_model|7.1 Serve your architecture",
+  "07_02_benchmark_serving|7.2 Benchmark a server",
+  "07_03_structured_output|7.3 Structured output and tools",
+  "07_04_modular_cloud|7.4 Deploy on Modular's cloud",
+]

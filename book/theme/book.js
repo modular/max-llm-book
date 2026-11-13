@@ -693,7 +693,7 @@ aria-label="Show hidden lines"></button>';
 
     clipboardSnippets.on('success', function(e) {
         e.clearSelection();
-        window.amplitude.logEvent('CodeSnippetCopied', { value: e.text });
+        window.trackEvent?.('CodeSnippetCopied', { value: e.text });
         showTooltip(e.trigger, 'Copied!');
     });
 
@@ -705,7 +705,7 @@ aria-label="Show hidden lines"></button>';
 (function scrollToTop() {
     const menuTitle = document.querySelector('.menu-title');
 
-    menuTitle.addEventListener('click', function() {
+    menuTitle?.addEventListener('click', function() {
         document.scrollingElement.scrollTo({ top: 0, behavior: 'smooth' });
     });
 })();

@@ -18,11 +18,13 @@ on:
       - main
     paths:
       - "pixi.lock"
+      - "book/**"
   pull_request:
     branches:
       - main
     paths:
       - "pixi.lock"
+      - "book/**"
 
 permissions:
   id-token: write

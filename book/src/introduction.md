@@ -1,81 +1,197 @@
-# Build an LLM from scratch in MAX
+# Build and serve an LLM with MAX
 
-Transformer models power today's most impactful AI applications, from language
-models like ChatGPT to code generation tools like GitHub Copilot. If you want
-to understand what's actually happening when you call an inference API, or you
-need to adapt one of these models for your own work, building one from scratch
-is the fastest path to that understanding.
+This book takes you from zero to serving your own language model with
+[MAX](https://max.modular.com/), Modular's framework for AI inference. You
+start by running a real model in three lines of Python. Then you rebuild
+that model from scratch, check every part against MAX's own implementation,
+and go on to the techniques that production inference engines use:
+distributing a model across devices, writing your own Mojo kernels, testing
+and benchmarking, building a serving engine, bringing up newer models, and
+serving your own architecture.
 
-This guide walks you through a complete GPT-2 implementation using the
-[MAX Python API](https://max.modular.com/api/python/). You'll start by
-running a working model, then build it component by component: embeddings,
-attention, feed-forward layers, and the serving layer that connects it all.
-Everything runs from the
-[GitHub repository](https://github.com/modular/max-llm-book).
+## Why this book
 
-## Why GPT-2?
+Most explanations of LLM inference stop at diagrams, and most inference
+engines are too large to read. This book sits between the two. You write
+every piece yourself, small enough to read in one sitting, and you run it on
+a real model so that each claim is a number you measured: the logits match
+the reference, the KV cache makes decoding flat, batching raises
+throughput.
 
-It's the architectural foundation for modern language models. LLaMA, Mistral,
-GPT-4; they're all built on the same core components you'll find here:
+You do it with MAX's own APIs, the same ones its production models use, so
+what you learn carries over directly:
 
-- multi-head attention
-- feed-forward layers
-- layer normalization
+- `max.pipelines`: `AutoPipeline`, `AutoModel`, and `AutoTokenizer` for
+  running models from Python.
+- `max.tensor` and `max.functional`: tensors and operations that run eagerly,
+  like NumPy, and compile into fast graphs.
+- `max.nn`: modules and layers for building models.
+- Mojo custom ops: kernels you write yourself and call from Python.
+- `max.graph`: the graph API that `compile` builds on, for full control.
+- `max serve`, `max generate`, and `max benchmark`: the command-line tools
+  for serving, testing, and measuring models.
 
-Modern variants add refinements like grouped-query attention or mixture of
-experts, but the fundamentals remain the same. GPT-2 is complex enough to teach
-real transformer architecture but simple enough to implement completely and
-understand deeply. When you grasp how its pieces fit together, you understand
-how to build any transformer-based model.
+Every section is a notebook with interactive figures you can hover, zoom,
+and slide through, and every notebook checks its own results.
 
-## Why MAX?
+## The model
 
-Building a model for inference typically means a separate tool for each stage:
-one framework for model definition, another for optimization, another for
-serving. Each handoff is another thing to learn and another place for things
-to break.
+The book uses
+[SmolLM2-135M-Instruct](https://huggingface.co/HuggingFaceTB/SmolLM2-135M-Instruct).
+It is a real chat model, small enough to run on a laptop CPU, and it uses the
+Llama architecture that most open models share: RMSNorm, rotary position
+embeddings, grouped-query attention, and a SwiGLU MLP. What you build for it
+applies to Llama, Qwen, Mistral, and their relatives, and [Chapter 6](./ch06.md)
+extends it to Qwen3, Gemma 3, and mixture-of-experts models.
 
-MAX handles all of it in one Python API. You define the model, load weights,
-run inference, and serve with `max serve`, all in the same environment.
+## Get started
 
-The GPT-2 implementation in this guide loads pretrained weights from Hugging
-Face, implements the architecture, and serves text generation, all in that same
-environment.
-
-## How to read this book
-
-You'll start by serving GPT-2 with MAX, getting a working model running before
-you write a line of model code. From there, you'll build the transformer block
-component by component, assemble those components into the full model, and
-finish by learning how inference and serving work with `max serve`.
-
-<div class="note">
-
-**Interactive companion notebook** — prefer to learn by running code? Open
-`notebooks/tutorial.ipynb` with `pixi run notebook`. Each section maps to a
-chapter here: you can inspect real tensor shapes, see activation visualizations,
-and generate text from pretrained weights, all without leaving JupyterLab. Read
-the chapters for the why; run the notebook for the how.
-
+<div class="callout">
+<p class="callout-title">Check your hardware first</p>
+<p>Before you install anything, check that MAX supports your machine and GPU
+in the
+<a href="https://max.modular.com/system-requirements/">MAX
+system requirements</a>. MAX runs on Linux and on macOS with Apple silicon.
+These notebooks need an NVIDIA GPU from the Ampere generation or newer; on
+an older one, such as a T4 or P100, they run on the CPU instead.</p>
 </div>
 
-| Chapter                                   | What you'll learn                                                  |
-|-------------------------------------------|--------------------------------------------------------------------|
-| [Project setup](./setup.md)               | Install MAX and clone the repository                               |
-| [Run the model](./serve_first.md)         | Serve GPT-2 and call the endpoint                                  |
-| [Model configuration](./step_01.md)       | Define the architecture hyperparameters                            |
-| [Feed-forward network](./step_02.md)      | Build the position-wise MLP with GELU activation                   |
-| [Causal masking](./step_03.md)            | Create attention masks that prevent looking at future tokens       |
-| [Multi-head attention](./step_04.md)      | Implement scaled dot-product attention with multiple heads         |
-| [Layer normalization](./step_05.md)       | Stabilize activations between sub-layers                           |
-| [Transformer block](./step_06.md)         | Combine attention and MLP with residual connections                |
-| [Stack transformer blocks](./step_07.md)  | Build the complete 12-layer GPT-2 with embeddings                  |
-| [Language model head](./step_08.md)       | Project hidden states to vocabulary logits                         |
-| [Weight adaptation](./step_09.md)         | Reconcile GPT-2's Hugging Face checkpoint with MAX's weight layout |
-| [KV cache configuration](./step_10.md)    | Expose attention dimensions for cache pre-allocation               |
-| [Pipeline model](./step_11.md)            | Load, compile, and execute the model inside `max serve`            |
-| [Architecture registration](./step_12.md) | Declare the package to `max serve` and wire all pieces together    |
+You can run the notebooks in Colab or Kaggle with nothing installed, or on
+your own machine.
 
-The code is pre-written in the repository. Training is not in scope.
+### In Colab or Kaggle
 
-Start with [Project setup](./setup.md) to get your environment ready.
+Every section page starts with Open in Colab and Open in Kaggle buttons. The
+first cell of every notebook installs what the notebook needs, so run the cells
+in order from the top:
+
+```python
+# The setup cell, shortened: it installs MAX and this book's package
+# with uv, but only if they're missing.
+if importlib.util.find_spec("max") is None:
+    uv_install("max[all]")  # from https://whl.modular.com/nightly/simple/
+if importlib.util.find_spec("minillm") is None:
+    uv_install("git+https://github.com/modular/max-llm-book@main")
+```
+
+`max[all]` is the MAX package with everything the book uses: the Python
+APIs, the `max` and `mojo` commands, serving, and the Jupyter `%%mojo`
+magic. `minillm` is the package you build in the book, installed so that
+later sections can import what earlier ones wrote.
+
+Choose the runtime before you run the first cell:
+
+- In Colab, the CPU runtime works for every notebook. For a GPU, choose an
+  L4 or A100 runtime. MAX's matrix multiplication needs an NVIDIA GPU from
+  the Ampere generation or later, so on a T4 runtime the setup cell hides
+  the GPU and the notebook runs on the CPU.
+- In Kaggle, turn on Internet in the notebook settings so that the setup
+  cell can download packages. Kaggle's GPUs, the T4 and the P100, are older
+  than Ampere, so the notebooks run on the CPU there.
+
+### On your own machine
+
+Install with pixi or uv, on a machine that meets the
+[system requirements](https://max.modular.com/system-requirements/).
+
+With [pixi](https://pixi.sh), which installs Python, MAX, and every other
+dependency into a project environment:
+
+1. Install pixi:
+
+   ```bash
+   curl -fsSL https://pixi.sh/install.sh | sh
+   ```
+
+2. Clone the book:
+
+   ```bash
+   git clone https://github.com/modular/max-llm-book
+   cd max-llm-book
+   ```
+
+3. Open the notebooks in JupyterLab:
+
+   ```bash
+   pixi run notebook
+   ```
+
+With [uv](https://docs.astral.sh/uv/) and Python 3.10 or later:
+
+1. Create and activate an environment:
+
+   ```bash
+   uv venv --python 3.12
+   source .venv/bin/activate
+   ```
+
+2. Install MAX from the nightly package index:
+
+   ```bash
+   uv pip install --prerelease allow --index-strategy unsafe-best-match \
+     --extra-index-url https://whl.modular.com/nightly/simple/ "max[all]"
+   ```
+
+3. Clone the book and install its package, with JupyterLab:
+
+   ```bash
+   git clone https://github.com/modular/max-llm-book
+   cd max-llm-book
+   uv pip install -e . jupyterlab
+   ```
+
+4. Open the notebooks:
+
+   ```bash
+   jupyter lab notebooks
+   ```
+
+Check the installation, and whether MAX found a GPU:
+
+```bash
+max --version
+python -c "from max.driver import accelerator_count; print('GPUs:', accelerator_count())"
+```
+
+The book uses the MAX nightly build, because some of the APIs it teaches are
+newer than the last stable release. Every notebook runs on a CPU and uses a GPU
+automatically when MAX finds a supported one.
+
+<div class="callout">
+<p class="callout-title">About the numbers</p>
+<p>Timings, speedups, and other measurements on these pages come from one
+run on an Apple-silicon Mac with a Metal GPU. Treat them as examples. Your
+numbers depend on your hardware and vary from run to run; the notebooks
+check results, such as matching logits, that hold on every machine.</p>
+</div>
+
+## Chapters
+
+| Chapter                                  | What you do                                                                                                                                                                        |
+|------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [1. Foundations](./ch01.md)              | Run and serve SmolLM2, then rebuild it from scratch: tensors, weights, layers, attention, the full model checked against MAX's, sampling, and a KV cache.                          |
+| [2. Distributed tensors](./ch02.md)      | Shard tensors and the model across a device mesh, simulated on one machine, and check that the result doesn't change.                                                              |
+| [3. Custom ops in Mojo](./ch03.md)       | Write a kernel in Mojo, call it from your model, and see the graph API that `compile` builds on.                                                                                   |
+| [4. Testing and benchmarking](./ch04.md) | Test layers against references, verify logits, and benchmark and profile models and kernels.                                                                                       |
+| [5. A serving engine](./ch05.md)         | Build the core of an inference engine: continuous batching, a paged KV cache, prefix caching, and speculative decoding.                                                            |
+| [6. Bigger models](./ch06.md)            | Extend your model to Qwen3, Gemma 3, and mixture-of-experts.                                                                                                                       |
+| [7. Production serving](./ch07.md)       | Serve your own architecture with `max serve`, benchmark it, use structured output and tools, and call state-of-the-art open models on [Modular's cloud](https://www.modular.com/). |
+
+Read the chapters in order the first time: each section builds on code from
+earlier ones, which the `minillm` package collects for you.
+
+## The handbook
+
+The [Modular handbook](https://handbook.modular.com/) explains how LLM
+inference works in production: metrics, batching, KV cache management,
+quantization, and GPU kernels. This book is its hands-on companion. Each
+section links the handbook pages for the ideas it implements, so you can
+read the concept and then build it.
+
+## Prerequisites
+
+You should be comfortable with Python and NumPy-style array code. Knowing
+what a neural network layer is helps; the book explains everything specific
+to transformers as it goes. [Section 6.2](./06_02_gemma3.md) uses Gemma 3,
+whose weights require you to accept Google's license on Hugging Face and log
+in with `hf auth login`.

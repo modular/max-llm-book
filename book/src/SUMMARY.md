@@ -1,29 +1,43 @@
 # Summary
 
-- [Introduction](./introduction.md)
+[Introduction](./introduction.md)
 
-## 1: Get started
+<!-- chapters:start -->
 
-- [Project setup](./setup.md)
-- [Run the model](./serve_first.md)
-- [Model configuration](./step_01.md)
+- [1. Foundations](./ch01.md)
+  - [1.1 Run and serve an LLM](./01_01_run_and_serve.md)
+  - [1.2 Tensors and eager execution](./01_02_tensors_and_eager.md)
+  - [1.3 Tokens, embeddings, and weights](./01_03_tokens_and_weights.md)
+  - [1.4 Building blocks](./01_04_building_blocks.md)
+  - [1.5 Attention](./01_05_attention.md)
+  - [1.6 The full model](./01_06_full_model.md)
+  - [1.7 Generation and sampling](./01_07_sampling.md)
+  - [1.8 The KV cache](./01_08_kv_cache.md)
+- [2. Distributed tensors](./ch02.md)
+  - [2.1 Distributed tensors](./02_01_distributed_tensors.md)
+  - [2.2 A tensor-parallel model](./02_02_tensor_parallel.md)
+- [3. Custom ops in Mojo](./ch03.md)
+  - [3.1 Your first custom op](./03_01_custom_ops.md)
+  - [3.2 Under the hood: the graph API](./03_02_graph_api.md)
+- [4. Testing and benchmarking](./ch04.md)
+  - [4.1 Testing layers against references](./04_01_layer_tests.md)
+  - [4.2 Verifying a model's logits](./04_02_logit_verification.md)
+  - [4.3 Benchmarking kernels and layers](./04_03_kernel_benchmarks.md)
+  - [4.4 Profiling](./04_04_profiling.md)
+- [5. A serving engine](./ch05.md)
+  - [5.1 The life of a request](./05_01_request_lifecycle.md)
+  - [5.2 Continuous batching](./05_02_continuous_batching.md)
+  - [5.3 A paged KV cache](./05_03_paged_kv_cache.md)
+  - [5.4 Prefix caching](./05_04_prefix_caching.md)
+  - [5.5 Speculative decoding](./05_05_speculative_decoding.md)
+- [6. Bigger models](./ch06.md)
+  - [6.1 Qwen3: normalized queries and keys](./06_01_qwen3.md)
+  - [6.2 Gemma 3: sliding-window attention](./06_02_gemma3.md)
+  - [6.3 Mixture of experts](./06_03_mixture_of_experts.md)
+- [7. Production serving](./ch07.md)
+  - [7.1 Serve your architecture](./07_01_serve_your_model.md)
+  - [7.2 Benchmark a server](./07_02_benchmark_serving.md)
+  - [7.3 Structured output and tools](./07_03_structured_output.md)
+  - [7.4 Modular's cloud](./07_04_modular_cloud.md)
 
-## 2: Build the transformer block
-
-- [Feed-forward network](./step_02.md)
-- [Causal masking](./step_03.md)
-- [Multi-head attention](./step_04.md)
-- [Layer normalization](./step_05.md)
-- [Transformer block](./step_06.md)
-
-## 3: Assemble the model
-
-- [Stack transformer blocks](./step_07.md)
-- [Language model head](./step_08.md)
-
-## 4: The serving package
-
-- [Weight adaptation](./step_09.md)
-- [KV cache configuration](./step_10.md)
-- [Pipeline model](./step_11.md)
-- [Architecture registration](./step_12.md)
+<!-- chapters:end -->

@@ -194,7 +194,7 @@ a.internal-link {
     padding: 0;
   }
 
-  button:not(.log-in):not(.get-started),
+  button:not(.get-started),
   .menu-btn {
     height: 32px;
     width: 32px;
@@ -318,8 +318,9 @@ body.sidebar-hidden #sidebar-toggle {
   ol.chapter {
     margin-top: 40px;
     margin-left: 10px;
+    /* Unnumbered pages, such as the introduction, before chapter 1. */
     li.affix {
-      display: none;
+      margin-bottom: 8px;
     }
   }
 
@@ -653,23 +654,6 @@ img {
   margin: 1em auto;
 }
 
-/* GPT-2 images that switch with theme - show/hide light/dark versions */
-img.light-mode-img {
-  display: block;
-}
-
-img.dark-mode-img {
-  display: none;
-}
-
-.ayu img.light-mode-img {
-  display: none;
-}
-
-.ayu img.dark-mode-img {
-  display: block;
-}
-
 /* Python/Mojo syntax highlighting for light mode */
 .language-mojo .kw,
 .language-mojo .hljs-keyword,
@@ -865,28 +849,6 @@ img.dark-mode-img {
   margin: 15px 0;
 }
 
-/* GPT-2 chapter container navigation */
-.previous-next-container {
-  display: flex;
-  justify-content: space-between;
-  margin: 2em 0;
-  padding-top: 1em;
-  border-top: 1px solid var(--modular-border);
-}
-
-.previous-next-container a {
-  padding: 10px 15px;
-  background-color: var(--modular-code-bg);
-  border-radius: 4px;
-  display: inline-block;
-  color: var(--modular-blue);
-}
-
-.previous-next-container a:hover {
-  background-color: rgba(200, 200, 200, 0.05);
-  text-decoration: none;
-}
-
 /* Fix for search result highlighting */
 .search-results a {
   color: var(--modular-blue) !important;
@@ -941,10 +903,6 @@ mark {
 
   .content {
     padding: 0;
-  }
-
-  .gpt2-image {
-    width: 60px;
   }
 
   .social-buttons {
@@ -1289,4 +1247,22 @@ details:last-child {
 main .content {
   max-width: var(--content-max-width);
   padding: 0 var(--page-padding);
+}
+
+/* An inline note that readers should see before they go on. */
+.callout {
+  margin: 16px 0;
+  padding: 12px 16px;
+  border-left: 4px solid var(--modular-blue);
+  border-radius: 4px;
+  background: var(--modular-nav-bg);
+}
+
+.callout p {
+  margin: 4px 0;
+}
+
+.callout .callout-title {
+  font-weight: 600;
+  color: var(--modular-heading);
 }

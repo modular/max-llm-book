@@ -1,0 +1,649 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>1.4 Building blocks - Build and serve an LLM with MAX</title>
+
+
+        <!-- Custom HTML head -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap"
+            rel="stylesheet">
+        
+        <link rel="stylesheet" href="theme/css/custom.css">
+        <link rel="stylesheet" href="theme/css/highlight.css">
+        <link rel="stylesheet" id="theme">
+        
+        <!-- Additional meta tags -->
+        <meta property="og:title" content="Build an LLM from scratch with MAX">
+        <meta property="og:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
+        <meta property="og:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
+        <meta property="og:url" content="https://llm.modular.com/">
+        <meta name="twitter:card" content="summary">
+        <meta name="twitter:image:alt" content="MAX Docs">
+        <meta name="twitter:title" content="Build an LLM from scratch with MAX">
+        <meta name="twitter:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
+        <meta name="twitter:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
+        <link rel="icon" type="image/png" href="https://llm.modular.com/assets/icons/m-dark.svg">
+        <script>
+          !function(){var i="cioanalytics", analytics=(window[i]=window[i]||[]);if(!analytics.initialize)if(analytics.invoked)window.console&&console.error&&console.error("Snippet included twice.");else{analytics.invoked=!0;analytics.methods=["trackSubmit","trackClick","trackLink","trackForm","pageview","identify","reset","group","track","ready","alias","debug","page","once","off","on","addSourceMiddleware","addIntegrationMiddleware","setAnonymousId","addDestinationMiddleware"];analytics.factory=function(e){return function(){var t=Array.prototype.slice.call(arguments);t.unshift(e);analytics.push(t);return analytics}};for(var e=0;e<analytics.methods.length;e++){var key=analytics.methods[e];analytics[key]=analytics.factory(key)}analytics.load=function(key,e){var t=document.createElement("script");t.type="text/javascript";t.async=!0;t.setAttribute('data-global-customerio-analytics-key', i);t.src="https://cdp.customer.io/v1/analytics-js/snippet/" + key + "/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(t,n);analytics._writeKey=key;analytics._loadOptions=e};analytics.SNIPPET_VERSION="4.15.3";
+            analytics.load(
+              "c5c8ad95a28930735be9",
+              {
+                "integrations": {
+                    "Customer.io In-App Plugin": {
+                        anonymousInApp: true
+                    }
+                }
+              }
+            );
+            analytics.page();
+          }}();
+        </script>
+
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+
+        <meta name="description" content="Go from zero to serving: run a small LLM with MAX, rebuild it from scratch with max.nn and max.functional, then add sampling, a KV cache, batching and your own server.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/css/custom.css">
+        <link rel="stylesheet" href="theme/css/highlight.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "ayu";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc.js"></script>
+    </head>
+    <body>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden" checked>
+        <button id="vertical-sidebar-toggle" class="vertical-sidebar-toggle" aria-label="Toggle sidebar"></button>
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <button class="collapse-sidebar" aria-label="Collapse sidebar"></button>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Toggle color mode and talk to us buttons -->
+        <script>
+            document.addEventListener('click', function (event) {
+                if (!event.target.matches('.theme-toggle')) return;
+                event.preventDefault();
+                const prevTheme = theme;
+                html.classList.remove(theme);
+                const newTheme = prevTheme === 'ayu' ? 'light' : 'ayu'
+                html.classList.add(newTheme);
+                theme = newTheme
+                localStorage.setItem('mdbook-theme', theme);
+            }, false);
+        </script>
+
+        <div class="page-header">
+            <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                <i class="fa fa-bars"></i>
+            </label>
+            <div id="menu-bar" class="menu-bar">
+                <div class="left-buttons">
+                    <div class="logo-section">
+                        <a class="desktop-logo-link" href="https://modular.com"></a>
+                        <a class="mobile-logo-link" href="https://builds.modular.com"></a>
+                        <div class="slash">/</div>
+                        <a class="internal-link" href="">MAX LLM</a>
+                    </div>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Dark</button></li>
+                        </ul>
+                    </div>
+                <div class="right-buttons">
+                    <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                        <i class="fa fa-search"></i>
+                    </button>
+                    <button id="theme-toggle" class="icon-button theme-toggle-btn" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="false" aria-expanded="false">
+                        <i class="theme-toggle"></i>
+                    </button>
+                    <a class="menu-btn print" href="print.html" title="Print this book" aria-label="Print this book">
+                        <i id="print-button" class="fa fa-print"></i>
+                    </a>
+                    <a class="menu-btn" href="https://github.com/modular/max-llm-book" title="Git repository" aria-label="Git repository">
+                        <i id="git-repository-button" class="fa fa-github"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-wrapper" class="page-wrapper">
+            <div class="page">
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="14-building-blocks"><a class="header" href="#14-building-blocks">1.4 Building blocks</a></h1>
+<p><a href="https://colab.research.google.com/github/modular/max-llm-book/blob/main/notebooks/01_04_building_blocks.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab" /></a>
+<a href="https://kaggle.com/kernels/welcome?src=https://github.com/modular/max-llm-book/blob/main/notebooks/01_04_building_blocks.ipynb"><img src="https://kaggle.com/static/images/open-in-kaggle.svg" alt="Open in Kaggle" /></a>
+<a href="https://github.com/modular/max-llm-book/blob/main/notebooks/01_04_building_blocks.ipynb"><img src="https://img.shields.io/badge/GitHub-notebook-black?logo=github" alt="View on GitHub" /></a></p>
+<p>Each of SmolLM2’s 30 layers has the same structure:</p>
+<pre><code class="language-text">x = x + attention(rms_norm(x))     # mix information across positions
+x = x + mlp(rms_norm(x))           # transform each position on its own
+</code></pre>
+<p>This section builds the three pieces besides attention: RMSNorm, the SwiGLU
+MLP, and rotary position embeddings (RoPE), which attention uses to know
+where each token is. Each piece is a few lines with <code>max.nn</code> and
+<code>max.functional</code>, and each is checked against a NumPy version of its
+formula, using the real weights of layer 0.</p>
+<pre><code class="language-python">import logging
+
+import numpy as np
+import plotly.graph_objects as go
+from max import functional as F
+from max.driver import CPU
+from max.dtype import DType
+from max.nn import Linear, Module, RMSNorm
+from max.tensor import Tensor, default_device, default_dtype
+
+from minillm import viz
+from minillm.device import pick_device
+from minillm.config import LlamaConfig
+from minillm.weights import load_checkpoint
+
+logging.getLogger("max").setLevel(logging.ERROR)
+DEVICE = pick_device()  # a GPU if MAX finds one, otherwise the CPU
+
+config = LlamaConfig.from_pretrained()
+weights = load_checkpoint()
+</code></pre>
+<p>A layer’s weights are the checkpoint entries under its name prefix. This
+helper selects them and strips the prefix, so a module can load them with
+<code>load_state_dict</code>:</p>
+<pre><code class="language-python">def select(
+    weights: dict[str, np.ndarray], prefix: str
+) -&gt; dict[str, np.ndarray]:
+    """Returns the entries under ``prefix``, with the prefix removed."""
+    return {
+        name.removeprefix(prefix): value
+        for name, value in weights.items()
+        if name.startswith(prefix)
+    }
+</code></pre>
+<p><small>Saved to <code>minillm/weights.py</code>.</small></p>
+<pre><code class="language-python">list(select(weights, "model.layers.0.mlp."))
+</code></pre>
+<pre><code class="language-text">['down_proj.weight', 'gate_proj.weight', 'up_proj.weight']
+</code></pre>
+<p>A random input stands in for the hidden states that reach layer 0. <code>to_np</code>
+reads a tensor back, and <code>compare</code> reports the largest difference from the
+NumPy result, absolute and relative to the largest value:</p>
+<pre><code class="language-python">rng = np.random.default_rng(0)
+x_np = rng.standard_normal((1, 6, config.hidden_size)).astype(np.float32)
+x = Tensor(x_np, device=DEVICE)
+
+
+def to_np(t: Tensor) -&gt; np.ndarray:
+    return t.to_numpy()
+
+
+def compare(actual: np.ndarray, expected: np.ndarray) -&gt; None:
+    diff = np.abs(actual - expected).max()
+    relative = diff / np.abs(expected).max()
+    print(f"max difference {diff:.1e} (relative {relative:.1e})")
+    assert relative &lt; 1e-4, "doesn't match the NumPy reference"
+</code></pre>
+<h2 id="rmsnorm"><a class="header" href="#rmsnorm">RMSNorm</a></h2>
+<p>Deep networks train better when each layer sees inputs of a stable scale.
+RMSNorm divides each vector by its root mean square, then multiplies by a
+learned weight per dimension:</p>
+<p>\[\mathrm{RMSNorm}(x) = \frac{x}{\sqrt{\mathrm{mean}(x^2) + \epsilon}} \cdot w\]</p>
+<p>Unlike LayerNorm, it doesn’t subtract the mean or add a bias, which
+saves work and in practice trains as well. <code>max.nn.RMSNorm</code> implements it:</p>
+<pre><code class="language-python">with default_device(DEVICE), default_dtype(DType.float32):
+    norm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
+norm.load_state_dict(select(weights, "model.layers.0.input_layernorm."))
+
+w = to_np(norm.weight)
+expected = (
+    x_np / np.sqrt((x_np**2).mean(-1, keepdims=True) + config.rms_norm_eps) * w
+)
+compare(to_np(norm(x)), expected)
+</code></pre>
+<pre><code class="language-text">max difference 3.0e-08 (relative 7.7e-08)
+</code></pre>
+<p>The learned weight is far from the all-ones it starts as. In layer 0, most
+dimensions are scaled close to zero, a few stand out several times larger, and
+nearly half are negative, so the norm also flips their sign. Hover over a bar to
+read its value:</p>
+<pre><code class="language-python">fig = go.Figure(
+    go.Bar(
+        x=np.arange(config.hidden_size),
+        y=w,
+        marker_color=viz.BLUE,
+        hovertemplate="dimension %{x}: %{y:.3f}&lt;extra&gt;&lt;/extra&gt;",
+    )
+)
+fig.update_layout(
+    title="Layer 0 input RMSNorm weight, per dimension",
+    height=340,
+    bargap=0,
+    xaxis_title="dimension",
+    yaxis_title="weight",
+)
+viz.show(fig)
+</code></pre>
+<div class="plotly-figure" data-src="generated/01_04_building_blocks_11_0.json"></div>
+<h2 id="the-swiglu-mlp"><a class="header" href="#the-swiglu-mlp">The SwiGLU MLP</a></h2>
+<p>The MLP transforms each position independently. SmolLM2 uses a <em>gated</em>
+variant: one projection, passed through SiLU, decides how much of a second
+projection to let through, and a third projection maps back to the hidden
+size:</p>
+<p>\[\mathrm{MLP}(x) = W_{\text{down}}\,\big(\mathrm{SiLU}(W_{\text{gate}}\,x) \odot W_{\text{up}}\,x\big)\]</p>
+<p>where \(\mathrm{SiLU}(z) = z \cdot \sigma(z)\). The attribute names match the
+checkpoint (<code>gate_proj</code>, <code>up_proj</code>, <code>down_proj</code>), so <code>load_state_dict</code> needs
+no renaming.</p>
+<pre><code class="language-python">z = np.linspace(-6, 6, 241)
+fig = go.Figure(
+    [
+        go.Scatter(
+            x=z,
+            y=np.maximum(z, 0),
+            name="ReLU",
+            line=dict(color=viz.ORANGE, dash="dot"),
+        ),
+        go.Scatter(
+            x=z, y=z / (1 + np.exp(-z)), name="SiLU", line_color=viz.BLUE
+        ),
+    ]
+)
+fig.update_traces(hovertemplate="%{x:.2f} -&gt; %{y:.3f}")
+fig.update_layout(
+    title="SiLU is a smooth ReLU that lets small negative values through",
+    height=360,
+    xaxis_title="z",
+    yaxis_title="activation",
+    hovermode="x unified",
+)
+viz.show(fig)
+</code></pre>
+<div class="plotly-figure" data-src="generated/01_04_building_blocks_13_0.json"></div>
+<pre><code class="language-python">from __future__ import annotations
+
+from max import functional as F
+from max.driver import Device
+from max.dtype import DType
+from max.graph import Dim
+from max.nn import Linear, Module
+from max.tensor import Tensor
+from max.tensor.sharding import DeviceMesh
+
+from minillm.config import LlamaConfig
+
+
+class MLP(Module):
+    """The SwiGLU feed-forward network of a Llama layer."""
+
+    def __init__(self, config: LlamaConfig) -&gt; None:
+        hidden, inner = config.hidden_size, config.intermediate_size
+        self.gate_proj = Linear(hidden, inner, bias=False)
+        self.up_proj = Linear(hidden, inner, bias=False)
+        self.down_proj = Linear(inner, hidden, bias=False)
+
+    def forward(self, x: Tensor) -&gt; Tensor:
+        return self.down_proj(F.silu(self.gate_proj(x)) * self.up_proj(x))
+</code></pre>
+<p><small>Saved to <code>minillm/layers.py</code>.</small></p>
+<pre><code class="language-python">with F.lazy(), default_device(DEVICE), default_dtype(DType.float32):
+    mlp = MLP(config)
+mlp.load_state_dict(select(weights, "model.layers.0.mlp."))
+
+gate, up, down = (
+    to_np(getattr(mlp, n).weight) for n in ("gate_proj", "up_proj", "down_proj")
+)
+g = x_np @ gate.T
+expected = (g / (1 + np.exp(-g)) * (x_np @ up.T)) @ down.T
+compare(to_np(mlp(x)), expected)
+</code></pre>
+<pre><code class="language-text">max difference 1.0e-03 (relative 8.2e-07)
+</code></pre>
+<p><code>Linear</code> stores its weight as <code>[out_features, in_features]</code>, the same layout
+as PyTorch, so the NumPy version multiplies by the transpose. The
+differences, about one part in a million, come from summing thousands of
+<code>float32</code> products in a different order than NumPy does.</p>
+<h2 id="rotary-position-embeddings"><a class="header" href="#rotary-position-embeddings">Rotary position embeddings</a></h2>
+<p>Attention compares tokens with dot products, which by themselves ignore
+order: “dog bites man” and “man bites dog” contain the same tokens. The model
+needs to know positions.</p>
+<p>RoPE encodes position by <em>rotating</em> query and key vectors. It splits each
+64-dimension head vector into 32 pairs and rotates pair <em>i</em> at position <em>p</em>
+by the angle \(p \cdot \theta_i\), where \(\theta_i = \text{base}^{-2i/d}\).
+Early pairs rotate quickly and late pairs slowly, like the hands of a clock.
+SmolLM2’s base is <code>rope_theta = 100000</code>.</p>
+<p>Following the Hugging Face layout, the two halves of the vector form the
+pairs: element <em>i</em> pairs with element <em>i + 32</em>. Rotating every pair at once
+is then two multiplications:</p>
+<p>\[\mathrm{rope}(x) = x \cdot \cos + \mathrm{rotate\_half}(x) \cdot \sin,
+\qquad \mathrm{rotate\_half}([x_1, x_2]) = [-x_2, x_1]\]</p>
+<p><code>start</code> offsets the positions;
+<a href="01_08_kv_cache.html">Section 1.8</a> needs it for the KV
+cache. The tables name their dtype: a <code>Tensor</code> built without one takes the
+device’s default, which is <code>bfloat16</code> on a GPU, and <code>bfloat16</code> can’t even
+represent every integer position above 256 exactly. Lengths are typed
+<code>int | Dim</code> because a compiled model sees symbolic dimensions such as <code>seq_len</code>
+instead of numbers;
+<a href="01_02_tensors_and_eager.html#modules-and-compilation">Section 1.2</a>
+shows where they come from.</p>
+<pre><code class="language-python">def rope_cos_sin(
+    head_dim: int,
+    theta: float,
+    start: int | Dim | Tensor,
+    length: int | Dim,
+    device: Device | DeviceMesh,
+) -&gt; tuple[Tensor, Tensor]:
+    """Returns the RoPE cos and sin tables, ``[length, head_dim]``, for
+    positions ``start`` to ``start + length - 1``."""
+    inv_freq = Tensor(
+        [theta ** (-i / head_dim) for i in range(0, head_dim, 2)],
+        dtype=DType.float32,
+        device=device,
+    )
+    positions = (
+        Tensor.arange(length, dtype=DType.float32, device=device) + start
+    )
+    angles = F.outer(positions, inv_freq)
+    angles = F.concat([angles, angles], axis=-1)
+    return F.cos(angles), F.sin(angles)
+
+
+def rotate_half(x: Tensor) -&gt; Tensor:
+    half = x.shape[-1] // 2
+    return F.concat([-x[..., half:], x[..., :half]], axis=-1)
+
+
+def apply_rope(x: Tensor, cos: Tensor, sin: Tensor) -&gt; Tensor:
+    """Rotates ``x``, shaped ``[batch, seq, heads, head_dim]``."""
+    seq, dim = cos.shape
+    cos = cos.reshape([1, seq, 1, dim])
+    sin = sin.reshape([1, seq, 1, dim])
+    return x * cos + rotate_half(x) * sin
+</code></pre>
+<p><small>Saved to <code>minillm/layers.py</code>.</small></p>
+<p>Each line is one pair’s rotation at a position; move the slider to
+advance the position. Pair 0 turns a full radian per token,
+while pair 31 has barely moved after 24 tokens:</p>
+<pre><code class="language-python">positions = 25
+cos_t, sin_t = rope_cos_sin(
+    config.head_dim, config.rope_theta, 0, positions, DEVICE
+)
+angles = np.arctan2(
+    to_np(sin_t), to_np(cos_t)
+)  # [position, head_dim], one angle per pair
+pairs = [0, 2, 8, 31]
+steps = []
+for pos in range(positions):
+    group = []
+    for pair, color in zip(pairs, viz.SERIES):
+        degrees = float(np.degrees(angles[pos, pair]))
+        group.append(
+            go.Scatterpolar(
+                r=[0, 1],
+                theta=[0, degrees],
+                mode="lines+markers",
+                name=f"pair {pair}",
+                line=dict(color=color, width=3),
+                marker=dict(size=[0, 10], color=color),
+                hovertemplate=f"pair {pair} at position {pos}: {degrees:.0f} degrees&lt;extra&gt;&lt;/extra&gt;",
+            )
+        )
+    steps.append(group)
+fig = go.Figure(
+    layout=dict(
+        title="RoPE rotates each pair at its own speed",
+        height=520,
+        polar=dict(
+            radialaxis=dict(visible=False, range=[0, 1.05]),
+            angularaxis=dict(gridcolor=viz.GRID, linecolor=viz.GRID),
+        ),
+    )
+)
+viz.show(
+    viz.with_slider(
+        fig, steps, [str(p) for p in range(positions)], "position ", active=3
+    )
+)
+</code></pre>
+<div class="plotly-figure" data-src="generated/01_04_building_blocks_19_0.json"></div>
+<p>RoPE relies on two properties, and both are easy to check. First, a
+rotation doesn’t change a vector’s length:</p>
+<pre><code class="language-python">q = Tensor(
+    rng.standard_normal((1, 8, 1, config.head_dim)).astype(np.float32),
+    device=DEVICE,
+)
+cos, sin = rope_cos_sin(config.head_dim, config.rope_theta, 0, 8, DEVICE)
+rotated = to_np(apply_rope(q, cos, sin))
+print(np.linalg.norm(to_np(q), axis=-1).ravel()[:4])
+print(np.linalg.norm(rotated, axis=-1).ravel()[:4])
+assert np.allclose(
+    np.linalg.norm(to_np(q), axis=-1),
+    np.linalg.norm(rotated, axis=-1),
+    rtol=1e-5,
+)
+</code></pre>
+<pre><code class="language-text">[6.897215  6.9866242 7.8358827 6.884518 ]
+[6.897215  6.9866247 7.8358827 6.884518 ]
+</code></pre>
+<p>Second, the dot product of a rotated query and key depends only on how far
+apart they are. Here a query at position 7 and a key at
+position 3 score the same as at positions 107 and 103:</p>
+<pre><code class="language-python">def score(q_pos: int, k_pos: int) -&gt; float:
+    qv = Tensor(np.ones((1, 1, 1, config.head_dim), np.float32), device=DEVICE)
+    kv = Tensor(
+        np.linspace(-1, 1, config.head_dim, dtype=np.float32).reshape(
+            1, 1, 1, -1
+        ),
+        device=DEVICE,
+    )
+    q_rot = apply_rope(
+        qv, *rope_cos_sin(config.head_dim, config.rope_theta, q_pos, 1, DEVICE)
+    )
+    k_rot = apply_rope(
+        kv, *rope_cos_sin(config.head_dim, config.rope_theta, k_pos, 1, DEVICE)
+    )
+    return float((to_np(q_rot) * to_np(k_rot)).sum())
+
+
+print(f"{score(7, 3):.4f}  {score(107, 103):.4f}  {score(7, 5):.4f}")
+assert (
+    abs(score(7, 3) - score(107, 103)) &lt; 1e-3
+    and abs(score(7, 3) - score(7, 5)) &gt; 1e-2
+)
+</code></pre>
+<pre><code class="language-text">10.2645  10.2645  7.8206
+</code></pre>
+<p>The first two scores match. The third, for positions two apart instead of
+four, differs. The sweep below fixes the key at position 10 or at 110 and
+moves the query up to 48 positions after it. The two curves lie on top of
+each other:</p>
+<pre><code class="language-python">q_vec = np.ones(config.head_dim, np.float32)
+k_vec = np.linspace(-1, 1, config.head_dim, dtype=np.float32)
+cos_t, sin_t = (
+    to_np(t)
+    for t in rope_cos_sin(config.head_dim, config.rope_theta, 0, 160, DEVICE)
+)
+
+
+def rope_np(v: np.ndarray, pos: int) -&gt; np.ndarray:
+    half = len(v) // 2
+    return v * cos_t[pos] + np.concatenate([-v[half:], v[:half]]) * sin_t[pos]
+
+
+distances = np.arange(49)
+fig = go.Figure(
+    [
+        go.Scatter(
+            x=distances,
+            y=[
+                rope_np(q_vec, k_pos + d) @ rope_np(k_vec, k_pos)
+                for d in distances
+            ],
+            name=f"key at position {k_pos}",
+            line=dict(color=color, dash=dash, width=width),
+            hovertemplate="distance %{x}: %{y:.3f}&lt;extra&gt;&lt;/extra&gt;",
+        )
+        for k_pos, color, dash, width in [
+            (10, viz.BLUE, "solid", 5),
+            (110, viz.ORANGE, "dash", 2),
+        ]
+    ]
+)
+fig.update_layout(
+    title="Query-key score after RoPE depends only on the distance",
+    height=380,
+    xaxis_title="query position minus key position",
+    yaxis_title="q · k",
+)
+viz.show(fig)
+</code></pre>
+<div class="plotly-figure" data-src="generated/01_04_building_blocks_25_0.json"></div>
+<p>Because scores depend only on relative position, RoPE generalizes well,
+and most open models use it.</p>
+<h2 id="exercises"><a class="header" href="#exercises">Exercises</a></h2>
+<ol>
+<li>Replace <code>RMSNorm</code> with a version you write from <code>F.rsqrt</code>, <code>.mean</code>, and
+<code>*</code>, and check that it gives the same output.</li>
+<li>Plot <code>cos</code> from <code>rope_cos_sin</code> for 512 positions as an image (positions
+by dimensions). Which dimensions change fastest?</li>
+<li>Run the RMSNorm check with <code>bfloat16</code> instead of <code>float32</code> (cast the input
+and the module’s weight). How large is the error, and why do real models
+compute norms in <code>float32</code>?</li>
+</ol>
+<h2 id="next"><a class="header" href="#next">Next</a></h2>
+<p><a href="01_05_attention.html">Section 1.5</a> builds attention,
+the part of the layer that mixes information between positions, and uses RoPE to
+do it.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="01_03_tokens_and_weights.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="01_05_attention.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="01_03_tokens_and_weights.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="01_05_attention.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="theme/code-highlighting.js"></script>
+        <script src="theme/sidebar.js"></script>
+        <script src="theme/init-amplitude.js"></script>
+        <script src="theme/warning.js"></script>
+        <script src="theme/plotly-figures.js"></script>
+
+
+    </div>
+    </body>
+</html>

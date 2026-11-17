@@ -1,0 +1,624 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>2.1 Distributed tensors - Build and serve an LLM with MAX</title>
+
+
+        <!-- Custom HTML head -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap"
+            rel="stylesheet">
+        
+        <link rel="stylesheet" href="theme/css/custom.css">
+        <link rel="stylesheet" href="theme/css/highlight.css">
+        <link rel="stylesheet" id="theme">
+        
+        <!-- Additional meta tags -->
+        <meta property="og:title" content="Build an LLM from scratch with MAX">
+        <meta property="og:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
+        <meta property="og:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
+        <meta property="og:url" content="https://llm.modular.com/">
+        <meta name="twitter:card" content="summary">
+        <meta name="twitter:image:alt" content="MAX Docs">
+        <meta name="twitter:title" content="Build an LLM from scratch with MAX">
+        <meta name="twitter:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
+        <meta name="twitter:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
+        <link rel="icon" type="image/png" href="https://llm.modular.com/assets/icons/m-dark.svg">
+        <script>
+          !function(){var i="cioanalytics", analytics=(window[i]=window[i]||[]);if(!analytics.initialize)if(analytics.invoked)window.console&&console.error&&console.error("Snippet included twice.");else{analytics.invoked=!0;analytics.methods=["trackSubmit","trackClick","trackLink","trackForm","pageview","identify","reset","group","track","ready","alias","debug","page","once","off","on","addSourceMiddleware","addIntegrationMiddleware","setAnonymousId","addDestinationMiddleware"];analytics.factory=function(e){return function(){var t=Array.prototype.slice.call(arguments);t.unshift(e);analytics.push(t);return analytics}};for(var e=0;e<analytics.methods.length;e++){var key=analytics.methods[e];analytics[key]=analytics.factory(key)}analytics.load=function(key,e){var t=document.createElement("script");t.type="text/javascript";t.async=!0;t.setAttribute('data-global-customerio-analytics-key', i);t.src="https://cdp.customer.io/v1/analytics-js/snippet/" + key + "/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(t,n);analytics._writeKey=key;analytics._loadOptions=e};analytics.SNIPPET_VERSION="4.15.3";
+            analytics.load(
+              "c5c8ad95a28930735be9",
+              {
+                "integrations": {
+                    "Customer.io In-App Plugin": {
+                        anonymousInApp: true
+                    }
+                }
+              }
+            );
+            analytics.page();
+          }}();
+        </script>
+
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+
+        <meta name="description" content="Go from zero to serving: run a small LLM with MAX, rebuild it from scratch with max.nn and max.functional, then add sampling, a KV cache, batching and your own server.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/css/custom.css">
+        <link rel="stylesheet" href="theme/css/highlight.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "ayu";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc.js"></script>
+    </head>
+    <body>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden" checked>
+        <button id="vertical-sidebar-toggle" class="vertical-sidebar-toggle" aria-label="Toggle sidebar"></button>
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <button class="collapse-sidebar" aria-label="Collapse sidebar"></button>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Toggle color mode and talk to us buttons -->
+        <script>
+            document.addEventListener('click', function (event) {
+                if (!event.target.matches('.theme-toggle')) return;
+                event.preventDefault();
+                const prevTheme = theme;
+                html.classList.remove(theme);
+                const newTheme = prevTheme === 'ayu' ? 'light' : 'ayu'
+                html.classList.add(newTheme);
+                theme = newTheme
+                localStorage.setItem('mdbook-theme', theme);
+            }, false);
+        </script>
+
+        <div class="page-header">
+            <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                <i class="fa fa-bars"></i>
+            </label>
+            <div id="menu-bar" class="menu-bar">
+                <div class="left-buttons">
+                    <div class="logo-section">
+                        <a class="desktop-logo-link" href="https://modular.com"></a>
+                        <a class="mobile-logo-link" href="https://builds.modular.com"></a>
+                        <div class="slash">/</div>
+                        <a class="internal-link" href="">MAX LLM</a>
+                    </div>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Dark</button></li>
+                        </ul>
+                    </div>
+                <div class="right-buttons">
+                    <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                        <i class="fa fa-search"></i>
+                    </button>
+                    <button id="theme-toggle" class="icon-button theme-toggle-btn" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="false" aria-expanded="false">
+                        <i class="theme-toggle"></i>
+                    </button>
+                    <a class="menu-btn print" href="print.html" title="Print this book" aria-label="Print this book">
+                        <i id="print-button" class="fa fa-print"></i>
+                    </a>
+                    <a class="menu-btn" href="https://github.com/modular/max-llm-book" title="Git repository" aria-label="Git repository">
+                        <i id="git-repository-button" class="fa fa-github"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-wrapper" class="page-wrapper">
+            <div class="page">
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="21-distributed-tensors"><a class="header" href="#21-distributed-tensors">2.1 Distributed tensors</a></h1>
+<p><a href="https://colab.research.google.com/github/modular/max-llm-book/blob/main/notebooks/02_01_distributed_tensors.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab" /></a>
+<a href="https://kaggle.com/kernels/welcome?src=https://github.com/modular/max-llm-book/blob/main/notebooks/02_01_distributed_tensors.ipynb"><img src="https://kaggle.com/static/images/open-in-kaggle.svg" alt="Open in Kaggle" /></a>
+<a href="https://github.com/modular/max-llm-book/blob/main/notebooks/02_01_distributed_tensors.ipynb"><img src="https://img.shields.io/badge/GitHub-notebook-black?logo=github" alt="View on GitHub" /></a></p>
+<p>A <em>distributed tensor</em> is one logical array whose data lives on several devices.
+In MAX it is an ordinary <code>Tensor</code>, the same type you used from
+<a href="01_02_tensors_and_eager.html">Section 1.2</a> on:
+operators, <code>max.functional</code>, and <code>max.nn</code> layers accept it, run on every device
+that holds a piece, and add the communication between devices that the math
+requires.</p>
+<p>This section runs everything on a <em>simulated</em> mesh: four “devices” that are
+all the same CPU. The program, the per-device pieces, and the results are
+the same as on four GPUs, so you can develop and test distributed code on a
+laptop and run it unchanged on real hardware.</p>
+<pre><code class="language-python">import logging
+import warnings
+
+import numpy as np
+import plotly.graph_objects as go
+from max import functional as F
+from max.driver import CPU
+from max.tensor import Tensor
+from max.tensor.sharding import (
+    DeviceMapping,
+    DeviceMesh,
+    Partial,
+    Replicated,
+    Sharded,
+    auto_reshard,
+    visualize,
+)
+from plotly.subplots import make_subplots
+
+from minillm import viz
+
+logging.getLogger("max").setLevel(logging.ERROR)
+</code></pre>
+<h2 id="meshes-and-placements"><a class="header" href="#meshes-and-placements">Meshes and placements</a></h2>
+<p>A <code>DeviceMesh</code> arranges devices on named axes. This one has four devices on
+one axis, named <code>tp</code> for tensor parallelism:</p>
+<pre><code class="language-python">mesh = DeviceMesh((CPU(),) * 4, (4,), ("tp",))
+
+
+def on(*placements) -&gt; DeviceMapping:
+    """Places a tensor on the mesh, with one placement per mesh axis."""
+    return DeviceMapping(mesh, placements)
+</code></pre>
+<p>A <code>DeviceMapping</code> says how a tensor’s data relates to the devices on each
+mesh axis. That relation is its <em>placement</em>:</p>
+<ul>
+<li><code>Replicated()</code>: every device holds the whole tensor.</li>
+<li><code>Sharded(axis)</code>: the tensor is split along <code>axis</code>, one piece per device.</li>
+<li><code>Partial()</code>: every device holds a full-size tensor, and the real value is
+their sum.</li>
+</ul>
+<p>Split an 8 × 4 matrix by rows:</p>
+<pre><code class="language-python">a = np.arange(32, dtype=np.float32).reshape(8, 4)
+x = Tensor(a, device=on(Sharded(0)))
+visualize(x)
+</code></pre>
+<pre><code class="language-text">DType.float32 [8, 4] with DeviceMapping(DeviceMesh(tp=4), [Sharded(axis=0)])
+┌──────────┐   tensor[:, :]
+│ device 0 │   ├── tp=0  device 0 - tensor[:2, :]
+│ [:2, :]  │   ├── tp=1  device 1 - tensor[2:4, :]
+├──────────┤   ├── tp=2  device 2 - tensor[4:6, :]
+│ device 1 │   └── tp=3  device 3 - tensor[6:, :]
+│ [2:4, :] │
+├──────────┤
+│ device 2 │
+│ [4:6, :] │
+├──────────┤
+│ device 3 │
+│ [6:, :]  │
+└──────────┘
+</code></pre>
+<p><code>x.shape</code> is the global shape, <code>[8, 4]</code>, as if the tensor lived on one
+device. Each device’s piece, its <em>shard</em>, is in <code>local_shards</code>:</p>
+<pre><code class="language-python">print("global shape:", [int(d) for d in x.shape])
+for i, shard in enumerate(x.local_shards):
+    print(f"device {i}:", [int(d) for d in shard.shape], shard.to_numpy()[:, 0])
+</code></pre>
+<pre><code class="language-text">global shape: [8, 4]
+device 0: [2, 4] [0. 4.]
+device 1: [2, 4] [ 8. 12.]
+device 2: [2, 4] [16. 20.]
+device 3: [2, 4] [24. 28.]
+</code></pre>
+<p>The next helper turns a tensor’s placement into a map of which device holds
+each element, using only <code>mapping.placements</code> and the shard shapes. The
+figures in this section draw it: one color per device, gray where every
+device holds the element, and a darker gray for a <code>Partial</code> tensor, whose
+every device holds a term of the sum.</p>
+<pre><code class="language-python">ALL, PARTIAL = -1, -2
+
+
+def owners(t: Tensor) -&gt; np.ndarray:
+    """Returns the device that holds each element of ``t`` on a 1-D mesh."""
+    grid = np.full([int(d) for d in t.shape], ALL)
+    placement = t.mapping.placements[0]
+    if isinstance(placement, Partial):
+        grid[:] = PARTIAL
+    elif isinstance(placement, Sharded):
+        start = 0
+        for device, shard in enumerate(t.local_shards):
+            size = int(shard.shape[placement.axis])
+            index = [slice(None)] * grid.ndim
+            index[placement.axis] = slice(start, start + size)
+            grid[tuple(index)] = device
+            start += size
+    return grid
+
+
+HOLDER = {ALL: "every device", PARTIAL: "every device, one term each"} | {
+    d: f"device {d}" for d in range(4)
+}
+# One band per value from -2 to 3: partial, all, then devices 0 to 3.
+BANDS = [
+    viz.INK_SECONDARY,
+    viz.GRID,
+    viz.BLUE,
+    viz.ORANGE,
+    viz.AQUA,
+    viz.YELLOW,
+]
+OWNER_SCALE = [
+    [edge, color]
+    for i, color in enumerate(BANDS)
+    for edge in (i / 6, (i + 1) / 6)
+]
+
+
+def owner_heatmap(t: Tensor, show_values: bool = True, **trace) -&gt; go.Heatmap:
+    grid = owners(t)
+    values = t.to_numpy()
+    rows, cols = grid.shape
+    holder = [
+        [HOLDER[int(grid[r, c])] for c in range(cols)] for r in range(rows)
+    ]
+    return go.Heatmap(
+        z=grid,
+        zmin=-2.5,
+        zmax=3.5,
+        colorscale=OWNER_SCALE,
+        showscale=False,
+        xgap=2,
+        ygap=2,
+        customdata=holder,
+        text=values.round(1) if show_values else None,
+        texttemplate="%{text}" if show_values else None,
+        hovertemplate="row %{y}, column %{x}&lt;br&gt;held by %{customdata}&lt;extra&gt;&lt;/extra&gt;",
+        **trace,
+    )
+
+
+def device_legend(fig: go.Figure) -&gt; None:
+    for d in range(4):
+        fig.add_trace(
+            go.Scatter(
+                x=[None],
+                y=[None],
+                mode="markers",
+                name=f"device {d}",
+                marker=dict(symbol="square", size=12, color=BANDS[d + 2]),
+            )
+        )
+</code></pre>
+<p>Move the slider to compare placements of the same 8 × 4 matrix:</p>
+<pre><code class="language-python">placements = {
+    "Sharded(0)": Sharded(0),
+    "Sharded(1)": Sharded(1),
+    "Replicated()": Replicated(),
+}
+steps = [[owner_heatmap(Tensor(a, device=on(p)))] for p in placements.values()]
+fig = go.Figure(
+    layout=dict(
+        title="Which device holds each element of an 8 × 4 matrix",
+        height=520,
+        xaxis=dict(showgrid=False, dtick=1),
+        yaxis=dict(showgrid=False, autorange="reversed", dtick=1),
+    )
+)
+device_legend(fig)
+viz.show(viz.with_slider(fig, steps, list(placements), "placement "))
+</code></pre>
+<div class="plotly-figure" data-src="generated/02_01_distributed_tensors_12_0.json"></div>
+<p><code>to_numpy()</code> gathers the shards back into one array, so checking a
+distributed result against NumPy is one line:</p>
+<pre><code class="language-python">print(np.array_equal(x.to_numpy(), a))
+</code></pre>
+<pre><code class="language-text">True
+</code></pre>
+<h2 id="sharded-matrix-multiplication"><a class="header" href="#sharded-matrix-multiplication">Sharded matrix multiplication</a></h2>
+<p>Models spend most of their time in matrix multiplications, and there are two
+natural ways to split \(y = x W\) across devices. Every tensor-parallel
+transformer uses both.</p>
+<p>In a <em>column-parallel</em> multiplication, every device holds all of \(x\) and a
+slice of \(W\)’s columns, and computes the matching slice of \(y\). It needs no
+communication:</p>
+<pre><code class="language-python">w = np.random.default_rng(0).standard_normal((4, 6)).astype(np.float32)
+
+y = Tensor(a, device=on(Replicated())) @ Tensor(w, device=on(Sharded(1)))
+print(y.mapping)
+print("correct:", np.allclose(y.to_numpy(), a @ w, atol=1e-5))
+assert np.allclose(y.to_numpy(), a @ w, atol=1e-5)
+</code></pre>
+<pre><code class="language-text">DeviceMapping(DeviceMesh(tp=4), [Sharded(axis=1)])
+correct: True
+</code></pre>
+<p>In a <em>row-parallel</em> multiplication, each device holds a slice of \(x\)’s
+columns and the matching slice of \(W\)’s rows. Each device’s product is one
+term of the full sum over the inner dimension, so the result is <code>Partial</code>:</p>
+<pre><code class="language-python">z = Tensor(a, device=on(Sharded(1))) @ Tensor(w, device=on(Sharded(0)))
+print(z.mapping)
+print("correct:", np.allclose(z.to_numpy(), a @ w, atol=1e-5))
+assert np.allclose(z.to_numpy(), a @ w, atol=1e-5)
+</code></pre>
+<pre><code class="language-text">DeviceMapping(DeviceMesh(tp=4), [Partial()])
+correct: True
+</code></pre>
+<p>A <code>Partial</code> tensor is correct only once its terms are summed. Most
+operations, such as an activation, need the real value, so MAX must first
+combine the shards with a <em>collective</em>, an operation that communicates
+between devices. Inside <code>auto_reshard(mode="warn")</code>, MAX reports every
+collective it inserts and the reason for it:</p>
+<pre><code class="language-python">with warnings.catch_warnings(record=True) as caught:
+    warnings.simplefilter("always")
+    with auto_reshard(mode="warn"):
+        activated = F.relu(z)
+print(next(w.message for w in caught if "reshards" in str(w.message)))
+print("result:", activated.mapping)
+</code></pre>
+<pre><code class="language-text">
+relu(x) reshards x
+  x      : float32[8, 6]@mesh(tp=4){"tp":P}
+  region : auto_reshard(DEFAULT_TRANSITIONS, mode="warn")
+
+  decided per mesh axis
+  axis    x          -&gt; out       collective         bytes   status
+  "tp"    x{P-&gt;S0}   -&gt; S0        reduce_scatter(x)     144  not allowed
+          x{P-&gt;S1}   -&gt; S1        reduce_scatter(x)     144  not allowed
+          x{P-&gt;R}    -&gt; R         allreduce(x)          288  chosen, reshards x
+  result  x{"tp":R}  -&gt; {"tp":R}
+
+  x = transfer_to(x, DeviceMapping(mesh, (R,)))
+  with auto_reshard(mode="silent"):
+  with auto_reshard(ALL_TRANSITIONS, mode="silent"):   # also allows the cheaper rows above
+  at /var/folders/gg/plf_qcqs5556rt10q1s96gl40000gn/T/ipykernel_87578/1282956743.py:4 in &lt;module&gt;()
+result: DeviceMapping(DeviceMesh(tp=4), [Replicated()])
+</code></pre>
+<p>MAX chose an <em>all-reduce</em>: every device sends its partial sum and receives
+the total. It also considered a <em>reduce-scatter</em>, which sums and leaves each
+device one slice, but that transition isn’t in the default set. Outside an
+<code>auto_reshard</code> block, MAX raises an error instead of inserting a collective,
+so a model can’t add communication you didn’t plan for.</p>
+<p>To move a tensor to a placement yourself, use <code>F.transfer_to</code>:</p>
+<pre><code class="language-python">replicated = F.transfer_to(z, on(Replicated()))
+print(replicated.mapping)
+</code></pre>
+<pre><code class="language-text">DeviceMapping(DeviceMesh(tp=4), [Replicated()])
+</code></pre>
+<h2 id="column-then-row-one-all-reduce-per-block"><a class="header" href="#column-then-row-one-all-reduce-per-block">Column then row: one all-reduce per block</a></h2>
+<p>Chaining the two patterns is the core of <em>tensor parallelism</em>, as introduced
+by the Megatron-LM paper. A column-parallel layer leaves its output split by
+columns, which is the input a row-parallel layer needs, so the pair runs with
+no communication between them and a single all-reduce at the end. Here is a
+small MLP block, checked against NumPy:</p>
+<pre><code class="language-python">rng = np.random.default_rng(1)
+w_up = rng.standard_normal((4, 16)).astype(np.float32)
+w_down = rng.standard_normal((16, 4)).astype(np.float32)
+
+with warnings.catch_warnings(record=True) as caught:
+    warnings.simplefilter("always")
+    with auto_reshard(mode="warn"):
+        h = F.relu(
+            Tensor(a, device=on(Replicated()))
+            @ Tensor(w_up, device=on(Sharded(1)))
+        )
+        partial_out = h @ Tensor(w_down, device=on(Sharded(0)))
+reshards = [w for w in caught if "reshards" in str(w.message)]
+out = F.transfer_to(partial_out, on(Replicated()))  # the one all-reduce
+
+print("hidden:", h.mapping, " block output:", partial_out.mapping)
+print("collectives MAX had to insert:", len(reshards))
+print(
+    "correct:",
+    np.allclose(out.to_numpy(), np.maximum(a @ w_up, 0) @ w_down, atol=1e-3),
+)
+assert not reshards and np.allclose(
+    out.to_numpy(), np.maximum(a @ w_up, 0) @ w_down, atol=1e-3
+)
+</code></pre>
+<pre><code class="language-text">hidden: DeviceMapping(DeviceMesh(tp=4), [Sharded(axis=1)])  block output: DeviceMapping(DeviceMesh(tp=4), [Partial()])
+collectives MAX had to insert: 0
+correct: True
+</code></pre>
+<p>Here is the whole block as placements. Every device holds all of <code>x</code>. The
+column-parallel weight and the hidden activation are split by columns in the
+same way, so each device multiplies only its own slice. The row-parallel
+weight is split by rows to match, and the block’s output, <code>h W_down</code>, is a
+partial sum on every device (dark gray) until the all-reduce sums it:</p>
+<pre><code class="language-python">panels = {
+    "x": Tensor(a, device=on(Replicated())),
+    "W_up": Tensor(w_up, device=on(Sharded(1))),
+    "h": h,
+    "W_down": Tensor(w_down, device=on(Sharded(0))),
+    "h W_down": partial_out,
+    "summed": out,
+}
+widths = [int(t.shape[1]) for t in panels.values()]
+fig = make_subplots(
+    rows=1,
+    cols=len(panels),
+    column_widths=widths,
+    horizontal_spacing=0.03,
+    subplot_titles=list(panels),
+)
+for col, t in enumerate(panels.values(), start=1):
+    fig.add_trace(owner_heatmap(t, show_values=False), row=1, col=col)
+device_legend(fig)
+fig.update_xaxes(showgrid=False, showticklabels=False)
+fig.update_yaxes(showgrid=False, showticklabels=False, autorange="reversed")
+fig.update_layout(
+    title="A column-parallel, row-parallel MLP block on 4 devices",
+    height=420,
+    legend=dict(y=-0.04, yanchor="top"),
+    margin=dict(t=96),
+)
+viz.show(fig)
+</code></pre>
+<div class="plotly-figure" data-src="generated/02_01_distributed_tensors_26_0.json"></div>
+<p>The hidden activation stayed sharded, <code>relu</code> ran on each shard independently,
+and the only communication was the explicit all-reduce at the end.
+<a href="02_02_tensor_parallel.html">Section 2.2</a> applies this
+pattern to every attention and MLP block of SmolLM2.</p>
+<h2 id="two-dimensional-meshes"><a class="header" href="#two-dimensional-meshes">Two-dimensional meshes</a></h2>
+<p>Real deployments combine strategies. A mesh with two axes can split a batch
+of requests across <code>dp</code> (data parallelism) while splitting each layer’s
+weights across <code>tp</code>. Each mesh axis gets its own placement:</p>
+<pre><code class="language-python">mesh_2d = DeviceMesh((CPU(),) * 4, (2, 2), ("dp", "tp"))
+batch = Tensor(
+    np.ones((4, 6), np.float32),
+    device=DeviceMapping(mesh_2d, (Sharded(0), Sharded(1))),
+)
+visualize(batch)
+</code></pre>
+<pre><code class="language-text">DType.float32 [4, 6] with DeviceMapping(DeviceMesh(dp=2, tp=2), [Sharded(axis=0), Sharded(axis=1)])
+┌──────────┬──────────┐   tensor[:, :]
+│ device 0 │ device 1 │   ├── dp=0 - tensor[:2, :]
+│ [:2, :3] │ [:2, 3:] │   │   ├── tp=0  device 0 - tensor[:2, :3]
+├──────────┼──────────┤   │   └── tp=1  device 1 - tensor[:2, 3:]
+│ device 2 │ device 3 │   └── dp=1 - tensor[2:, :]
+│ [2:, :3] │ [2:, 3:] │       ├── tp=0  device 2 - tensor[2:, :3]
+└──────────┴──────────┘       └── tp=1  device 3 - tensor[2:, 3:]
+</code></pre>
+<p>On real hardware, the cost of each collective depends on how much data it moves
+and how fast the devices are connected, and that decides the best layout for a
+given model and cluster. The handbook’s
+<a href="https://handbook.modular.com/inference-optimization/data-tensor-pipeline-expert-hybrid-parallelism/">parallelism strategies</a>
+page compares data, tensor, pipeline, and expert parallelism. MAX’s docs cover
+<a href="https://max.modular.com/develop/distributed/tensors">distributed tensors</a> in
+more detail.</p>
+<h2 id="exercises"><a class="header" href="#exercises">Exercises</a></h2>
+<ol>
+<li>Shard <code>x</code> with <code>Sharded(1)</code> instead of <code>Sharded(0)</code> and visualize it.
+What happens with 3 devices instead of 4, which don’t divide 4 columns
+evenly?</li>
+<li>Swap the order in the MLP block: row-parallel first, then column-parallel.
+Which collectives does MAX insert now?</li>
+<li>Count the bytes each device sends in the all-reduce of the MLP block.
+How does it scale with the batch size and the hidden size?</li>
+</ol>
+<h2 id="next"><a class="header" href="#next">Next</a></h2>
+<p><a href="02_02_tensor_parallel.html">Section 2.2</a> splits SmolLM2
+across devices and checks that its logits don’t change.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="ch02.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="02_02_tensor_parallel.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="ch02.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="02_02_tensor_parallel.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="theme/code-highlighting.js"></script>
+        <script src="theme/sidebar.js"></script>
+        <script src="theme/init-amplitude.js"></script>
+        <script src="theme/warning.js"></script>
+        <script src="theme/plotly-figures.js"></script>
+
+
+    </div>
+    </body>
+</html>

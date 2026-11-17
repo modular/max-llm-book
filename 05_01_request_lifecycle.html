@@ -1,0 +1,780 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>5.1 The life of a request - Build and serve an LLM with MAX</title>
+
+
+        <!-- Custom HTML head -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap"
+            rel="stylesheet">
+        
+        <link rel="stylesheet" href="theme/css/custom.css">
+        <link rel="stylesheet" href="theme/css/highlight.css">
+        <link rel="stylesheet" id="theme">
+        
+        <!-- Additional meta tags -->
+        <meta property="og:title" content="Build an LLM from scratch with MAX">
+        <meta property="og:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
+        <meta property="og:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
+        <meta property="og:url" content="https://llm.modular.com/">
+        <meta name="twitter:card" content="summary">
+        <meta name="twitter:image:alt" content="MAX Docs">
+        <meta name="twitter:title" content="Build an LLM from scratch with MAX">
+        <meta name="twitter:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
+        <meta name="twitter:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
+        <link rel="icon" type="image/png" href="https://llm.modular.com/assets/icons/m-dark.svg">
+        <script>
+          !function(){var i="cioanalytics", analytics=(window[i]=window[i]||[]);if(!analytics.initialize)if(analytics.invoked)window.console&&console.error&&console.error("Snippet included twice.");else{analytics.invoked=!0;analytics.methods=["trackSubmit","trackClick","trackLink","trackForm","pageview","identify","reset","group","track","ready","alias","debug","page","once","off","on","addSourceMiddleware","addIntegrationMiddleware","setAnonymousId","addDestinationMiddleware"];analytics.factory=function(e){return function(){var t=Array.prototype.slice.call(arguments);t.unshift(e);analytics.push(t);return analytics}};for(var e=0;e<analytics.methods.length;e++){var key=analytics.methods[e];analytics[key]=analytics.factory(key)}analytics.load=function(key,e){var t=document.createElement("script");t.type="text/javascript";t.async=!0;t.setAttribute('data-global-customerio-analytics-key', i);t.src="https://cdp.customer.io/v1/analytics-js/snippet/" + key + "/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(t,n);analytics._writeKey=key;analytics._loadOptions=e};analytics.SNIPPET_VERSION="4.15.3";
+            analytics.load(
+              "c5c8ad95a28930735be9",
+              {
+                "integrations": {
+                    "Customer.io In-App Plugin": {
+                        anonymousInApp: true
+                    }
+                }
+              }
+            );
+            analytics.page();
+          }}();
+        </script>
+
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+
+        <meta name="description" content="Go from zero to serving: run a small LLM with MAX, rebuild it from scratch with max.nn and max.functional, then add sampling, a KV cache, batching and your own server.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/css/custom.css">
+        <link rel="stylesheet" href="theme/css/highlight.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "ayu";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc.js"></script>
+    </head>
+    <body>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden" checked>
+        <button id="vertical-sidebar-toggle" class="vertical-sidebar-toggle" aria-label="Toggle sidebar"></button>
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <button class="collapse-sidebar" aria-label="Collapse sidebar"></button>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Toggle color mode and talk to us buttons -->
+        <script>
+            document.addEventListener('click', function (event) {
+                if (!event.target.matches('.theme-toggle')) return;
+                event.preventDefault();
+                const prevTheme = theme;
+                html.classList.remove(theme);
+                const newTheme = prevTheme === 'ayu' ? 'light' : 'ayu'
+                html.classList.add(newTheme);
+                theme = newTheme
+                localStorage.setItem('mdbook-theme', theme);
+            }, false);
+        </script>
+
+        <div class="page-header">
+            <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                <i class="fa fa-bars"></i>
+            </label>
+            <div id="menu-bar" class="menu-bar">
+                <div class="left-buttons">
+                    <div class="logo-section">
+                        <a class="desktop-logo-link" href="https://modular.com"></a>
+                        <a class="mobile-logo-link" href="https://builds.modular.com"></a>
+                        <div class="slash">/</div>
+                        <a class="internal-link" href="">MAX LLM</a>
+                    </div>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Dark</button></li>
+                        </ul>
+                    </div>
+                <div class="right-buttons">
+                    <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                        <i class="fa fa-search"></i>
+                    </button>
+                    <button id="theme-toggle" class="icon-button theme-toggle-btn" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="false" aria-expanded="false">
+                        <i class="theme-toggle"></i>
+                    </button>
+                    <a class="menu-btn print" href="print.html" title="Print this book" aria-label="Print this book">
+                        <i id="print-button" class="fa fa-print"></i>
+                    </a>
+                    <a class="menu-btn" href="https://github.com/modular/max-llm-book" title="Git repository" aria-label="Git repository">
+                        <i id="git-repository-button" class="fa fa-github"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-wrapper" class="page-wrapper">
+            <div class="page">
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="51-the-life-of-a-request"><a class="header" href="#51-the-life-of-a-request">5.1 The life of a request</a></h1>
+<p><a href="https://colab.research.google.com/github/modular/max-llm-book/blob/main/notebooks/05_01_request_lifecycle.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab" /></a>
+<a href="https://kaggle.com/kernels/welcome?src=https://github.com/modular/max-llm-book/blob/main/notebooks/05_01_request_lifecycle.ipynb"><img src="https://kaggle.com/static/images/open-in-kaggle.svg" alt="Open in Kaggle" /></a>
+<a href="https://github.com/modular/max-llm-book/blob/main/notebooks/05_01_request_lifecycle.ipynb"><img src="https://img.shields.io/badge/GitHub-notebook-black?logo=github" alt="View on GitHub" /></a></p>
+<p>So far your model served one prompt at a time, from a notebook. A serving engine
+takes requests from many users at once and keeps them all moving: it admits new
+requests, runs the model, hands each request its next token, and stops each one
+when it is done. <a href="ch05.html">This chapter</a> builds that
+engine over five sections, on top of a new model interface designed for it.</p>
+<p>MAX Serve and other inference engines share this structure:</p>
+<pre><code class="language-text">requests ─► scheduler ─► model step (one batched forward pass) ─► sampler
+               ▲                                                     │
+               └─────────── KV cache manager ◄──── new tokens ◄──────┘
+</code></pre>
+<p>The handbook’s
+<a href="https://handbook.modular.com/llm-inference-basics/how-does-llm-inference-work/">How does LLM inference work?</a>
+page describes the same loop.</p>
+<pre><code class="language-python">import logging
+import math
+import time
+import warnings
+from dataclasses import dataclass, field
+
+import numpy as np
+import plotly.graph_objects as go
+from max import functional as F
+from max.driver import CPU
+from max.dtype import DType
+from max.nn import ModuleList
+from max.nn.kernels.attention import flash_attention
+from max.pipelines import AutoTokenizer
+from max.tensor import Tensor
+from max.tensor.tensor import TensorType
+from plotly.subplots import make_subplots
+
+from minillm import viz
+from minillm.attention import Attention
+from minillm.device import pick_device
+from minillm.config import MODEL_ID, LlamaConfig
+from minillm.layers import rotate_half
+from minillm.model import DecoderLayer, LlamaForCausalLM, load_model
+from minillm.weights import load_checkpoint
+
+logging.getLogger("max").setLevel(logging.ERROR)
+warnings.filterwarnings("ignore", message="The eager interpreter failed")
+DEVICE = pick_device()  # a GPU if MAX finds one, otherwise the CPU
+
+config = LlamaConfig.from_pretrained()
+tokenizer = AutoTokenizer(MODEL_ID)
+</code></pre>
+<h2 id="a-model-step-for-an-engine"><a class="header" href="#a-model-step-for-an-engine">A model step for an engine</a></h2>
+<p>The cached model from <a href="01_08_kv_cache.html">Section 1.8</a>
+kept its cache inside and handled one sequence. An engine needs one call that
+advances <em>several</em> sequences, each with its own history, by any number of
+tokens. The <em>step</em> model does that. Each call takes, for every sequence in the
+batch:</p>
+<ul>
+<li>the new tokens and their positions,</li>
+<li>an attention mask saying which past and new positions each token may see,</li>
+<li>the past keys and values,</li>
+</ul>
+<p>and returns the next-token logits plus only the <em>new</em> keys and values. The model
+keeps no state. Where the cache lives and how it is laid out is up to the
+engine, and <a href="05_03_paged_kv_cache.html">Section 5.3</a> and
+<a href="05_04_prefix_caching.html">Section 5.4</a> change exactly
+that.</p>
+<p>Positions now differ per sequence, so
+<a href="01_04_building_blocks.html#rotary-position-embeddings">RoPE</a>
+takes a position for each token instead of a start offset:</p>
+<pre><code class="language-python">from __future__ import annotations
+
+import math
+from collections.abc import Callable
+
+from max import functional as F
+from max.dtype import DType
+from max.nn import ModuleList
+from max.nn.kernels.attention import flash_attention
+from max.tensor import Tensor
+
+from minillm.attention import Attention
+from minillm.config import LlamaConfig
+from minillm.layers import rotate_half
+from minillm.model import DecoderLayer, LlamaForCausalLM
+
+KVPair = tuple[Tensor, Tensor]
+Step = Callable[..., tuple[Tensor, list[KVPair]]]
+# Masked scores use a large finite value instead of -inf: attention kernels
+# process keys in blocks, and a row whose first block is fully -inf computes
+# exp(-inf - -inf) = NaN, which then spreads through the values to other rows.
+MASKED = -1e30
+
+
+def rope_at(
+    x: Tensor, positions: Tensor, head_dim: int, theta: float
+) -&gt; Tensor:
+    """Rotates ``x``, ``[batch, q, heads, head_dim]``, for per-token
+    ``positions``, ``[batch, q]``."""
+    inv_freq = Tensor(
+        [theta ** (-i / head_dim) for i in range(0, head_dim, 2)],
+        dtype=DType.float32,
+        device=x.mesh,
+    )
+    batch, q = positions.shape
+    angles = positions.reshape([batch, q, 1]) * inv_freq
+    angles = F.concat([angles, angles], axis=-1).reshape(
+        [batch, q, 1, head_dim]
+    )
+    return x * F.cos(angles) + rotate_half(x) * F.sin(angles)
+
+
+class StepAttention(Attention):
+    """Attends from new tokens to the past keys and values plus their own."""
+
+    def forward(
+        self, x: Tensor, positions: Tensor, mask: Tensor, past: KVPair
+    ) -&gt; tuple[Tensor, KVPair]:
+        batch, q, _ = x.shape
+        query = self.q_proj(x).reshape(
+            [batch, q, self.num_heads, self.head_dim]
+        )
+        key = self.k_proj(x).reshape(
+            [batch, q, self.num_kv_heads, self.head_dim]
+        )
+        value = self.v_proj(x).reshape(
+            [batch, q, self.num_kv_heads, self.head_dim]
+        )
+        query = rope_at(query, positions, self.head_dim, self.rope_theta)
+        key = rope_at(key, positions, self.head_dim, self.rope_theta)
+        all_keys = F.concat([past[0], key], axis=1)
+        all_values = F.concat([past[1], value], axis=1)
+        # The mask has one column per past and new position.
+        mask = F.rebind(mask, [batch, q, all_keys.shape[1]])
+        out = flash_attention(
+            query, all_keys, all_values, 1 / math.sqrt(self.head_dim), mask
+        ).rebind_mapping(query.mapping)
+        out = out.reshape([batch, q, self.num_heads * self.head_dim])
+        return self.o_proj(out), (key, value)
+
+
+class StepLayer(DecoderLayer):
+    def __init__(self, config: LlamaConfig) -&gt; None:
+        super().__init__(config)
+        self.self_attn = StepAttention(config)
+
+    def forward(
+        self, x: Tensor, positions: Tensor, mask: Tensor, past: KVPair
+    ) -&gt; tuple[Tensor, KVPair]:
+        attn, kv = self.self_attn(
+            self.input_layernorm(x), positions, mask, past
+        )
+        x = x + attn
+        return x + self.mlp(self.post_attention_layernorm(x)), kv
+
+
+class StepModel(LlamaForCausalLM):
+    """Advances a batch of sequences: returns each one's next-token logits
+    and the new tokens' keys and values for every layer."""
+
+    def __init__(self, config: LlamaConfig) -&gt; None:
+        super().__init__(config)
+        self.model.layers = ModuleList(
+            [StepLayer(config) for _ in range(config.num_hidden_layers)]
+        )
+
+    def forward(
+        self,
+        tokens: Tensor,
+        positions: Tensor,
+        mask: Tensor,
+        past: list[KVPair],
+    ) -&gt; tuple[Tensor, list[KVPair]]:
+        x = self.model.embed_tokens(tokens)
+        new_kv = []
+        for layer, layer_past in zip(self.model.layers, past, strict=True):
+            x, kv = layer(x, positions, mask, layer_past)
+            new_kv.append(kv)
+        return self.lm_head(self.model.norm(x)[:, -1]), new_kv
+</code></pre>
+<p><small>Saved to <code>minillm/step.py</code>.</small></p>
+<p>Compile it once. Every dimension that changes between calls is symbolic: the
+batch size, the number of new tokens <code>q</code>, and the past length:</p>
+<pre><code class="language-python">import numpy as np
+from max.driver import Device
+from max.tensor.tensor import TensorType
+
+
+def compile_step(model: StepModel, config: LlamaConfig, device: Device) -&gt; Step:
+    """Compiles ``model`` for any batch size, number of new tokens, and past
+    length."""
+    kv = TensorType(
+        DType.float32,
+        ("batch", "past", config.num_key_value_heads, config.head_dim),
+        device=device,
+    )
+    return model.compile(
+        TensorType(DType.int64, ("batch", "q"), device=device),
+        TensorType(DType.float32, ("batch", "q"), device=device),
+        TensorType(DType.float32, ("batch", "q", "kv"), device=device),
+        [(kv, kv)] * config.num_hidden_layers,
+    )
+</code></pre>
+<p><small>Saved to <code>minillm/step.py</code>.</small></p>
+<pre><code class="language-python">start = time.perf_counter()
+weights = load_checkpoint()
+step = compile_step(
+    load_model(config, weights, DEVICE, StepModel), config, DEVICE
+)
+print(f"compiled the step model in {time.perf_counter() - start:.0f} s")
+</code></pre>
+<pre><code class="language-text">compiled the step model in 12 s
+</code></pre>
+<h2 id="the-cache-and-the-batch"><a class="header" href="#the-cache-and-the-batch">The cache and the batch</a></h2>
+<p>The engine stores each sequence’s keys and values in a cache object. The
+first version is the simplest: one growing array per layer. Every later
+cache has the same interface (<code>length</code>, <code>num_layers</code>, <code>read</code>, and <code>append</code>),
+so <code>run_step</code> and the step model work with all of them unchanged.</p>
+<pre><code class="language-python">class ContiguousCache:
+    """One sequence's keys and values: a growing array per layer."""
+
+    def __init__(self, config: LlamaConfig) -&gt; None:
+        shape = (0, config.num_key_value_heads, config.head_dim)
+        self.layers = [
+            [np.zeros(shape, np.float32), np.zeros(shape, np.float32)]
+            for _ in range(config.num_hidden_layers)
+        ]
+
+    @property
+    def length(self) -&gt; int:
+        return len(self.layers[0][0])
+
+    @property
+    def num_layers(self) -&gt; int:
+        return len(self.layers)
+
+    def read(self, layer: int) -&gt; tuple[np.ndarray, np.ndarray]:
+        return self.layers[layer][0], self.layers[layer][1]
+
+    def append(self, layer: int, keys: np.ndarray, values: np.ndarray) -&gt; None:
+        entry = self.layers[layer]
+        entry[0] = np.concatenate([entry[0], keys])
+        entry[1] = np.concatenate([entry[1], values])
+</code></pre>
+<p><small>Saved to <code>minillm/step.py</code>.</small></p>
+<p>To run several sequences in one step, the engine packs them into rectangular
+arrays. Sequences add different numbers of new tokens, so shorter ones are
+<em>left-padded</em>, and the mask is built per token: a new token may see its own
+sequence’s past and the new tokens up to itself, and nothing else. A padding
+token sees only itself, so its row of the softmax stays well defined; its
+output is discarded. Masked positions get a large negative number instead of
+\(-\infty\). If a padding row’s first block of keys were entirely \(-\infty\), a
+blockwise attention kernel would compute \(e^{-\infty + \infty}\), which is
+NaN. In the next layer that NaN would become the padding position’s keys and
+values, and the real tokens of the same sequence would pick it up even
+though the mask hides that position.</p>
+<pre><code class="language-python">def run_step(
+    step: Step, caches: list, new_tokens: list[list[int]], device: Device
+) -&gt; np.ndarray:
+    """Advances each sequence by its ``new_tokens``, appends their keys and
+    values to its cache, and returns next-token logits, ``[batch, vocab]``."""
+    batch, q = len(caches), max(len(t) for t in new_tokens)
+    past = max(c.length for c in caches)
+    tokens = np.zeros((batch, q), np.int64)
+    positions = np.zeros((batch, q), np.float32)
+    mask = np.full((batch, q, past + q), MASKED, np.float32)
+    for i, (cache, new) in enumerate(zip(caches, new_tokens, strict=True)):
+        pad, n = q - len(new), cache.length
+        tokens[i, pad:] = new
+        positions[i, pad:] = np.arange(n, n + len(new))
+        mask[i, pad:, :n] = 0.0  # every new token sees the sequence's past
+        mask[i, pad:, past + pad :] = np.triu(
+            np.full((len(new), len(new)), MASKED), 1
+        )
+        mask[i, np.arange(pad), past + np.arange(pad)] = (
+            0.0  # padding sees itself
+        )
+    past_kv = []
+    for layer in range(caches[0].num_layers):
+        keys = np.zeros(
+            (batch, past, *caches[0].read(layer)[0].shape[1:]), np.float32
+        )
+        values = np.zeros_like(keys)
+        for i, cache in enumerate(caches):
+            k, v = cache.read(layer)
+            keys[i, : len(k)], values[i, : len(v)] = k, v
+        past_kv.append(
+            (Tensor(keys, device=device), Tensor(values, device=device))
+        )
+    logits, new_kv = step(
+        Tensor(tokens, device=device),
+        Tensor(positions, device=device),
+        Tensor(mask, device=device),
+        past_kv,
+    )
+    for layer, (k, v) in enumerate(new_kv):
+        k, v = k.to_numpy(), v.to_numpy()
+        for i, (cache, new) in enumerate(zip(caches, new_tokens, strict=True)):
+            pad = q - len(new)
+            cache.append(layer, k[i, pad:], v[i, pad:])
+    return logits.to_numpy()
+</code></pre>
+<p><small>Saved to <code>minillm/step.py</code>.</small></p>
+<p>Check the step against the model from
+<a href="01_06_full_model.html">Section 1.6</a> by generating
+greedily for two prompts of different lengths in the <em>same</em> steps:</p>
+<pre><code class="language-python">full = load_model(config, weights, DEVICE).compile(
+    TensorType(DType.int64, ("batch", "seq"), device=DEVICE)
+)
+
+
+def greedy_reference(ids: list[int], n: int) -&gt; list[int]:
+    ids = list(ids)
+    for _ in range(n):
+        ids.append(
+            int(
+                full(Tensor(np.array([ids]), device=DEVICE))
+                .to_numpy()[0, -1]
+                .argmax()
+            )
+        )
+    return ids[-n:]
+
+
+prompts = [
+    tokenizer([t])["input_ids"][0]
+    for t in ["The capital of France is", "Once upon a time, there was a"]
+]
+caches = [ContiguousCache(config) for _ in prompts]
+outputs = [[int(t)] for t in run_step(step, caches, prompts, DEVICE).argmax(-1)]
+for _ in range(11):
+    next_ids = run_step(
+        step, caches, [[o[-1]] for o in outputs], DEVICE
+    ).argmax(-1)
+    for out, t in zip(outputs, next_ids):
+        out.append(int(t))
+for prompt, out in zip(prompts, outputs):
+    print(out == greedy_reference(prompt, 12), repr(tokenizer.decode(out)))
+    assert out == greedy_reference(prompt, 12)
+</code></pre>
+<pre><code class="language-text">True ' Paris. Paris is the largest city in France and the capital'
+True ' young woman named Sarah who was struggling to find her place in'
+</code></pre>
+<p>Both sequences match the reference, even though they have different lengths
+and shared every step.</p>
+<p>Here is the mask <code>run_step</code> builds for a mixed step: sequence 0 has 6
+tokens cached and decodes 1 new token, while sequence 1 has nothing cached
+and prefills a 4-token prompt. A wrapper around <code>step</code> records the inputs it
+receives. Blue cells may attend; hover over any cell:</p>
+<pre><code class="language-python">recorded = {}
+
+
+def recording_step(tokens, positions, mask, past):
+    recorded.update(
+        tokens=tokens.to_numpy(),
+        positions=positions.to_numpy(),
+        mask=mask.to_numpy(),
+    )
+    return step(tokens, positions, mask, past)
+
+
+caches = [ContiguousCache(config), ContiguousCache(config)]
+run_step(
+    step, caches[:1], [prompts[1][:6]], DEVICE
+)  # sequence 0 now has 6 cached tokens
+run_step(recording_step, caches, [[prompts[1][6]], prompts[0][:4]], DEVICE)
+
+mask, positions = recorded["mask"], recorded["positions"]
+past = mask.shape[2] - mask.shape[1]
+columns = [f"cached slot {j}" for j in range(past)] + [
+    f"new slot {j}" for j in range(mask.shape[1])
+]
+fig = make_subplots(
+    rows=1,
+    cols=2,
+    horizontal_spacing=0.26,
+    subplot_titles=[
+        "sequence 0: 6 cached, decodes 1",
+        "sequence 1: nothing cached, prefills 4",
+    ],
+)
+for i, new_length in enumerate([1, 4]):
+    pad = mask.shape[1] - new_length  # left padding, as in run_step
+    rows = [
+        f"padding row {r}"
+        if r &lt; pad
+        else f"new token at position {int(positions[i, r])}"
+        for r in range(mask.shape[1])
+    ]
+    text = [
+        [
+            f"{rows[r]} -&gt; {columns[c]}: "
+            + ("visible" if mask[i, r, c] == 0 else "masked")
+            for c in range(mask.shape[2])
+        ]
+        for r in range(mask.shape[1])
+    ]
+    fig.add_trace(
+        go.Heatmap(
+            z=(mask[i] == 0).astype(int),
+            zmin=0,
+            zmax=1,
+            showscale=False,
+            xgap=2,
+            ygap=2,
+            colorscale=[
+                [0, viz.GRID],
+                [0.5, viz.GRID],
+                [0.5, viz.BLUE],
+                [1, viz.BLUE],
+            ],
+            x=columns,
+            y=rows,
+            customdata=text,
+            hovertemplate="%{customdata}&lt;extra&gt;&lt;/extra&gt;",
+        ),
+        row=1,
+        col=i + 1,
+    )
+fig.update_xaxes(showgrid=False, tickangle=-45)
+fig.update_yaxes(showgrid=False, autorange="reversed")
+fig.update_layout(
+    title="One step's attention mask for a batch of two sequences",
+    height=440,
+    margin=dict(l=8),
+)
+viz.show(fig)
+</code></pre>
+<div class="plotly-figure" data-src="generated/05_01_request_lifecycle_15_0.json"></div>
+<p>Sequence 0’s single new token sits in the last row, after three padding rows
+that each see only themselves. It sees its 6 cached slots and itself.
+Sequence 1 has no cached tokens, so its 6 cached slots are masked in every
+row. They hold zeros, there only because the batch’s longest past is 6. Its
+4 new tokens form the triangle of the
+<a href="01_05_attention.html#the-causal-mask">causal mask</a>.</p>
+<h2 id="a-first-engine-one-request-at-a-time"><a class="header" href="#a-first-engine-one-request-at-a-time">A first engine: one request at a time</a></h2>
+<p>A request carries its prompt, how many tokens it may generate, and timestamps
+for the latency metrics from
+<a href="01_01_run_and_serve.html#measure-it">Section 1.1</a>, such
+as time to first token (TTFT). The simplest engine serves requests in arrival
+order, each to completion, one at a time:</p>
+<pre><code class="language-python">from dataclasses import dataclass, field
+
+
+@dataclass
+class Request:
+    prompt: list[int]
+    max_new_tokens: int
+    output: list[int] = field(default_factory=list)
+    arrived: float = 0.0
+    first_token: float | None = None
+    finished: float | None = None
+
+    @property
+    def done(self) -&gt; bool:
+        return len(self.output) &gt;= self.max_new_tokens
+</code></pre>
+<p><small>Saved to <code>minillm/step.py</code>.</small></p>
+<pre><code class="language-python">def serve_one_at_a_time(requests: list[Request]) -&gt; None:
+    for request in requests:
+        cache = ContiguousCache(config)
+        logits = run_step(step, [cache], [request.prompt], DEVICE)
+        while True:
+            request.output.append(int(logits[0].argmax()))
+            request.first_token = request.first_token or time.perf_counter()
+            if request.done:
+                break
+            logits = run_step(step, [cache], [[request.output[-1]]], DEVICE)
+        request.finished = time.perf_counter()
+
+
+def make_workload() -&gt; list[Request]:
+    texts = [
+        "Tell me about Paris.",
+        "Write a haiku about the sea.",
+        "What is 2 + 2?",
+        "List three colors.",
+        "Explain gravity in one sentence.",
+        "Name a fruit.",
+        "Describe a cat.",
+        "Say hello in French.",
+    ]
+    now = time.perf_counter()
+    return [
+        Request(tokenizer([t])["input_ids"][0], max_new_tokens=n, arrived=now)
+        for t, n in zip(texts, [32, 24, 8, 16, 32, 8, 24, 16])
+    ]
+
+
+def report(requests: list[Request]) -&gt; None:
+    ttft = [(r.first_token - r.arrived) * 1000 for r in requests]
+    total = max(r.finished for r in requests) - min(r.arrived for r in requests)
+    tokens = sum(len(r.output) for r in requests)
+    print(
+        f"TTFT: first request {ttft[0]:.0f} ms, median {np.median(ttft):.0f} ms, worst {max(ttft):.0f} ms"
+    )
+    print(f"{tokens} tokens in {total:.1f} s = {tokens / total:.0f} tokens/s")
+
+
+sequential = make_workload()
+serve_one_at_a_time(sequential)
+report(sequential)
+</code></pre>
+<pre><code class="language-text">TTFT: first request 317 ms, median 25305 ms, worst 50618 ms
+160 tokens in 56.2 s = 3 tokens/s
+</code></pre>
+<p>Eight users sent their requests at the same moment. The first one got a token
+almost at once. The last one waited for every request ahead of it to finish, so
+its time to first token is most of the total run time.
+<a href="04_03_kernel_benchmarks.html#benchmark-a-layer">Section 4.3</a>
+measured a decoder layer’s decode step for 32 sequences at about 1.2 to 1.3
+times the cost of a step for one, on the Mac the book was built on, so this
+engine leaves most of the hardware’s capacity unused.
+<a href="05_02_continuous_batching.html">Section 5.2</a> runs
+several requests in each step.</p>
+<p>The handbook’s
+<a href="https://handbook.modular.com/llm-inference-basics/llm-inference-metrics/">LLM inference metrics</a>
+page explains why serving systems track TTFT percentiles as well as averages.</p>
+<h2 id="exercises"><a class="header" href="#exercises">Exercises</a></h2>
+<ol>
+<li>Serve the workload in order of <code>max_new_tokens</code>, shortest first. What
+happens to the median and worst TTFT? What would a user with a long
+request think of this policy?</li>
+<li>Run <code>run_step</code> with three prompts in one call and check each against
+<code>greedy_reference</code>.</li>
+<li>Print the mask <code>run_step</code> builds for two sequences with 2 and 4 new
+tokens and past lengths 3 and 1. Check each row by hand.</li>
+</ol>
+<h2 id="next"><a class="header" href="#next">Next</a></h2>
+<p><a href="05_02_continuous_batching.html">Section 5.2</a> replaces
+the one-at-a-time loop with continuous batching.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="ch05.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="05_02_continuous_batching.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="ch05.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="05_02_continuous_batching.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="theme/code-highlighting.js"></script>
+        <script src="theme/sidebar.js"></script>
+        <script src="theme/init-amplitude.js"></script>
+        <script src="theme/warning.js"></script>
+        <script src="theme/plotly-figures.js"></script>
+
+
+    </div>
+    </body>
+</html>

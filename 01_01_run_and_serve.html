@@ -1,0 +1,588 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>1.1 Run and serve an LLM - Build and serve an LLM with MAX</title>
+
+
+        <!-- Custom HTML head -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap"
+            rel="stylesheet">
+        
+        <link rel="stylesheet" href="theme/css/custom.css">
+        <link rel="stylesheet" href="theme/css/highlight.css">
+        <link rel="stylesheet" id="theme">
+        
+        <!-- Additional meta tags -->
+        <meta property="og:title" content="Build an LLM from scratch with MAX">
+        <meta property="og:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
+        <meta property="og:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
+        <meta property="og:url" content="https://llm.modular.com/">
+        <meta name="twitter:card" content="summary">
+        <meta name="twitter:image:alt" content="MAX Docs">
+        <meta name="twitter:title" content="Build an LLM from scratch with MAX">
+        <meta name="twitter:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
+        <meta name="twitter:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
+        <link rel="icon" type="image/png" href="https://llm.modular.com/assets/icons/m-dark.svg">
+        <script>
+          !function(){var i="cioanalytics", analytics=(window[i]=window[i]||[]);if(!analytics.initialize)if(analytics.invoked)window.console&&console.error&&console.error("Snippet included twice.");else{analytics.invoked=!0;analytics.methods=["trackSubmit","trackClick","trackLink","trackForm","pageview","identify","reset","group","track","ready","alias","debug","page","once","off","on","addSourceMiddleware","addIntegrationMiddleware","setAnonymousId","addDestinationMiddleware"];analytics.factory=function(e){return function(){var t=Array.prototype.slice.call(arguments);t.unshift(e);analytics.push(t);return analytics}};for(var e=0;e<analytics.methods.length;e++){var key=analytics.methods[e];analytics[key]=analytics.factory(key)}analytics.load=function(key,e){var t=document.createElement("script");t.type="text/javascript";t.async=!0;t.setAttribute('data-global-customerio-analytics-key', i);t.src="https://cdp.customer.io/v1/analytics-js/snippet/" + key + "/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(t,n);analytics._writeKey=key;analytics._loadOptions=e};analytics.SNIPPET_VERSION="4.15.3";
+            analytics.load(
+              "c5c8ad95a28930735be9",
+              {
+                "integrations": {
+                    "Customer.io In-App Plugin": {
+                        anonymousInApp: true
+                    }
+                }
+              }
+            );
+            analytics.page();
+          }}();
+        </script>
+
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+
+        <meta name="description" content="Go from zero to serving: run a small LLM with MAX, rebuild it from scratch with max.nn and max.functional, then add sampling, a KV cache, batching and your own server.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/css/custom.css">
+        <link rel="stylesheet" href="theme/css/highlight.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "ayu";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc.js"></script>
+    </head>
+    <body>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden" checked>
+        <button id="vertical-sidebar-toggle" class="vertical-sidebar-toggle" aria-label="Toggle sidebar"></button>
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <button class="collapse-sidebar" aria-label="Collapse sidebar"></button>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Toggle color mode and talk to us buttons -->
+        <script>
+            document.addEventListener('click', function (event) {
+                if (!event.target.matches('.theme-toggle')) return;
+                event.preventDefault();
+                const prevTheme = theme;
+                html.classList.remove(theme);
+                const newTheme = prevTheme === 'ayu' ? 'light' : 'ayu'
+                html.classList.add(newTheme);
+                theme = newTheme
+                localStorage.setItem('mdbook-theme', theme);
+            }, false);
+        </script>
+
+        <div class="page-header">
+            <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                <i class="fa fa-bars"></i>
+            </label>
+            <div id="menu-bar" class="menu-bar">
+                <div class="left-buttons">
+                    <div class="logo-section">
+                        <a class="desktop-logo-link" href="https://modular.com"></a>
+                        <a class="mobile-logo-link" href="https://builds.modular.com"></a>
+                        <div class="slash">/</div>
+                        <a class="internal-link" href="">MAX LLM</a>
+                    </div>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Dark</button></li>
+                        </ul>
+                    </div>
+                <div class="right-buttons">
+                    <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                        <i class="fa fa-search"></i>
+                    </button>
+                    <button id="theme-toggle" class="icon-button theme-toggle-btn" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="false" aria-expanded="false">
+                        <i class="theme-toggle"></i>
+                    </button>
+                    <a class="menu-btn print" href="print.html" title="Print this book" aria-label="Print this book">
+                        <i id="print-button" class="fa fa-print"></i>
+                    </a>
+                    <a class="menu-btn" href="https://github.com/modular/max-llm-book" title="Git repository" aria-label="Git repository">
+                        <i id="git-repository-button" class="fa fa-github"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-wrapper" class="page-wrapper">
+            <div class="page">
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="11-run-and-serve-an-llm"><a class="header" href="#11-run-and-serve-an-llm">1.1 Run and serve an LLM</a></h1>
+<p><a href="https://colab.research.google.com/github/modular/max-llm-book/blob/main/notebooks/01_01_run_and_serve.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab" /></a>
+<a href="https://kaggle.com/kernels/welcome?src=https://github.com/modular/max-llm-book/blob/main/notebooks/01_01_run_and_serve.ipynb"><img src="https://kaggle.com/static/images/open-in-kaggle.svg" alt="Open in Kaggle" /></a>
+<a href="https://github.com/modular/max-llm-book/blob/main/notebooks/01_01_run_and_serve.ipynb"><img src="https://img.shields.io/badge/GitHub-notebook-black?logo=github" alt="View on GitHub" /></a></p>
+<p>In this section you run a real language model with MAX four ways, from three
+lines of Python to an OpenAI-compatible server:</p>
+<ol>
+<li><code>AutoPipeline</code>: text in, text out.</li>
+<li><code>AutoTokenizer</code> and <code>AutoModel</code>: the tokens and scores underneath.</li>
+<li><code>max generate</code>: the same thing from the command line, with timings.</li>
+<li><code>max serve</code>: an HTTP server that any OpenAI client can call.</li>
+</ol>
+<p>The model is
+<a href="https://huggingface.co/HuggingFaceTB/SmolLM2-135M-Instruct">SmolLM2-135M-Instruct</a>,
+a 135M-parameter chat model from Hugging Face. It is small enough to run
+anywhere, and its architecture (the Llama family) is the one most open models
+use. The rest of the book rebuilds it from scratch.</p>
+<p>If you are new to LLM inference, read
+<a href="https://handbook.modular.com/llm-inference-basics/what-is-llm-inference/">What is LLM inference?</a>
+in the Modular handbook first.</p>
+<h2 id="setup"><a class="header" href="#setup">Setup</a></h2>
+<p>MAX runs on a GPU if it finds one, otherwise on the CPU. Every call below
+asks for <code>float32</code> numbers. MAX requires <code>float32</code> on a CPU, since it runs
+<code>bfloat16</code> weights only on GPUs; on a GPU, <code>float32</code> keeps the results
+comparable with the rest of the book. The first run downloads the
+model (about 270 MB) and compiles it, which takes a minute; later runs reuse
+both caches.</p>
+<pre><code class="language-python">import logging
+import subprocess
+import time
+import urllib.request
+
+import numpy as np
+import plotly.graph_objects as go
+from max.pipelines import AutoPipeline
+from openai import OpenAI
+
+from minillm import viz
+
+# MAX logs performance hints that don't matter at this model size.
+logging.getLogger("max").setLevel(logging.ERROR)
+
+MODEL = "HuggingFaceTB/SmolLM2-135M-Instruct"
+FLOAT32 = dict(quantization_encoding="float32")
+</code></pre>
+<h2 id="generate-text-in-three-lines"><a class="header" href="#generate-text-in-three-lines">Generate text in three lines</a></h2>
+<p><code>AutoPipeline</code> loads a model and its tokenizer and generates text, much like
+<code>transformers.pipeline</code>. <code>top_k=1</code> makes generation greedy: it always picks
+the most likely next token, so the output is the same on every run.</p>
+<pre><code class="language-python">pipe = AutoPipeline(MODEL, **FLOAT32)
+completion = pipe(["The capital of France is"], max_new_tokens=16, top_k=1)
+assert "Paris" in completion[0]
+completion
+</code></pre>
+<pre><code class="language-text">['The capital of France is Paris. Paris is the largest city in France and the capital of the French department']
+</code></pre>
+<p>A plain string goes to the model as is, and the output starts with the
+prompt. An instruct model is trained on conversations, so a list of chat
+messages usually works better. The pipeline formats them with the model’s
+chat template and returns only the reply.</p>
+<pre><code class="language-python">messages = [{"role": "user", "content": "What is the capital of France?"}]
+pipe([messages], max_new_tokens=32, top_k=1)
+</code></pre>
+<pre><code class="language-text">['The capital of France is Paris.']
+</code></pre>
+<h2 id="look-underneath-tokens-and-scores"><a class="header" href="#look-underneath-tokens-and-scores">Look underneath: tokens and scores</a></h2>
+<p>A language model doesn’t read text. A tokenizer splits the text into
+<em>tokens</em> (whole words, pieces of words, or punctuation) and maps each to an
+integer ID. SmolLM2’s vocabulary has 49,152 tokens.</p>
+<pre><code class="language-python">tokenizer = pipe.tokenizer
+ids = tokenizer(["The capital of France is"])["input_ids"][0]
+print(ids)
+viz.tokens([tokenizer.decode([i]) for i in ids], ids)
+</code></pre>
+<div style="line-height:2"><span title="token ID 504" style="background:rgba(42,120,214,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">The</span><span title="token ID 3575" style="background:rgba(235,104,52,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;capital</span><span title="token ID 282" style="background:rgba(27,175,122,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;of</span><span title="token ID 4649" style="background:rgba(237,161,0,0.25);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;France</span><span title="token ID 314" style="background:rgba(232,123,164,0.25);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;is</span></div>
+<pre><code class="language-text">[504, 3575, 282, 4649, 314]
+</code></pre>
+<p>Each chip is one token; hover over it for its ID, and the dots mark spaces.
+Common words are single tokens, usually with their leading space. Rare
+words, numbers, and code split into pieces:</p>
+<pre><code class="language-python">text = (
+    "Tokenizers split unbelievably rare words, 3.14159, and snake_case_names."
+)
+pieces = tokenizer([text])["input_ids"][0]
+viz.tokens([tokenizer.decode([i]) for i in pieces], pieces)
+</code></pre>
+<div style="line-height:2"><span title="token ID 20855" style="background:rgba(42,120,214,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">Token</span><span title="token ID 7927" style="background:rgba(235,104,52,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">izers</span><span title="token ID 7074" style="background:rgba(27,175,122,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;split</span><span title="token ID 33282" style="background:rgba(237,161,0,0.25);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;unbelie</span><span title="token ID 102" style="background:rgba(232,123,164,0.25);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">v</span><span title="token ID 1756" style="background:rgba(98,80,214,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">ably</span><span title="token ID 3861" style="background:rgba(42,120,214,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;rare</span><span title="token ID 1924" style="background:rgba(235,104,52,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;words</span><span title="token ID 28" style="background:rgba(27,175,122,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">,</span><span title="token ID 216" style="background:rgba(237,161,0,0.25);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;</span><span title="token ID 35" style="background:rgba(232,123,164,0.25);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">3</span><span title="token ID 30" style="background:rgba(98,80,214,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">.</span><span title="token ID 33" style="background:rgba(42,120,214,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">1</span><span title="token ID 36" style="background:rgba(235,104,52,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">4</span><span title="token ID 33" style="background:rgba(27,175,122,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">1</span><span title="token ID 37" style="background:rgba(237,161,0,0.25);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">5</span><span title="token ID 41" style="background:rgba(232,123,164,0.25);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">9</span><span title="token ID 28" style="background:rgba(98,80,214,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">,</span><span title="token ID 284" style="background:rgba(42,120,214,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;and</span><span title="token ID 14321" style="background:rgba(235,104,52,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;snake</span><span title="token ID 79" style="background:rgba(27,175,122,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">_</span><span title="token ID 7544" style="background:rgba(237,161,0,0.25);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">case</span><span title="token ID 79" style="background:rgba(232,123,164,0.25);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">_</span><span title="token ID 6464" style="background:rgba(98,80,214,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">names</span><span title="token ID 30" style="background:rgba(42,120,214,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">.</span></div>
+<p>Given the IDs, the model produces one score (a <em>logit</em>) for every token in
+the vocabulary: its prediction of what comes next. <code>AutoModel.generate</code> can
+return those scores. Softmax turns them into probabilities: it
+exponentiates each logit \(z_i\) and divides by the total, so every
+probability is positive and they sum to 1:</p>
+<p>\[p_i = \frac{e^{z_i}}{\sum_j e^{z_j}}\]</p>
+<pre><code class="language-python">model = pipe.model
+out = model.generate(input_ids=[ids], max_new_tokens=1, output_logits=True)
+
+logits = out.logits[0][0]  # first prompt, first new token: [vocab_size]
+probs = np.exp(logits - logits.max())
+probs /= probs.sum()
+assert tokenizer.decode([int(probs.argmax())]) == " Paris"
+
+top = np.argsort(probs)[::-1][:10]
+fig = go.Figure(
+    go.Bar(
+        x=probs[top],
+        y=[repr(tokenizer.decode([int(i)])) for i in top],
+        orientation="h",
+        marker_color=viz.BLUE,
+        text=[f"{p:.1%}" for p in probs[top]],
+        textposition="outside",
+        customdata=top,
+        hovertemplate="%{y} (ID %{customdata}): %{x:.2%}&lt;extra&gt;&lt;/extra&gt;",
+    )
+)
+fig.update_layout(
+    title="The ten likeliest tokens after 'The capital of France is'",
+    height=420,
+    xaxis=dict(title="probability", tickformat=".0%", range=[0, 1.1]),
+    yaxis=dict(autorange="reversed", showgrid=False),
+)
+viz.show(fig)
+</code></pre>
+<div class="plotly-figure" data-src="generated/01_01_run_and_serve_13_0.json"></div>
+<p>Generation repeats this step: pick a token from the distribution, append it, and
+run the model again. Picking the top token is greedy decoding; sampling from the
+distribution gives more varied text.
+<a href="01_07_sampling.html">Section 1.7</a> implements both.</p>
+<h2 id="measure-it"><a class="header" href="#measure-it">Measure it</a></h2>
+<p>Two numbers describe how fast a model feels:</p>
+<ul>
+<li>Time to first token (TTFT) is how long the user waits before anything
+appears. It covers <em>prefill</em>, which processes the whole prompt at once.</li>
+<li>Time per output token (TPOT) is how long each later token takes. Each
+one is a <em>decode</em> step that processes a single new token.</li>
+</ul>
+<p>Generating one token measures prefill; generating more adds decode steps.</p>
+<pre><code class="language-python">def seconds(n_tokens: int) -&gt; float:
+    start = time.perf_counter()
+    model.generate(
+        input_ids=[ids], max_new_tokens=n_tokens, top_k=1, ignore_eos=True
+    )
+    return time.perf_counter() - start
+
+
+ttft = seconds(1)
+tpot = (seconds(65) - ttft) / 64
+print(
+    f"TTFT {ttft * 1000:.0f} ms, TPOT {tpot * 1000:.1f} ms ({1 / tpot:.0f} tokens/s)"
+)
+</code></pre>
+<pre><code class="language-text">TTFT 16 ms, TPOT 9.1 ms (110 tokens/s)
+</code></pre>
+<p>On a timeline, one request is a prefill followed by a run of decode steps.
+The user waits through the prefill, then watches tokens arrive one decode
+step apart:</p>
+<pre><code class="language-python">starts = [0.0] + [ttft + i * tpot for i in range(64)]
+widths = [ttft] + [tpot] * 64
+fig = go.Figure(
+    go.Bar(
+        x=np.array(widths) * 1000,
+        base=np.array(starts) * 1000,
+        y=["request"] * 65,
+        orientation="h",
+        marker=dict(
+            color=[viz.ORANGE] + [viz.BLUE] * 64,
+            line=dict(color=viz.SURFACE, width=1),
+        ),
+        customdata=["prefill (time to first token)"]
+        + [f"decode step {i}" for i in range(1, 65)],
+        hovertemplate="%{customdata}&lt;br&gt;starts at %{base:.0f} ms, takes %{x:.1f} ms&lt;extra&gt;&lt;/extra&gt;",
+    )
+)
+fig.update_layout(
+    title="One request: prefill (orange), then 64 decode steps (blue)",
+    xaxis_title="milliseconds",
+    height=220,
+    margin=dict(t=56, b=48),
+    yaxis=dict(showticklabels=False, showgrid=False),
+)
+viz.show(fig)
+</code></pre>
+<div class="plotly-figure" data-src="generated/01_01_run_and_serve_17_0.json"></div>
+<p><code>ignore_eos=True</code> keeps generating past the end-of-sequence token, so every run
+does the same amount of work.
+<a href="https://handbook.modular.com/llm-inference-basics/llm-inference-metrics/">LLM inference metrics</a>
+in the handbook defines these and the other metrics engines report.</p>
+<p>Close the pipeline to free its memory. <code>max generate</code> and <code>max serve</code>
+below load the model again.</p>
+<pre><code class="language-python">pipe.close()
+</code></pre>
+<h2 id="the-command-line-max-generate"><a class="header" href="#the-command-line-max-generate">The command line: <code>max generate</code></a></h2>
+<p>The <code>max</code> command, installed with MAX, runs the same pipeline from a shell.
+In a notebook, a line that starts with <code>!</code> runs as a shell command.
+<code>max generate</code> applies the chat template to <code>--prompt</code> and prints timing
+statistics after the text.</p>
+<pre><code class="language-python">!max generate --model HuggingFaceTB/SmolLM2-135M-Instruct --quantization-encoding float32 \
+    --prompt "What is the capital of France?" --max-new-tokens 32 --top-k 1 2&gt;/dev/null
+</code></pre>
+<pre><code class="language-text">The capital of France is Paris.
+Prompt size: 37
+Output size: 8
+Startup time: 0.3349781036376953 ms
+Time to first token: 32.834768295288086 ms
+Prompt eval throughput (context-encoding): 1126.854304780023 tokens per second
+Time per Output Token: 11.296612875802177 ms
+Eval throughput (token-generation): 88.52210932553442 tokens per second
+Total Latency: 111.91105842590332 ms
+Total Throughput: 8.935667431490725 req/s
+</code></pre>
+<p><code>2&gt;/dev/null</code> hides the startup log. Run <code>max generate --help</code> to see every
+option.</p>
+<h2 id="serve-the-model"><a class="header" href="#serve-the-model">Serve the model</a></h2>
+<p><code>max serve</code> starts an HTTP server with an OpenAI-compatible API, so any
+OpenAI client library or tool can use your model. In a terminal you would run:</p>
+<pre><code class="language-bash">max serve --model HuggingFaceTB/SmolLM2-135M-Instruct \
+  --quantization-encoding float32
+</code></pre>
+<p>From a notebook, start it in the background and wait until its <code>/health</code>
+endpoint answers:</p>
+<pre><code class="language-python">server = subprocess.Popen(
+    [
+        "max",
+        "serve",
+        "--model",
+        MODEL,
+        "--port",
+        "8000",
+        "--quantization-encoding",
+        "float32",
+    ],
+    stdout=subprocess.DEVNULL,
+    stderr=subprocess.DEVNULL,
+)
+start = time.perf_counter()
+while True:
+    try:
+        urllib.request.urlopen("http://localhost:8000/health")
+        break
+    except OSError:
+        if server.poll() is not None:
+            raise RuntimeError(
+                "max serve exited; run it in a terminal to see why"
+            )
+        time.sleep(1)
+print(f"server ready in {time.perf_counter() - start:.0f} s")
+</code></pre>
+<pre><code class="language-text">server ready in 16 s
+</code></pre>
+<p>Now call it with the official <code>openai</code> package. The API key is unused but
+required by the client.</p>
+<pre><code class="language-python">client = OpenAI(base_url="http://localhost:8000/v1", api_key="unused")
+reply = client.chat.completions.create(
+    model=MODEL,
+    messages=[{"role": "user", "content": "Name three primary colors."}],
+    max_tokens=48,
+    temperature=0,
+)
+print(reply.choices[0].message.content)
+print(
+    reply.usage.prompt_tokens,
+    "prompt tokens,",
+    reply.usage.completion_tokens,
+    "completion tokens",
+)
+assert reply.choices[0].message.content.strip()
+</code></pre>
+<pre><code class="language-text">The primary colors are:
+
+1. Red: A warm, reddish-brown color that is often associated with fire, blood, and fire.
+2. Blue: A cool, deep, and deep blue color that is often associated with
+35 prompt tokens, 48 completion tokens
+</code></pre>
+<p>Chat apps show the reply as it is generated. With <code>stream=True</code> the server
+sends each token as soon as the model produces it:</p>
+<pre><code class="language-python">stream = client.chat.completions.create(
+    model=MODEL,
+    messages=[{"role": "user", "content": "Count from one to ten in words."}],
+    max_tokens=48,
+    temperature=0,
+    stream=True,
+)
+for chunk in stream:
+    print(chunk.choices[0].delta.content or "", end="", flush=True)
+</code></pre>
+<pre><code class="language-text">1. One
+2. Two
+3. Three
+4. Four
+5. Five
+6. Six
+7. Seven
+8. Eight
+9. Nine
+10. Ten
+</code></pre>
+<pre><code class="language-python">server.terminate()
+_ = server.wait()
+</code></pre>
+<p><a href="https://handbook.modular.com/model-interaction/openai-compatible-api/">OpenAI-compatible API</a>
+in the handbook covers the request format, and
+<a href="https://handbook.modular.com/model-interaction/inference-parameters/">Inference parameters</a>
+explains <code>temperature</code>, <code>top_p</code>, and the other sampling options.</p>
+<h2 id="what-max-did"><a class="header" href="#what-max-did">What MAX did</a></h2>
+<p>Each call above ran the same pipeline:</p>
+<pre><code class="language-text">text ─► tokenizer ─► token IDs ─► model ─► logits ─► sampler ─► next token
+                                    ▲                                 │
+                                    └──────── append and repeat ──────┘
+</code></pre>
+<p>Inside, MAX also compiled the model into optimized kernels, kept a <em>KV
+cache</em> so each decode step processes one token instead of the whole
+sequence, and scheduled requests so the server can batch them. In the rest
+of the book you build each of these parts yourself:</p>
+<div class="table-wrapper"><table><thead><tr><th>Where</th><th>You build</th><th>With</th></tr></thead><tbody>
+<tr><td><a href="01_02_tensors_and_eager.html">1.2</a></td><td>Tensors, eager execution, compilation</td><td><code>max.tensor</code>, <code>max.functional</code></td></tr>
+<tr><td><a href="01_03_tokens_and_weights.html">1.3</a></td><td>Tokens, embeddings, weight loading</td><td><code>max.nn.Embedding</code>, safetensors</td></tr>
+<tr><td><a href="01_04_building_blocks.html">1.4</a></td><td>RMSNorm, rotary embeddings, the MLP</td><td><code>max.nn</code> layers</td></tr>
+<tr><td><a href="01_05_attention.html">1.5</a></td><td>Causal grouped-query attention</td><td><code>max.functional</code>, flash attention</td></tr>
+<tr><td><a href="01_06_full_model.html">1.6</a></td><td>The full model, checked against <code>AutoModel</code></td><td><code>max.nn.Module</code>, <code>compile</code></td></tr>
+<tr><td><a href="01_07_sampling.html">1.7</a></td><td>Generation and sampling</td><td>your model</td></tr>
+<tr><td><a href="01_08_kv_cache.html">1.8</a></td><td>A KV cache</td><td>your model</td></tr>
+<tr><td><a href="ch02.html">2</a></td><td>The model split across several devices</td><td><code>max.tensor.sharding</code></td></tr>
+<tr><td><a href="ch03.html">3</a></td><td>Your own kernels in Mojo</td><td><code>%%mojo</code>, <code>F.custom</code>, <code>max.graph</code></td></tr>
+<tr><td><a href="ch04.html">4</a> to <a href="ch07.html">7</a></td><td>Testing, a serving engine, bigger models, production serving</td><td></td></tr>
+</tbody></table>
+</div>
+<h2 id="exercises"><a class="header" href="#exercises">Exercises</a></h2>
+<ol>
+<li>Ask the chat model a few questions of your own. Where does a 135M model
+go wrong?</li>
+<li>Pass <code>temperature=0.8</code> instead of <code>top_k=1</code> and run the same prompt
+several times. What changes?</li>
+<li>Rerun the measurement with a prompt ten times longer. Which number
+grows, TTFT or TPOT, and why?</li>
+</ol>
+<h2 id="next"><a class="header" href="#next">Next</a></h2>
+<p><a href="01_02_tensors_and_eager.html">Section 1.2</a> introduces
+the tensor library you build the model with: <code>max.tensor</code>, <code>max.functional</code>, and
+eager execution.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="ch01.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="01_02_tensors_and_eager.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="ch01.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="01_02_tensors_and_eager.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="theme/code-highlighting.js"></script>
+        <script src="theme/sidebar.js"></script>
+        <script src="theme/init-amplitude.js"></script>
+        <script src="theme/warning.js"></script>
+        <script src="theme/plotly-figures.js"></script>
+
+
+    </div>
+    </body>
+</html>

@@ -1,0 +1,555 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>5.4 Prefix caching - Build and serve an LLM with MAX</title>
+
+
+        <!-- Custom HTML head -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap"
+            rel="stylesheet">
+        
+        <link rel="stylesheet" href="theme/css/custom.css">
+        <link rel="stylesheet" href="theme/css/highlight.css">
+        <link rel="stylesheet" id="theme">
+        
+        <!-- Additional meta tags -->
+        <meta property="og:title" content="Build an LLM from scratch with MAX">
+        <meta property="og:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
+        <meta property="og:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
+        <meta property="og:url" content="https://llm.modular.com/">
+        <meta name="twitter:card" content="summary">
+        <meta name="twitter:image:alt" content="MAX Docs">
+        <meta name="twitter:title" content="Build an LLM from scratch with MAX">
+        <meta name="twitter:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
+        <meta name="twitter:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
+        <link rel="icon" type="image/png" href="https://llm.modular.com/assets/icons/m-dark.svg">
+        <script>
+          !function(){var i="cioanalytics", analytics=(window[i]=window[i]||[]);if(!analytics.initialize)if(analytics.invoked)window.console&&console.error&&console.error("Snippet included twice.");else{analytics.invoked=!0;analytics.methods=["trackSubmit","trackClick","trackLink","trackForm","pageview","identify","reset","group","track","ready","alias","debug","page","once","off","on","addSourceMiddleware","addIntegrationMiddleware","setAnonymousId","addDestinationMiddleware"];analytics.factory=function(e){return function(){var t=Array.prototype.slice.call(arguments);t.unshift(e);analytics.push(t);return analytics}};for(var e=0;e<analytics.methods.length;e++){var key=analytics.methods[e];analytics[key]=analytics.factory(key)}analytics.load=function(key,e){var t=document.createElement("script");t.type="text/javascript";t.async=!0;t.setAttribute('data-global-customerio-analytics-key', i);t.src="https://cdp.customer.io/v1/analytics-js/snippet/" + key + "/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(t,n);analytics._writeKey=key;analytics._loadOptions=e};analytics.SNIPPET_VERSION="4.15.3";
+            analytics.load(
+              "c5c8ad95a28930735be9",
+              {
+                "integrations": {
+                    "Customer.io In-App Plugin": {
+                        anonymousInApp: true
+                    }
+                }
+              }
+            );
+            analytics.page();
+          }}();
+        </script>
+
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+
+        <meta name="description" content="Go from zero to serving: run a small LLM with MAX, rebuild it from scratch with max.nn and max.functional, then add sampling, a KV cache, batching and your own server.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/css/custom.css">
+        <link rel="stylesheet" href="theme/css/highlight.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "ayu";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc.js"></script>
+    </head>
+    <body>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden" checked>
+        <button id="vertical-sidebar-toggle" class="vertical-sidebar-toggle" aria-label="Toggle sidebar"></button>
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <button class="collapse-sidebar" aria-label="Collapse sidebar"></button>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Toggle color mode and talk to us buttons -->
+        <script>
+            document.addEventListener('click', function (event) {
+                if (!event.target.matches('.theme-toggle')) return;
+                event.preventDefault();
+                const prevTheme = theme;
+                html.classList.remove(theme);
+                const newTheme = prevTheme === 'ayu' ? 'light' : 'ayu'
+                html.classList.add(newTheme);
+                theme = newTheme
+                localStorage.setItem('mdbook-theme', theme);
+            }, false);
+        </script>
+
+        <div class="page-header">
+            <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                <i class="fa fa-bars"></i>
+            </label>
+            <div id="menu-bar" class="menu-bar">
+                <div class="left-buttons">
+                    <div class="logo-section">
+                        <a class="desktop-logo-link" href="https://modular.com"></a>
+                        <a class="mobile-logo-link" href="https://builds.modular.com"></a>
+                        <div class="slash">/</div>
+                        <a class="internal-link" href="">MAX LLM</a>
+                    </div>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Dark</button></li>
+                        </ul>
+                    </div>
+                <div class="right-buttons">
+                    <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                        <i class="fa fa-search"></i>
+                    </button>
+                    <button id="theme-toggle" class="icon-button theme-toggle-btn" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="false" aria-expanded="false">
+                        <i class="theme-toggle"></i>
+                    </button>
+                    <a class="menu-btn print" href="print.html" title="Print this book" aria-label="Print this book">
+                        <i id="print-button" class="fa fa-print"></i>
+                    </a>
+                    <a class="menu-btn" href="https://github.com/modular/max-llm-book" title="Git repository" aria-label="Git repository">
+                        <i id="git-repository-button" class="fa fa-github"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-wrapper" class="page-wrapper">
+            <div class="page">
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="54-prefix-caching"><a class="header" href="#54-prefix-caching">5.4 Prefix caching</a></h1>
+<p><a href="https://colab.research.google.com/github/modular/max-llm-book/blob/main/notebooks/05_04_prefix_caching.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab" /></a>
+<a href="https://kaggle.com/kernels/welcome?src=https://github.com/modular/max-llm-book/blob/main/notebooks/05_04_prefix_caching.ipynb"><img src="https://kaggle.com/static/images/open-in-kaggle.svg" alt="Open in Kaggle" /></a>
+<a href="https://github.com/modular/max-llm-book/blob/main/notebooks/05_04_prefix_caching.ipynb"><img src="https://img.shields.io/badge/GitHub-notebook-black?logo=github" alt="View on GitHub" /></a></p>
+<p>Real traffic repeats itself. Requests to a chat product start with the same
+system prompt, and every turn of a conversation resends the turns before it.
+Those shared tokens get the same keys and values every time, because a token’s
+keys and values depend only on that token and the tokens before it. <em>Prefix
+caching</em> computes them once and shares their cache blocks between requests. With
+the paged cache from
+<a href="05_03_paged_kv_cache.html">Section 5.3</a>, it takes
+little code.</p>
+<pre><code class="language-python">import logging
+import time
+import warnings
+from collections import OrderedDict
+
+import numpy as np
+import plotly.graph_objects as go
+from max.driver import CPU
+from max.pipelines import AutoTokenizer
+
+from minillm import viz
+from minillm.device import pick_device
+from minillm.config import MODEL_ID, LlamaConfig
+from minillm.model import load_model
+from minillm.paged import BlockPool, PagedCache, PagedEngine
+from minillm.step import Request, StepModel, compile_step
+from minillm.weights import load_checkpoint
+
+logging.getLogger("max").setLevel(logging.ERROR)
+warnings.filterwarnings("ignore", message="The eager interpreter failed")
+DEVICE = pick_device()  # a GPU if MAX finds one, otherwise the CPU
+
+config = LlamaConfig.from_pretrained()
+tokenizer = AutoTokenizer(MODEL_ID)
+step = compile_step(
+    load_model(config, load_checkpoint(), DEVICE, StepModel), config, DEVICE
+)
+</code></pre>
+<h2 id="naming-blocks-by-their-content"><a class="header" href="#naming-blocks-by-their-content">Naming blocks by their content</a></h2>
+<p>To share a block, the engine must recognize it. A full block is identified
+by the tokens it holds <em>and every token before it</em>, since those determine
+its keys and values. A chained hash captures both: each block’s hash
+combines the previous block’s hash with the block’s own tokens. Two requests
+share a block exactly when their prompts agree up to the end of that block.</p>
+<p>The pool keeps a table from hash to block, counts how many sequences use
+each block, and frees a block only when no sequence uses it. A block with no
+users whose contents are still valid stays in the table, in
+least-recently-used order, so a later request can still reuse it. Such
+blocks are evicted only when the pool runs out of free blocks.</p>
+<p>Only <em>full</em> blocks are shared, and new tokens always go into a sequence’s
+own next block, so a shared block is never written to.</p>
+<pre><code class="language-python">from __future__ import annotations
+
+from collections import OrderedDict
+
+from minillm.config import LlamaConfig
+from minillm.paged import BlockPool, PagedCache, PagedEngine
+from minillm.step import Request
+
+
+class PrefixCachingPool(BlockPool):
+    """A block pool that remembers full prompt blocks for reuse."""
+
+    def __init__(
+        self, config: LlamaConfig, num_blocks: int, block_size: int = 16
+    ) -&gt; None:
+        super().__init__(config, num_blocks, block_size)
+        self.refs = [0] * num_blocks
+        self.by_hash: dict[int, int] = {}
+        self.hash_of: dict[int, int] = {}
+        self.unused: OrderedDict[int, None] = OrderedDict()  # cached, no users
+
+    def allocate(self) -&gt; int:
+        if self.free:
+            block = self.free.pop()
+        elif self.unused:
+            block, _ = self.unused.popitem(last=False)  # evict the oldest
+            del self.by_hash[self.hash_of.pop(block)]
+        else:
+            raise MemoryError("the KV cache pool is full")
+        self.refs[block] = 1
+        return block
+
+    def available(self) -&gt; int:
+        # Cached blocks that no request uses can be evicted and reused.
+        return len(self.free) + len(self.unused)
+
+    def release(self, blocks: list[int]) -&gt; None:
+        for block in blocks:
+            self.refs[block] -= 1
+            if self.refs[block] == 0:
+                if block in self.hash_of:
+                    self.unused[block] = None
+                else:
+                    self.free.append(block)
+
+    def block_hashes(self, tokens: list[int]) -&gt; list[int]:
+        hashes, previous = [], 0
+        for start in range(
+            0, len(tokens) - self.block_size + 1, self.block_size
+        ):
+            previous = hash(
+                (previous, tuple(tokens[start : start + self.block_size]))
+            )
+            hashes.append(previous)
+        return hashes
+
+    def lookup(self, prompt: list[int]) -&gt; list[int]:
+        """Returns the cached blocks that start ``prompt``, and claims them.
+        The last prompt token is always left to compute, since its logits
+        are needed."""
+        blocks = []
+        for h in self.block_hashes(prompt[:-1]):
+            block = self.by_hash.get(h)
+            if block is None:
+                break
+            self.refs[block] += 1
+            self.unused.pop(block, None)
+            blocks.append(block)
+        return blocks
+
+    def register(self, prompt: list[int], blocks: list[int]) -&gt; None:
+        """Records a sequence's full prompt blocks for later requests."""
+        # The last block may be partial; only full blocks have hashes.
+        for h, block in zip(self.block_hashes(prompt), blocks, strict=False):
+            if h not in self.by_hash:
+                self.by_hash[h] = block
+                self.hash_of[block] = h
+
+
+class PrefixCachingEngine(PagedEngine):
+    """A paged engine that skips computing prompt prefixes it has cached."""
+
+    def __init__(self, *args, pool: PrefixCachingPool, **kwargs) -&gt; None:
+        super().__init__(*args, pool=pool, **kwargs)
+        self.computed_prompt_tokens = 0
+
+    def prefill_tokens(self, request: Request, cache: PagedCache) -&gt; list[int]:
+        tokens = (
+            request.prompt + request.output
+        )  # output is empty unless preempted
+        cache.blocks = self.pool.lookup(tokens)
+        cache.length = len(cache.blocks) * self.pool.block_size
+        new = tokens[cache.length :]
+        self.computed_prompt_tokens += len(new)
+        return new
+
+    def prefilled(self, request: Request, cache: PagedCache) -&gt; None:
+        self.pool.register(request.prompt, cache.blocks)
+</code></pre>
+<p><small>Saved to <code>minillm/prefix.py</code>.</small></p>
+<p><code>prefill_tokens</code> and <code>prefilled</code> are the two hooks the engine from
+<a href="05_02_continuous_batching.html">Section 5.2</a> calls
+around each prefill. The base engine returns the whole prompt from the first and
+does nothing in the second. The step model already handles the rest: a prefill
+with a non-empty past is a step with several new tokens.</p>
+<h2 id="a-workload-with-a-shared-prefix"><a class="header" href="#a-workload-with-a-shared-prefix">A workload with a shared prefix</a></h2>
+<p>Eight users ask different questions of the same assistant. Its system
+prompt is about 150 tokens long; real ones are often much longer:</p>
+<pre><code class="language-python">SYSTEM = (
+    "You are a helpful assistant for a travel company. Answer briefly and politely. "
+    "Recommend destinations in Europe, mention the best season to visit, give one "
+    "practical tip about transport, and never invent prices. "
+) * 4
+QUESTIONS = [
+    "Where should I go in spring?",
+    "Is Rome good in winter?",
+    "How do I get around Paris?",
+    "What about Lisbon?",
+    "Best city for museums?",
+    "Where can I hike?",
+    "Is Berlin expensive?",
+    "Suggest a beach town.",
+]
+
+
+def workload() -&gt; list[Request]:
+    now = time.perf_counter()
+    return [
+        Request(tokenizer([SYSTEM + q])["input_ids"][0], 8, arrived=now)
+        for q in QUESTIONS
+    ]
+
+
+print("prompt tokens per request:", len(workload()[0].prompt))
+
+
+def serve(engine) -&gt; list[Request]:
+    requests = workload()
+    for r in requests:
+        engine.add(r)
+    start = time.perf_counter()
+    engine.run()
+    ttft = [(r.first_token - r.arrived) * 1000 for r in requests]
+    print(
+        f"{type(engine).__name__:20} {time.perf_counter() - start:5.1f} s   "
+        f"TTFT median {np.median(ttft):5.0f} ms, worst {max(ttft):5.0f} ms"
+    )
+    return requests
+
+
+class CountingPrefixEngine(PrefixCachingEngine):
+    """Records how many prompt tokens each request computes."""
+
+    def prefill_tokens(self, request: Request, cache: object) -&gt; list[int]:
+        tokens = super().prefill_tokens(request, cache)
+        self.computed_per_request[id(request)] = len(tokens)
+        return tokens
+
+
+plain = serve(
+    PagedEngine(step, config, DEVICE, max_batch=4, pool=BlockPool(config, 128))
+)
+prefix_pool = PrefixCachingPool(config, 128)
+cached_engine = CountingPrefixEngine(
+    step, config, DEVICE, max_batch=4, pool=prefix_pool
+)
+cached_engine.computed_per_request = {}
+cached = serve(cached_engine)
+</code></pre>
+<pre><code class="language-text">prompt tokens per request: 163
+PagedEngine            6.4 s   TTFT median  2143 ms, worst  3812 ms
+CountingPrefixEngine   5.6 s   TTFT median  1774 ms, worst  3106 ms
+</code></pre>
+<pre><code class="language-python">total_prompt = sum(len(r.prompt) for r in cached)
+print(
+    f"prompt tokens computed: {cached_engine.computed_prompt_tokens} of {total_prompt} "
+    f"({cached_engine.computed_prompt_tokens / total_prompt:.0%})"
+)
+print("same tokens:", [r.output for r in cached] == [r.output for r in plain])
+assert [r.output for r in cached] == [r.output for r in plain]
+assert cached_engine.computed_prompt_tokens &lt; total_prompt
+
+computed = [cached_engine.computed_per_request[id(r)] for r in cached]
+reused = [len(r.prompt) - c for r, c in zip(cached, computed)]
+names = [f"request {i}: {q}" for i, q in enumerate(QUESTIONS)]
+fig = go.Figure(
+    [
+        go.Bar(
+            y=names,
+            x=reused,
+            name="reused from the cache",
+            orientation="h",
+            marker_color=viz.BLUE,
+            hovertemplate="%{x} tokens reused&lt;extra&gt;%{y}&lt;/extra&gt;",
+        ),
+        go.Bar(
+            y=names,
+            x=computed,
+            name="computed",
+            orientation="h",
+            marker_color=viz.ORANGE,
+            hovertemplate="%{x} tokens computed&lt;extra&gt;%{y}&lt;/extra&gt;",
+        ),
+    ]
+)
+fig.update_layout(
+    title="Prompt tokens per request with prefix caching",
+    barmode="stack",
+    height=420,
+    xaxis_title="prompt tokens",
+    yaxis=dict(autorange="reversed", showgrid=False),
+)
+viz.show(fig)
+</code></pre>
+<pre><code class="language-text">prompt tokens computed: 715 of 1291 (55%)
+same tokens: True
+</code></pre>
+<div class="plotly-figure" data-src="generated/05_04_prefix_caching_7_1.json"></div>
+<p>The first batch computes the system prompt once per request, because nothing is
+cached yet. From the second batch on, each request finds the system prompt’s
+full blocks in the table and computes only the rest: the system prompt’s last,
+partly filled block plus its own question. That brings the prompt tokens
+computed down to 715 of 1,291, or 55%. The outputs are identical, because the
+reused keys and values are exactly the ones the request would have computed.</p>
+<p>The wall-clock gain is modest here: the whole workload took about 5.6 s with
+prefix caching against 6.4 s without, on this page’s machine (an Apple-silicon
+Mac with a Metal GPU), because prefilling about 160 prompt tokens on a 135M
+model is only part of the workload’s time. Treat these numbers as an example:
+yours depend on your hardware and vary from run to run. The saving grows with
+the shared prefix. A multi-turn chat resends the whole conversation so far on
+every turn, often thousands of tokens, and an agent resends long tool
+descriptions on every call, so for them prefix caching removes most of the
+prefill.</p>
+<p>MAX Serve enables prefix caching by default; <code>--no-enable-prefix-caching</code> turns
+it off. The same idea extends across servers: a router can send each request to
+the replica that already holds its prefix. The handbook covers
+<a href="https://handbook.modular.com/inference-optimization/prefix-caching/">prefix caching</a>
+and
+<a href="https://handbook.modular.com/inference-optimization/inference-routing/">inference routing</a>.</p>
+<h2 id="exercises"><a class="header" href="#exercises">Exercises</a></h2>
+<ol>
+<li>Send the workload twice through the same engine. What fraction of prompt
+tokens does the second pass compute?</li>
+<li>Shrink the pool so cached blocks must be evicted. Which requests lose
+their prefix, and why does least-recently-used eviction suit chat traffic?</li>
+<li>Why does <code>lookup</code> hash <code>prompt[:-1]</code> instead of the whole prompt? What
+would break otherwise?</li>
+</ol>
+<h2 id="next"><a class="header" href="#next">Next</a></h2>
+<p><a href="05_05_speculative_decoding.html">Section 5.5</a> speeds up
+decoding instead: speculative decoding can produce several tokens per step of
+the large model.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="05_03_paged_kv_cache.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="05_05_speculative_decoding.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="05_03_paged_kv_cache.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="05_05_speculative_decoding.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="theme/code-highlighting.js"></script>
+        <script src="theme/sidebar.js"></script>
+        <script src="theme/init-amplitude.js"></script>
+        <script src="theme/warning.js"></script>
+        <script src="theme/plotly-figures.js"></script>
+
+
+    </div>
+    </body>
+</html>

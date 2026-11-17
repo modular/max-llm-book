@@ -1,0 +1,492 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>4.2 Verifying a model&#x27;s logits - Build and serve an LLM with MAX</title>
+
+
+        <!-- Custom HTML head -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap"
+            rel="stylesheet">
+        
+        <link rel="stylesheet" href="theme/css/custom.css">
+        <link rel="stylesheet" href="theme/css/highlight.css">
+        <link rel="stylesheet" id="theme">
+        
+        <!-- Additional meta tags -->
+        <meta property="og:title" content="Build an LLM from scratch with MAX">
+        <meta property="og:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
+        <meta property="og:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
+        <meta property="og:url" content="https://llm.modular.com/">
+        <meta name="twitter:card" content="summary">
+        <meta name="twitter:image:alt" content="MAX Docs">
+        <meta name="twitter:title" content="Build an LLM from scratch with MAX">
+        <meta name="twitter:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
+        <meta name="twitter:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
+        <link rel="icon" type="image/png" href="https://llm.modular.com/assets/icons/m-dark.svg">
+        <script>
+          !function(){var i="cioanalytics", analytics=(window[i]=window[i]||[]);if(!analytics.initialize)if(analytics.invoked)window.console&&console.error&&console.error("Snippet included twice.");else{analytics.invoked=!0;analytics.methods=["trackSubmit","trackClick","trackLink","trackForm","pageview","identify","reset","group","track","ready","alias","debug","page","once","off","on","addSourceMiddleware","addIntegrationMiddleware","setAnonymousId","addDestinationMiddleware"];analytics.factory=function(e){return function(){var t=Array.prototype.slice.call(arguments);t.unshift(e);analytics.push(t);return analytics}};for(var e=0;e<analytics.methods.length;e++){var key=analytics.methods[e];analytics[key]=analytics.factory(key)}analytics.load=function(key,e){var t=document.createElement("script");t.type="text/javascript";t.async=!0;t.setAttribute('data-global-customerio-analytics-key', i);t.src="https://cdp.customer.io/v1/analytics-js/snippet/" + key + "/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(t,n);analytics._writeKey=key;analytics._loadOptions=e};analytics.SNIPPET_VERSION="4.15.3";
+            analytics.load(
+              "c5c8ad95a28930735be9",
+              {
+                "integrations": {
+                    "Customer.io In-App Plugin": {
+                        anonymousInApp: true
+                    }
+                }
+              }
+            );
+            analytics.page();
+          }}();
+        </script>
+
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+
+        <meta name="description" content="Go from zero to serving: run a small LLM with MAX, rebuild it from scratch with max.nn and max.functional, then add sampling, a KV cache, batching and your own server.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/css/custom.css">
+        <link rel="stylesheet" href="theme/css/highlight.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "ayu";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc.js"></script>
+    </head>
+    <body>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden" checked>
+        <button id="vertical-sidebar-toggle" class="vertical-sidebar-toggle" aria-label="Toggle sidebar"></button>
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <button class="collapse-sidebar" aria-label="Collapse sidebar"></button>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Toggle color mode and talk to us buttons -->
+        <script>
+            document.addEventListener('click', function (event) {
+                if (!event.target.matches('.theme-toggle')) return;
+                event.preventDefault();
+                const prevTheme = theme;
+                html.classList.remove(theme);
+                const newTheme = prevTheme === 'ayu' ? 'light' : 'ayu'
+                html.classList.add(newTheme);
+                theme = newTheme
+                localStorage.setItem('mdbook-theme', theme);
+            }, false);
+        </script>
+
+        <div class="page-header">
+            <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                <i class="fa fa-bars"></i>
+            </label>
+            <div id="menu-bar" class="menu-bar">
+                <div class="left-buttons">
+                    <div class="logo-section">
+                        <a class="desktop-logo-link" href="https://modular.com"></a>
+                        <a class="mobile-logo-link" href="https://builds.modular.com"></a>
+                        <div class="slash">/</div>
+                        <a class="internal-link" href="">MAX LLM</a>
+                    </div>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Dark</button></li>
+                        </ul>
+                    </div>
+                <div class="right-buttons">
+                    <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                        <i class="fa fa-search"></i>
+                    </button>
+                    <button id="theme-toggle" class="icon-button theme-toggle-btn" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="false" aria-expanded="false">
+                        <i class="theme-toggle"></i>
+                    </button>
+                    <a class="menu-btn print" href="print.html" title="Print this book" aria-label="Print this book">
+                        <i id="print-button" class="fa fa-print"></i>
+                    </a>
+                    <a class="menu-btn" href="https://github.com/modular/max-llm-book" title="Git repository" aria-label="Git repository">
+                        <i id="git-repository-button" class="fa fa-github"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-wrapper" class="page-wrapper">
+            <div class="page">
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="42-verifying-a-models-logits"><a class="header" href="#42-verifying-a-models-logits">4.2 Verifying a model’s logits</a></h1>
+<p><a href="https://colab.research.google.com/github/modular/max-llm-book/blob/main/notebooks/04_02_logit_verification.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab" /></a>
+<a href="https://kaggle.com/kernels/welcome?src=https://github.com/modular/max-llm-book/blob/main/notebooks/04_02_logit_verification.ipynb"><img src="https://kaggle.com/static/images/open-in-kaggle.svg" alt="Open in Kaggle" /></a>
+<a href="https://github.com/modular/max-llm-book/blob/main/notebooks/04_02_logit_verification.ipynb"><img src="https://img.shields.io/badge/GitHub-notebook-black?logo=github" alt="View on GitHub" /></a></p>
+<p>Layer tests catch bugs in one layer. A whole model can still go wrong in
+ways no layer test sees: a weight loaded into the wrong layer, a tied head
+that isn’t tied, a mask that only fails on long prompts. So model bring-ups
+end with <em>logit verification</em>: run the same prompts through your model and a
+trusted reference, and compare the logits at every position.</p>
+<p>This section verifies your SmolLM2 against Hugging Face’s PyTorch
+implementation, with the metrics MAX’s own verification tools use.</p>
+<pre><code class="language-python">import logging
+import warnings
+
+import numpy as np
+import plotly.graph_objects as go
+import torch
+from max.driver import CPU
+from max.dtype import DType
+from max.pipelines import AutoTokenizer
+from max.tensor import Tensor
+from max.tensor.tensor import TensorType
+from transformers import AutoModelForCausalLM
+
+from minillm import viz
+from minillm.device import pick_device
+from minillm.config import MODEL_ID, LlamaConfig
+from minillm.kv_cache import CachedLlamaForCausalLM, KVCacheDecoder
+from minillm.model import load_model
+from minillm.sampling import generate
+from minillm.testing import compare_outputs
+from minillm.weights import load_checkpoint
+
+logging.getLogger("max").setLevel(logging.ERROR)
+warnings.filterwarnings("ignore", message="The eager interpreter failed")
+DEVICE = pick_device()  # a GPU if MAX finds one, otherwise the CPU
+
+config = LlamaConfig.from_pretrained()
+weights = load_checkpoint()
+tokenizer = AutoTokenizer(MODEL_ID)
+
+ours = load_model(config, weights, DEVICE).compile(
+    TensorType(DType.int64, ("batch", "seq_len"), device=DEVICE)
+)
+reference = AutoModelForCausalLM.from_pretrained(
+    MODEL_ID, torch_dtype=torch.float32
+).eval()
+</code></pre>
+<h2 id="prompts"><a class="header" href="#prompts">Prompts</a></h2>
+<p>Verification prompts should exercise different behavior: plain prose, code,
+numbers, another language, and a prompt long enough to stress attention and
+RoPE at larger positions.</p>
+<pre><code class="language-python">long_prompt = " ".join(["The quick brown fox jumps over the lazy dog."] * 60)
+prompts = {
+    "prose": "The capital of France is Paris, and the capital of Italy is",
+    "code": "def fibonacci(n):\n    if n &lt; 2:\n        return n\n    return",
+    "numbers": "1, 1, 2, 3, 5, 8, 13, 21,",
+    "french": "Le chat est assis sur",
+    "long": long_prompt,
+}
+
+
+def logits_pair(text: str) -&gt; tuple[np.ndarray, np.ndarray]:
+    ids = tokenizer([text])["input_ids"][0]
+    mine = ours(Tensor(np.array([ids]), device=DEVICE)).to_numpy()[0]
+    with torch.no_grad():
+        theirs = reference(torch.tensor([ids])).logits[0].numpy()
+    return mine, theirs
+</code></pre>
+<h2 id="metrics-for-logits"><a class="header" href="#metrics-for-logits">Metrics for logits</a></h2>
+<p>Logits feed a softmax, so on top of the elementwise metrics from
+<a href="04_01_layer_tests.html">Section 4.1</a>, two measures
+matter for generation.</p>
+<p>The <em>KL divergence</em> between the next-token distributions measures how much
+probability mass moved. It is the standard measure for comparing two models’
+predictions, and it ignores differences in logits that softmax removes, such
+as a constant offset. For the reference distribution \(P\) and yours, \(Q\), at
+one position:</p>
+<p>\[D_{\mathrm{KL}}(P \,\Vert\, Q) = \sum_i P_i \log \frac{P_i}{Q_i}\]</p>
+<p>It is 0 only when the two distributions are identical.</p>
+<p><em>Top-1 agreement</em> is the fraction of positions at which both models predict
+the same most likely token. It is all that greedy decoding sees.</p>
+<pre><code class="language-python">def softmax(z: np.ndarray) -&gt; np.ndarray:
+    z = z.astype(np.float64) - z.max(-1, keepdims=True)
+    e = np.exp(z)
+    return e / e.sum(-1, keepdims=True)
+
+
+def kl_divergence(p_logits: np.ndarray, q_logits: np.ndarray) -&gt; float:
+    """Mean KL(P || Q) over positions, in nats."""
+    p, q = softmax(p_logits), softmax(q_logits)
+    return float((p * (np.log(p + 1e-30) - np.log(q + 1e-30))).sum(-1).mean())
+
+
+print(
+    f"{'prompt':8} {'positions':&gt;9} {'max err':&gt;8} {'cos dist':&gt;9} {'KL':&gt;9} {'top-1':&gt;6}"
+)
+errors = {}
+for name, text in prompts.items():
+    mine, theirs = logits_pair(text)
+    errors[name] = np.abs(mine - theirs).max(-1)
+    r = compare_outputs(mine, theirs, atol=1e-3, rtol=1e-3)
+    top1 = (mine.argmax(-1) == theirs.argmax(-1)).mean()
+    print(
+        f"{name:8} {len(mine):&gt;9} {r.max_abs_err:&gt;8.1e} {r.cos_dist:&gt;9.1e} "
+        f"{kl_divergence(theirs, mine):&gt;9.1e} {top1:&gt;6.0%}"
+    )
+    assert top1 &gt;= 0.99 and kl_divergence(theirs, mine) &lt; 1e-6
+</code></pre>
+<pre><code class="language-text">prompt   positions  max err  cos dist        KL  top-1
+prose           13  8.2e-05   2.4e-12   3.2e-11   100%
+code            18  8.3e-05   1.5e-12   4.0e-11   100%
+numbers         25  1.1e-04   2.1e-12   2.2e-11   100%
+french           6  1.0e-04   1.3e-12   8.6e-11   100%
+long           600  1.1e-04   2.6e-12   2.5e-12   100%
+</code></pre>
+<p>A summary number can hide a trend. Plot the largest logit error at each
+position: if a bug in RoPE or the mask grew with position, the long prompt
+would show it as a rising line.</p>
+<pre><code class="language-python">fig = go.Figure(
+    [
+        go.Scatter(
+            x=np.arange(len(err)),
+            y=err,
+            name=name,
+            mode="lines",
+            line_color=color,
+            hovertemplate=name + ", position %{x}: %{y:.1e}&lt;extra&gt;&lt;/extra&gt;",
+        )
+        for (name, err), color in zip(errors.items(), viz.SERIES)
+    ]
+)
+fig.update_layout(
+    title="Largest logit error at each position, against Hugging Face",
+    height=400,
+    xaxis=dict(title="position", type="log", dtick=1),
+    yaxis=dict(title="max |logit difference|", type="log", dtick=1),
+)
+viz.show(fig)
+</code></pre>
+<div class="plotly-figure" data-src="generated/04_02_logit_verification_8_0.json"></div>
+<p>Every prompt agrees at every position, including the 600-token one, with 100%
+top-1 agreement and KL divergences between about <code>1e-12</code> and <code>1e-10</code> nats. MAX
+verifies its own models the same way, comparing MAX’s logits with reference
+logits from PyTorch or vLLM by cosine distance, KL divergence, and tolerances.
+The
+<a href="https://max.modular.com/develop/model-bringup-workflow">model bring-up workflow</a>
+guide covers the rest of bringing a new architecture to MAX.</p>
+<h2 id="greedy-generation"><a class="header" href="#greedy-generation">Greedy generation</a></h2>
+<p>Matching logits at the prompt is necessary but not sufficient: generation feeds
+the model its own outputs, through your KV cache from
+<a href="01_08_kv_cache.html">Section 1.8</a>. Compare 48 greedy
+tokens from your cached decoder with Hugging Face’s <code>generate</code>:</p>
+<pre><code class="language-python">cached = KVCacheDecoder(
+    load_model(config, weights, DEVICE, CachedLlamaForCausalLM), config, DEVICE
+)
+
+gaps = {}
+for name in ["prose", "code", "numbers"]:
+    ids = tokenizer([prompts[name]])["input_ids"][0]
+    mine = generate(cached, ids, 48, temperature=0)
+    with torch.no_grad():
+        out = reference.generate(
+            torch.tensor([ids]),
+            max_new_tokens=48,
+            do_sample=False,
+            output_scores=True,
+            return_dict_in_generate=True,
+        )
+    theirs = out.sequences[0, len(ids) :].tolist()
+    gaps[name] = [
+        float(np.diff(np.sort(step[0].numpy())[-2:])[0]) for step in out.scores
+    ]
+    same = next(
+        (i for i, (a, b) in enumerate(zip(mine, theirs)) if a != b), len(mine)
+    )
+    print(f"{name:8} identical for {same} of {len(mine)} tokens")
+    assert same &gt;= 24, (
+        "diverged early; check the gap between the top two logits"
+    )
+</code></pre>
+<pre><code class="language-text">prose    identical for 48 of 48 tokens
+code     identical for 48 of 48 tokens
+numbers  identical for 48 of 48 tokens
+</code></pre>
+<p>At each greedy step, how far ahead was the winning token? Plot the gap
+between the reference’s top two logits:</p>
+<pre><code class="language-python">fig = go.Figure(
+    [
+        go.Scatter(
+            x=np.arange(len(gap)),
+            y=gap,
+            name=name,
+            mode="lines+markers",
+            line_color=color,
+            marker=dict(size=5),
+            hovertemplate=name + ", step %{x}: gap %{y:.3f}&lt;extra&gt;&lt;/extra&gt;",
+        )
+        for (name, gap), color in zip(gaps.items(), viz.SERIES)
+    ]
+)
+fig.update_layout(
+    title="Gap between the top two logits at each greedy step",
+    height=400,
+    xaxis_title="generated token",
+    yaxis=dict(title="logit gap (log scale)", type="log", dtick=1),
+)
+viz.show(fig)
+</code></pre>
+<div class="plotly-figure" data-src="generated/04_02_logit_verification_12_0.json"></div>
+<p>Compare the gaps with the logit errors in the previous chart. A rounding
+difference can change the winner only at a step where the gap is smaller
+than the error. Here the smallest gap is above <code>0.1</code> and the largest error
+about <code>1e-4</code>, so no step comes close.</p>
+<p>If a run does diverge after many tokens, the cause is usually a <em>near tie</em>:
+at some step two tokens have almost the same logit, and a difference in the
+fourth or fifth decimal place, from summing in a different order, picks a
+different winner. From then on the two texts differ, though both are valid
+greedy continuations. When you see a divergence, look at the gap between the
+top two logits at that step: a tiny gap means rounding, a large one means a
+bug.</p>
+<h2 id="beyond-logits-accuracy-evaluations"><a class="header" href="#beyond-logits-accuracy-evaluations">Beyond logits: accuracy evaluations</a></h2>
+<p>Logit verification compares two implementations. It can’t tell you whether the
+model is <em>good</em> at a task, or whether a change that alters numbers on purpose,
+such as quantization, costs accuracy. For that, serving teams run task
+evaluations such as GSM8K or MMLU against the server
+(<a href="07_01_serve_your_model.html">Section 7.1</a> serves your
+model). The handbook’s
+<a href="https://handbook.modular.com/model-preparation/llm-quantization/">quantization</a>
+page covers how quantized models are evaluated.</p>
+<h2 id="exercises"><a class="header" href="#exercises">Exercises</a></h2>
+<ol>
+<li>Run the comparison in <code>bfloat16</code> (cast the weights and cast the logits
+back to <code>float32</code>). How do KL divergence and top-1 agreement change?</li>
+<li>Find the step where two tokens’ logits are closest during a greedy run.
+How small is the gap?</li>
+<li>Load one layer’s weights into the wrong layer index and rerun the table.
+Which prompt and metric show it most clearly?</li>
+</ol>
+<h2 id="next"><a class="header" href="#next">Next</a></h2>
+<p><a href="04_03_kernel_benchmarks.html">Section 4.3</a> measures
+speed: how to benchmark kernels and layers so the numbers mean something.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="04_01_layer_tests.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="04_03_kernel_benchmarks.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="04_01_layer_tests.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="04_03_kernel_benchmarks.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="theme/code-highlighting.js"></script>
+        <script src="theme/sidebar.js"></script>
+        <script src="theme/init-amplitude.js"></script>
+        <script src="theme/warning.js"></script>
+        <script src="theme/plotly-figures.js"></script>
+
+
+    </div>
+    </body>
+</html>

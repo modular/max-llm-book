@@ -1,0 +1,585 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>3.2 Under the hood: the graph API - Build and serve an LLM with MAX</title>
+
+
+        <!-- Custom HTML head -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap"
+            rel="stylesheet">
+        
+        <link rel="stylesheet" href="theme/css/custom.css">
+        <link rel="stylesheet" href="theme/css/highlight.css">
+        <link rel="stylesheet" id="theme">
+        
+        <!-- Additional meta tags -->
+        <meta property="og:title" content="Build an LLM from scratch with MAX">
+        <meta property="og:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
+        <meta property="og:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
+        <meta property="og:url" content="https://llm.modular.com/">
+        <meta name="twitter:card" content="summary">
+        <meta name="twitter:image:alt" content="MAX Docs">
+        <meta name="twitter:title" content="Build an LLM from scratch with MAX">
+        <meta name="twitter:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
+        <meta name="twitter:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
+        <link rel="icon" type="image/png" href="https://llm.modular.com/assets/icons/m-dark.svg">
+        <script>
+          !function(){var i="cioanalytics", analytics=(window[i]=window[i]||[]);if(!analytics.initialize)if(analytics.invoked)window.console&&console.error&&console.error("Snippet included twice.");else{analytics.invoked=!0;analytics.methods=["trackSubmit","trackClick","trackLink","trackForm","pageview","identify","reset","group","track","ready","alias","debug","page","once","off","on","addSourceMiddleware","addIntegrationMiddleware","setAnonymousId","addDestinationMiddleware"];analytics.factory=function(e){return function(){var t=Array.prototype.slice.call(arguments);t.unshift(e);analytics.push(t);return analytics}};for(var e=0;e<analytics.methods.length;e++){var key=analytics.methods[e];analytics[key]=analytics.factory(key)}analytics.load=function(key,e){var t=document.createElement("script");t.type="text/javascript";t.async=!0;t.setAttribute('data-global-customerio-analytics-key', i);t.src="https://cdp.customer.io/v1/analytics-js/snippet/" + key + "/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(t,n);analytics._writeKey=key;analytics._loadOptions=e};analytics.SNIPPET_VERSION="4.15.3";
+            analytics.load(
+              "c5c8ad95a28930735be9",
+              {
+                "integrations": {
+                    "Customer.io In-App Plugin": {
+                        anonymousInApp: true
+                    }
+                }
+              }
+            );
+            analytics.page();
+          }}();
+        </script>
+
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+
+        <meta name="description" content="Go from zero to serving: run a small LLM with MAX, rebuild it from scratch with max.nn and max.functional, then add sampling, a KV cache, batching and your own server.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/css/custom.css">
+        <link rel="stylesheet" href="theme/css/highlight.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "ayu";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc.js"></script>
+    </head>
+    <body>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden" checked>
+        <button id="vertical-sidebar-toggle" class="vertical-sidebar-toggle" aria-label="Toggle sidebar"></button>
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <button class="collapse-sidebar" aria-label="Collapse sidebar"></button>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Toggle color mode and talk to us buttons -->
+        <script>
+            document.addEventListener('click', function (event) {
+                if (!event.target.matches('.theme-toggle')) return;
+                event.preventDefault();
+                const prevTheme = theme;
+                html.classList.remove(theme);
+                const newTheme = prevTheme === 'ayu' ? 'light' : 'ayu'
+                html.classList.add(newTheme);
+                theme = newTheme
+                localStorage.setItem('mdbook-theme', theme);
+            }, false);
+        </script>
+
+        <div class="page-header">
+            <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                <i class="fa fa-bars"></i>
+            </label>
+            <div id="menu-bar" class="menu-bar">
+                <div class="left-buttons">
+                    <div class="logo-section">
+                        <a class="desktop-logo-link" href="https://modular.com"></a>
+                        <a class="mobile-logo-link" href="https://builds.modular.com"></a>
+                        <div class="slash">/</div>
+                        <a class="internal-link" href="">MAX LLM</a>
+                    </div>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Dark</button></li>
+                        </ul>
+                    </div>
+                <div class="right-buttons">
+                    <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                        <i class="fa fa-search"></i>
+                    </button>
+                    <button id="theme-toggle" class="icon-button theme-toggle-btn" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="false" aria-expanded="false">
+                        <i class="theme-toggle"></i>
+                    </button>
+                    <a class="menu-btn print" href="print.html" title="Print this book" aria-label="Print this book">
+                        <i id="print-button" class="fa fa-print"></i>
+                    </a>
+                    <a class="menu-btn" href="https://github.com/modular/max-llm-book" title="Git repository" aria-label="Git repository">
+                        <i id="git-repository-button" class="fa fa-github"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-wrapper" class="page-wrapper">
+            <div class="page">
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="32-under-the-hood-the-graph-api"><a class="header" href="#32-under-the-hood-the-graph-api">3.2 Under the hood: the graph API</a></h1>
+<p><a href="https://colab.research.google.com/github/modular/max-llm-book/blob/main/notebooks/03_02_graph_api.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab" /></a>
+<a href="https://kaggle.com/kernels/welcome?src=https://github.com/modular/max-llm-book/blob/main/notebooks/03_02_graph_api.ipynb"><img src="https://kaggle.com/static/images/open-in-kaggle.svg" alt="Open in Kaggle" /></a>
+<a href="https://github.com/modular/max-llm-book/blob/main/notebooks/03_02_graph_api.ipynb"><img src="https://img.shields.io/badge/GitHub-notebook-black?logo=github" alt="View on GitHub" /></a></p>
+<p>Since <a href="01_02_tensors_and_eager.html">Section 1.2</a> you
+have called <code>compile</code> on modules and gotten a fast callable back. This section
+opens that box. <code>compile</code> traces your module into a <em>graph</em>, a complete
+description of the computation, and MAX’s compiler turns the graph into
+optimized code. You can also build graphs directly with <code>max.graph</code>, which is
+how many of MAX’s serving pipelines build their models, and load checkpoints
+with MAX’s production weight loader.</p>
+<pre><code class="language-python">import logging
+import re
+from pathlib import Path
+
+import numpy as np
+import plotly.graph_objects as go
+from huggingface_hub import hf_hub_download
+from max.driver import CPU, Buffer
+from max.dtype import DType
+from max.engine import InferenceSession
+from max.graph import DeviceRef, Graph, TensorType, Weight, ops
+from max.graph.weights import load_weights
+from max.tensor import Tensor, default_device, default_dtype
+
+from minillm import viz
+from minillm.device import pick_device
+from minillm.config import MODEL_ID, LlamaConfig
+from minillm.layers import MLP
+from minillm.weights import load_checkpoint, select
+
+logging.getLogger("max").setLevel(logging.ERROR)
+DEVICE = pick_device()  # a GPU if MAX finds one, otherwise the CPU
+
+config = LlamaConfig.from_pretrained()
+weights = load_checkpoint()
+</code></pre>
+<h2 id="what-compile-builds"><a class="header" href="#what-compile-builds">What <code>compile</code> builds</a></h2>
+<p><code>trace</code> runs the first half of <code>compile</code>: it calls <code>forward</code> with symbolic
+inputs and records every operation into a graph, without compiling it. Here is
+SmolLM2’s MLP from
+<a href="01_04_building_blocks.html">Section 1.4</a>:</p>
+<pre><code class="language-python">with default_device(DEVICE), default_dtype(DType.float32):
+    mlp = MLP(config)
+mlp.load_state_dict(select(weights, "model.layers.0.mlp."))
+
+staged = mlp.trace(
+    TensorType(
+        DType.float32,
+        ("seq_len", config.hidden_size),
+        device=DeviceRef.from_device(DEVICE),
+    )
+)
+print("\n".join(str(staged.graph).splitlines()[:12]))
+</code></pre>
+<pre><code class="language-text">mo.graph @MLP&lt;seq_len&gt;(%arg0: !mo.tensor&lt;[seq_len, 576], f32, gpu:0&gt;) -&gt; !mo.tensor&lt;[seq_len, 576], f32, gpu:0&gt; attributes {_kernel_library_paths = [], argument_names = ["input0"], result_names = ["output0"]} {
+  %0 = mo.chain.create()
+  %1 = mo.constant.external [name = "gate_proj.weight", align = 1, device = #M.device_ref&lt;"cpu", 0&gt;] : !mo.tensor&lt;[1536, 576], f32&gt;
+  %result, %outChain = mo.transfer[%0] %1 : !mo.tensor&lt;[1536, 576], f32&gt; to &lt;"gpu", 0&gt;
+  %2 = mo.constant &lt;#M.dense_array&lt;1, 0&gt; : tensor&lt;2xsi64&gt;&gt; : !mo.tensor&lt;[2], si64&gt;
+  %3 = mo.transpose(%result, %2) : (!mo.tensor&lt;[1536, 576], f32, gpu:0&gt;, !mo.tensor&lt;[2], si64&gt;) -&gt; !mo.tensor&lt;[576, 1536], f32, gpu:0&gt;
+  %4 = rmo.matmul(%arg0, %3) : (!mo.tensor&lt;[seq_len, 576], f32, gpu:0&gt;, !mo.tensor&lt;[576, 1536], f32, gpu:0&gt;) -&gt; !mo.tensor&lt;[seq_len, 1536], f32, gpu:0&gt;
+  %5 = mo.constant &lt;#M.dense_array&lt;0.000000e+00&gt; : tensor&lt;f32&gt;&gt; : !mo.tensor&lt;[], f32, gpu:0&gt;
+  %6 = rmo.add(%4, %5) : (!mo.tensor&lt;[seq_len, 1536], f32, gpu:0&gt;, !mo.tensor&lt;[], f32, gpu:0&gt;) -&gt; !mo.tensor&lt;[seq_len, 1536], f32, gpu:0&gt;
+  %7 = mo.silu(%6) : !mo.tensor&lt;[seq_len, 1536], f32, gpu:0&gt;
+  %8 = mo.constant.external [name = "up_proj.weight", align = 1, device = #M.device_ref&lt;"cpu", 0&gt;] : !mo.tensor&lt;[1536, 576], f32&gt;
+  %result_0, %outChain_1 = mo.transfer[%0] %8 : !mo.tensor&lt;[1536, 576], f32&gt; to &lt;"gpu", 0&gt;
+</code></pre>
+<p>The text is a dataflow graph: each line defines one value (<code>%4</code>) from
+earlier ones. Parse it and draw it, with each operation placed one column
+after the latest value it reads. Hover over a node to see its line of IR:</p>
+<pre><code class="language-python">LINE = re.compile(
+    r"^\s*(%\w+)(?:, %\w+)* = ([\w.]+)(.*)$"
+)  # some ops have two results
+nodes, edges = {"%arg0": ("input", "input0: [seq_len, 576]")}, []
+for line in str(staged.graph).splitlines():
+    match = LINE.match(line)
+    if not match or match.group(2) in ("mo.chain.create", "mo.constant"):
+        continue  # skip bookkeeping and small constants
+    value, op, rest = match.groups()
+    weight = re.search(r'name = "([^"]+)"', rest)
+    label = weight.group(1) if weight else op.split(".")[-1]
+    nodes[value] = (label, line.strip())
+    edges += [(src, value) for src in re.findall(r"%\w+", rest) if src in nodes]
+output = re.search(r"mo.output (%\w+)", str(staged.graph)).group(1)
+nodes["output"] = ("output", "output0: [seq_len, 576]")
+edges.append((output, "output"))
+
+depth = {}
+for value in nodes:  # lines are in dataflow order
+    depth[value] = max(
+        (depth[src] + 1 for src, dst in edges if dst == value), default=0
+    )
+column = {}
+position = {}
+for value in nodes:
+    row = column.get(depth[value], 0)
+    column[depth[value]] = row + 1
+    position[value] = (depth[value], -row)
+
+
+def kind(label: str) -&gt; str:
+    if label in ("input", "output"):
+        return "input or output"
+    if label.endswith(".weight"):
+        return "weight"
+    if label == "transfer":
+        return "copy to device"
+    return "matmul" if label == "matmul" else "other operation"
+
+
+colors = {
+    "input or output": viz.VIOLET,
+    "weight": viz.ORANGE,
+    "copy to device": viz.YELLOW,
+    "matmul": viz.BLUE,
+    "other operation": viz.AQUA,
+}
+edge_x, edge_y = [], []
+for src, dst in edges:
+    edge_x += [position[src][0], position[dst][0], None]
+    edge_y += [position[src][1], position[dst][1], None]
+fig = go.Figure(
+    go.Scatter(
+        x=edge_x,
+        y=edge_y,
+        mode="lines",
+        line=dict(color=viz.GRID, width=2),
+        hoverinfo="skip",
+        showlegend=False,
+    )
+)
+for name, color in colors.items():
+    members = [v for v in nodes if kind(nodes[v][0]) == name]
+    fig.add_trace(
+        go.Scatter(
+            x=[position[v][0] for v in members],
+            y=[position[v][1] for v in members],
+            mode="markers+text",
+            name=name,
+            text=[nodes[v][0] for v in members],
+            textposition="top center",
+            marker=dict(
+                size=18, color=color, line=dict(color=viz.SURFACE, width=2)
+            ),
+            customdata=[nodes[v][1][:110] for v in members],
+            hovertemplate="%{customdata}&lt;extra&gt;&lt;/extra&gt;",
+        )
+    )
+fig.update_layout(
+    title="The MLP's graph, as compile sees it",
+    height=480,
+    xaxis=dict(visible=False, range=[-0.8, max(depth.values()) + 0.6]),
+    yaxis=dict(visible=False, range=[-max(column.values()) + 0.5, 0.6]),
+)
+viz.show(fig)
+</code></pre>
+<div class="plotly-figure" data-src="generated/03_02_graph_api_6_0.json"></div>
+<p>The graph is MAX’s intermediate representation (in MLIR). A few things to
+read in it:</p>
+<ul>
+<li>The input type is <code>[seq_len, 576]</code>: <code>seq_len</code> stays symbolic, which is why
+one compiled graph serves every sequence length.</li>
+<li>Each weight is a <code>mo.constant.external</code> with a name such as
+<code>gate_proj.weight</code>. The graph refers to weights by name and gets their
+values when it is loaded, so the same graph works with any checkpoint.</li>
+<li>On a GPU, each weight also passes through a <code>mo.transfer</code> that copies it
+from host memory to the device (yellow in the diagram); on a CPU there is
+nothing to copy.</li>
+<li>Every line is one operation (<code>rmo.matmul</code>, <code>mo.silu</code>, …) with fully known
+types. That is what lets the compiler fuse operations, plan memory for the
+whole computation, and generate code for the target device ahead of time.</li>
+</ul>
+<h2 id="build-a-graph-yourself"><a class="header" href="#build-a-graph-yourself">Build a graph yourself</a></h2>
+<p><code>max.graph</code> builds graphs directly. A <code>Graph</code> takes a name, the input types,
+and a <code>forward</code> function that combines <code>max.graph.ops</code> operations. Weights
+are declared as <code>Weight</code> objects with a name, dtype, shape, and device:</p>
+<pre><code class="language-python">H, I = config.hidden_size, config.intermediate_size
+
+
+def mlp_forward(x):
+    def weight(name: str, shape: list[int]) -&gt; Weight:
+        return Weight(
+            name, DType.float32, shape, device=DeviceRef.from_device(DEVICE)
+        )
+
+    gate = x @ weight("gate_proj.weight", [I, H]).T
+    up = x @ weight("up_proj.weight", [I, H]).T
+    return (ops.silu(gate) * up) @ weight("down_proj.weight", [H, I]).T
+
+
+graph = Graph(
+    "mlp",
+    forward=mlp_forward,
+    input_types=[
+        TensorType(
+            DType.float32, ("seq_len", H), device=DeviceRef.from_device(DEVICE)
+        )
+    ],
+)
+</code></pre>
+<p>An <code>InferenceSession</code> compiles graphs for a set of devices. <code>load</code> compiles
+this one and binds each named weight from a registry; <code>execute</code> runs it on
+<code>Buffer</code>s, the driver’s plain device memory:</p>
+<pre><code class="language-python">session = InferenceSession(devices=[DEVICE])
+compiled_mlp = session.load(
+    graph, weights_registry=select(weights, "model.layers.0.mlp.")
+)
+
+x = np.random.default_rng(0).standard_normal((5, H)).astype(np.float32)
+(out,) = compiled_mlp.execute(Buffer.from_numpy(x).to(DEVICE))
+expected = mlp(Tensor(x, device=DEVICE)).to_numpy()
+scale = np.abs(expected).max()
+relative = np.abs(out.to_numpy() - expected).max() / scale
+print(
+    f"max difference from your module, relative to the largest output: {relative:.1e}"
+)
+assert relative &lt; 1e-5
+</code></pre>
+<pre><code class="language-text">max difference from your module, relative to the largest output: 4.8e-07
+</code></pre>
+<p>The hand-built graph and your module agree because <code>Module.compile</code> builds
+this same graph for you, loads it in a session shared by the whole process,
+and wraps the result so it takes and returns <code>Tensor</code>s.</p>
+<p>Custom ops work in graphs too, through <code>ops.custom</code>. Compile the kernel from
+<a href="03_01_custom_ops.html">Section 3.1</a> again and use it in
+place of <code>silu * up</code>:</p>
+<pre><code class="language-python">import mojo.notebook
+</code></pre>
+<pre><code class="language-mojo">%%mojo package -o kernels.mojoc
+import extensibility
+from extensibility import ElementwiseBinaryOp
+from std.math import exp
+
+
+@extensibility.register("swiglu")
+struct SwiGLU(ElementwiseBinaryOp):
+    @staticmethod
+    def elementwise[
+        dtype: DType, width: SIMDLength
+    ](gate: SIMD[dtype, width], up: SIMD[dtype, width]) -&gt; SIMD[dtype, width]:
+        comptime assert dtype.is_floating_point(), "SwiGLU needs floats"
+        return gate / (1 + exp(-gate)) * up
+</code></pre>
+<pre><code class="language-python">def fused_forward(x):
+    def weight(name: str, shape: list[int]) -&gt; Weight:
+        return Weight(
+            name, DType.float32, shape, device=DeviceRef.from_device(DEVICE)
+        )
+
+    gate = x @ weight("gate_proj.weight", [I, H]).T
+    up = x @ weight("up_proj.weight", [I, H]).T
+    (h,) = ops.custom(
+        "swiglu",
+        device=DeviceRef.from_device(DEVICE),
+        values=[gate, up],
+        out_types=[gate.type],
+    )
+    return h.tensor @ weight("down_proj.weight", [H, I]).T
+
+
+fused_graph = Graph(
+    "fused_mlp",
+    forward=fused_forward,
+    input_types=[
+        TensorType(
+            DType.float32, ("seq_len", H), device=DeviceRef.from_device(DEVICE)
+        )
+    ],
+    custom_extensions=[Path("kernels.mojoc")],
+)
+fused_mlp = session.load(
+    fused_graph, weights_registry=select(weights, "model.layers.0.mlp.")
+)
+(fused_out,) = fused_mlp.execute(Buffer.from_numpy(x).to(DEVICE))
+relative = np.abs(fused_out.to_numpy() - expected).max() / scale
+print(f"max difference, relative to the largest output: {relative:.1e}")
+assert relative &lt; 1e-5
+</code></pre>
+<pre><code class="language-text">max difference, relative to the largest output: 4.8e-07
+</code></pre>
+<h2 id="production-weight-loading"><a class="header" href="#production-weight-loading">Production weight loading</a></h2>
+<p>The loader from
+<a href="01_03_tokens_and_weights.html">Section 1.3</a> reads one
+safetensors file into memory as <code>float32</code>. MAX’s own loader,
+<code>max.graph.weights.load_weights</code>, reads safetensors (including checkpoints split
+across many files) and GGUF. It maps files into memory instead of reading them,
+so a tensor is read only when it’s used, and it keeps each tensor’s original
+dtype and, for GGUF, its quantization encoding. Tensors are reached by attribute
+path:</p>
+<pre><code class="language-python">path = Path(hf_hub_download(MODEL_ID, "model.safetensors"))
+checkpoint = load_weights([path])
+gate = checkpoint.model.layers[0].mlp.gate_proj.weight
+print(gate.name)
+weight = gate.allocate()
+print(weight.shape, weight.dtype)
+</code></pre>
+<pre><code class="language-text">model.layers.0.mlp.gate_proj.weight
+[Dim(1536), Dim(576)] DType.bfloat16
+</code></pre>
+<p><code>allocate</code> returns a <code>Weight</code> like the ones in your hand-built graph, with
+the checkpoint’s name, shape, and dtype filled in. A serving pipeline builds
+its graph from these, so the graph matches the checkpoint exactly, and the
+loader supplies the data when the graph is loaded.</p>
+<h2 id="why-it-matters"><a class="header" href="#why-it-matters">Why it matters</a></h2>
+<p>Because the whole computation is known before it runs, MAX can:</p>
+<ul>
+<li>fuse operations and plan memory across the entire model instead of one
+operation at a time;</li>
+<li>compile once, ahead of time, and cache the result (the reason <code>max serve</code>
+starts faster the second time);</li>
+<li>on GPUs, record a decode step’s kernel launches and replay them with almost
+no CPU overhead (<em>device graph capture</em>);</li>
+<li>run the same graph on CPUs and on NVIDIA, AMD, and Apple GPUs.</li>
+</ul>
+<p><code>max.nn</code> modules with <code>compile</code> give you all of this while you write ordinary
+Python. Use <code>max.graph</code> directly when you need control over exactly what goes
+into a graph, as MAX’s serving pipelines do. MAX’s docs describe the
+<a href="https://max.modular.com/develop/graph">graph API</a> in full; the handbook’s
+<a href="https://handbook.modular.com/kernel-optimization/kernel-optimization-for-llm-inference/">kernel optimization</a>
+page explains why whole-graph compilation and fusion matter for LLMs.</p>
+<h2 id="exercises"><a class="header" href="#exercises">Exercises</a></h2>
+<ol>
+<li>Print the full traced graph of one <code>DecoderLayer</code> from
+<a href="01_06_full_model.html">Section 1.6</a>. Find the flash
+attention call and the residual additions.</li>
+<li>Build the MLP graph with a static input shape, <code>[5, 576]</code>, instead of
+<code>seq_len</code>. What happens when you execute it with 6 positions?</li>
+<li>Load layer 0’s MLP weights through <code>load_weights</code> instead of
+<code>load_checkpoint</code>. What has to change for the <code>float32</code> graph?</li>
+</ol>
+<h2 id="next"><a class="header" href="#next">Next</a></h2>
+<p><a href="ch04.html">Chapter 4</a> turns to correctness and speed:
+testing layers against references, verifying a whole model, and benchmarking and
+profiling.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="03_01_custom_ops.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="ch04.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="03_01_custom_ops.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="ch04.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="theme/code-highlighting.js"></script>
+        <script src="theme/sidebar.js"></script>
+        <script src="theme/init-amplitude.js"></script>
+        <script src="theme/warning.js"></script>
+        <script src="theme/plotly-figures.js"></script>
+
+
+    </div>
+    </body>
+</html>

@@ -1,0 +1,707 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>1.3 Tokens, embeddings, and weights - Build and serve an LLM with MAX</title>
+
+
+        <!-- Custom HTML head -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap"
+            rel="stylesheet">
+        
+        <link rel="stylesheet" href="theme/css/custom.css">
+        <link rel="stylesheet" href="theme/css/highlight.css">
+        <link rel="stylesheet" id="theme">
+        
+        <!-- Additional meta tags -->
+        <meta property="og:title" content="Build an LLM from scratch with MAX">
+        <meta property="og:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
+        <meta property="og:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
+        <meta property="og:url" content="https://llm.modular.com/">
+        <meta name="twitter:card" content="summary">
+        <meta name="twitter:image:alt" content="MAX Docs">
+        <meta name="twitter:title" content="Build an LLM from scratch with MAX">
+        <meta name="twitter:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
+        <meta name="twitter:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
+        <link rel="icon" type="image/png" href="https://llm.modular.com/assets/icons/m-dark.svg">
+        <script>
+          !function(){var i="cioanalytics", analytics=(window[i]=window[i]||[]);if(!analytics.initialize)if(analytics.invoked)window.console&&console.error&&console.error("Snippet included twice.");else{analytics.invoked=!0;analytics.methods=["trackSubmit","trackClick","trackLink","trackForm","pageview","identify","reset","group","track","ready","alias","debug","page","once","off","on","addSourceMiddleware","addIntegrationMiddleware","setAnonymousId","addDestinationMiddleware"];analytics.factory=function(e){return function(){var t=Array.prototype.slice.call(arguments);t.unshift(e);analytics.push(t);return analytics}};for(var e=0;e<analytics.methods.length;e++){var key=analytics.methods[e];analytics[key]=analytics.factory(key)}analytics.load=function(key,e){var t=document.createElement("script");t.type="text/javascript";t.async=!0;t.setAttribute('data-global-customerio-analytics-key', i);t.src="https://cdp.customer.io/v1/analytics-js/snippet/" + key + "/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(t,n);analytics._writeKey=key;analytics._loadOptions=e};analytics.SNIPPET_VERSION="4.15.3";
+            analytics.load(
+              "c5c8ad95a28930735be9",
+              {
+                "integrations": {
+                    "Customer.io In-App Plugin": {
+                        anonymousInApp: true
+                    }
+                }
+              }
+            );
+            analytics.page();
+          }}();
+        </script>
+
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+
+        <meta name="description" content="Go from zero to serving: run a small LLM with MAX, rebuild it from scratch with max.nn and max.functional, then add sampling, a KV cache, batching and your own server.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/css/custom.css">
+        <link rel="stylesheet" href="theme/css/highlight.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "ayu";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc.js"></script>
+    </head>
+    <body>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden" checked>
+        <button id="vertical-sidebar-toggle" class="vertical-sidebar-toggle" aria-label="Toggle sidebar"></button>
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <button class="collapse-sidebar" aria-label="Collapse sidebar"></button>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Toggle color mode and talk to us buttons -->
+        <script>
+            document.addEventListener('click', function (event) {
+                if (!event.target.matches('.theme-toggle')) return;
+                event.preventDefault();
+                const prevTheme = theme;
+                html.classList.remove(theme);
+                const newTheme = prevTheme === 'ayu' ? 'light' : 'ayu'
+                html.classList.add(newTheme);
+                theme = newTheme
+                localStorage.setItem('mdbook-theme', theme);
+            }, false);
+        </script>
+
+        <div class="page-header">
+            <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                <i class="fa fa-bars"></i>
+            </label>
+            <div id="menu-bar" class="menu-bar">
+                <div class="left-buttons">
+                    <div class="logo-section">
+                        <a class="desktop-logo-link" href="https://modular.com"></a>
+                        <a class="mobile-logo-link" href="https://builds.modular.com"></a>
+                        <div class="slash">/</div>
+                        <a class="internal-link" href="">MAX LLM</a>
+                    </div>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Dark</button></li>
+                        </ul>
+                    </div>
+                <div class="right-buttons">
+                    <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                        <i class="fa fa-search"></i>
+                    </button>
+                    <button id="theme-toggle" class="icon-button theme-toggle-btn" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="false" aria-expanded="false">
+                        <i class="theme-toggle"></i>
+                    </button>
+                    <a class="menu-btn print" href="print.html" title="Print this book" aria-label="Print this book">
+                        <i id="print-button" class="fa fa-print"></i>
+                    </a>
+                    <a class="menu-btn" href="https://github.com/modular/max-llm-book" title="Git repository" aria-label="Git repository">
+                        <i id="git-repository-button" class="fa fa-github"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-wrapper" class="page-wrapper">
+            <div class="page">
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="13-tokens-embeddings-and-weights"><a class="header" href="#13-tokens-embeddings-and-weights">1.3 Tokens, embeddings, and weights</a></h1>
+<p><a href="https://colab.research.google.com/github/modular/max-llm-book/blob/main/notebooks/01_03_tokens_and_weights.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab" /></a>
+<a href="https://kaggle.com/kernels/welcome?src=https://github.com/modular/max-llm-book/blob/main/notebooks/01_03_tokens_and_weights.ipynb"><img src="https://kaggle.com/static/images/open-in-kaggle.svg" alt="Open in Kaggle" /></a>
+<a href="https://github.com/modular/max-llm-book/blob/main/notebooks/01_03_tokens_and_weights.ipynb"><img src="https://img.shields.io/badge/GitHub-notebook-black?logo=github" alt="View on GitHub" /></a></p>
+<p>From this section on, you rebuild SmolLM2-135M-Instruct piece by piece. A
+model on Hugging Face is two things: a configuration that gives its sizes,
+and a checkpoint that holds its trained weights. This section loads both,
+then builds the model’s first layer, the token embedding.</p>
+<p>Code cells that start with <code># export:</code> become part of the <code>minillm</code> package,
+so later sections can import them instead of repeating them.</p>
+<pre><code class="language-python">import json
+import logging
+from pathlib import Path
+
+import numpy as np
+import plotly.graph_objects as go
+from max.driver import CPU
+from max.dtype import DType
+from max.nn import Embedding
+from max.pipelines import AutoTokenizer
+from max.tensor import Tensor, default_device, default_dtype
+
+from minillm import viz
+from minillm.device import pick_device
+
+logging.getLogger("max").setLevel(logging.ERROR)
+DEVICE = pick_device()  # a GPU if MAX finds one, otherwise the CPU
+</code></pre>
+<h2 id="the-configuration"><a class="header" href="#the-configuration">The configuration</a></h2>
+<p><code>config.json</code> lists the architecture and its sizes. These numbers decide
+the shape of every weight:</p>
+<pre><code class="language-python">from huggingface_hub import hf_hub_download
+
+MODEL_ID = "HuggingFaceTB/SmolLM2-135M-Instruct"
+raw = json.loads(Path(hf_hub_download(MODEL_ID, "config.json")).read_text())
+{
+    k: raw[k]
+    for k in [
+        "architectures",
+        "vocab_size",
+        "hidden_size",
+        "intermediate_size",
+        "num_hidden_layers",
+        "num_attention_heads",
+        "num_key_value_heads",
+        "rope_theta",
+        "rms_norm_eps",
+        "tie_word_embeddings",
+    ]
+}
+</code></pre>
+<pre><code class="language-text">{'architectures': ['LlamaForCausalLM'],
+ 'vocab_size': 49152,
+ 'hidden_size': 576,
+ 'intermediate_size': 1536,
+ 'num_hidden_layers': 30,
+ 'num_attention_heads': 9,
+ 'num_key_value_heads': 3,
+ 'rope_theta': 100000,
+ 'rms_norm_eps': 1e-05,
+ 'tie_word_embeddings': True}
+</code></pre>
+<p>Read it as: 30 identical layers (<code>num_hidden_layers</code>), each working on vectors
+of 576 numbers (<code>hidden_size</code>). Attention uses 9 query heads but only 3
+key/value heads, so each head has 576 / 9 = 64 dimensions;
+<a href="01_05_attention.html">Section 1.5</a> explains why the
+counts differ. <code>LlamaForCausalLM</code> is the architecture the code must implement.</p>
+<p>A small dataclass keeps these fields typed. The field names match Hugging
+Face’s, so you can compare against any Llama-family <code>config.json</code>.</p>
+<pre><code class="language-python">from __future__ import annotations
+
+import json
+from dataclasses import dataclass, fields
+from pathlib import Path
+
+from huggingface_hub import hf_hub_download
+
+MODEL_ID = "HuggingFaceTB/SmolLM2-135M-Instruct"
+
+
+@dataclass(frozen=True)
+class LlamaConfig:
+    """The sizes of a Llama-family model, as in its ``config.json``."""
+
+    vocab_size: int = 49152
+    hidden_size: int = 576
+    intermediate_size: int = 1536
+    num_hidden_layers: int = 30
+    num_attention_heads: int = 9
+    num_key_value_heads: int = 3
+    rope_theta: float = 100000.0
+    rms_norm_eps: float = 1e-5
+    max_position_embeddings: int = 8192
+    tie_word_embeddings: bool = True
+    eos_token_id: int = 2
+    head_dim: int = 0  # 0 means hidden_size // num_attention_heads
+
+    def __post_init__(self) -&gt; None:
+        if (
+            not self.head_dim
+        ):  # newer configs, such as Qwen3's, give it explicitly
+            object.__setattr__(
+                self, "head_dim", self.hidden_size // self.num_attention_heads
+            )
+
+    @classmethod
+    def from_pretrained(cls, model_id: str = MODEL_ID) -&gt; LlamaConfig:
+        """Reads the config of a Hugging Face model."""
+        raw = json.loads(
+            Path(hf_hub_download(model_id, "config.json")).read_text()
+        )
+        return cls(
+            **{f.name: raw[f.name] for f in fields(cls) if f.name in raw}
+        )
+</code></pre>
+<p><small>Saved to <code>minillm/config.py</code>.</small></p>
+<pre><code class="language-python">config = LlamaConfig.from_pretrained()
+print(config)
+print("head_dim:", config.head_dim)
+</code></pre>
+<pre><code class="language-text">LlamaConfig(vocab_size=49152, hidden_size=576, intermediate_size=1536, num_hidden_layers=30, num_attention_heads=9, num_key_value_heads=3, rope_theta=100000, rms_norm_eps=1e-05, max_position_embeddings=8192, tie_word_embeddings=True, eos_token_id=2, head_dim=64)
+head_dim: 64
+</code></pre>
+<h2 id="the-checkpoint"><a class="header" href="#the-checkpoint">The checkpoint</a></h2>
+<p>The weights live in <code>model.safetensors</code>. The format is simple enough to read
+by hand: 8 bytes giving the length of a JSON header, the header itself, then
+the raw bytes of every tensor. The header maps each tensor’s name to its
+dtype, shape, and byte range:</p>
+<pre><code class="language-python">path = hf_hub_download(MODEL_ID, "model.safetensors")
+with open(path, "rb") as f:
+    header_len = int.from_bytes(f.read(8), "little")
+    header = json.loads(f.read(header_len))
+header.pop("__metadata__", None)
+print(len(header), "tensors")
+for name in list(header)[:8]:
+    print(f"{name:45} {header[name]}")
+</code></pre>
+<pre><code class="language-text">272 tensors
+model.embed_tokens.weight                     {'dtype': 'BF16', 'shape': [49152, 576], 'data_offsets': [0, 56623104]}
+model.layers.0.input_layernorm.weight         {'dtype': 'BF16', 'shape': [576], 'data_offsets': [56623104, 56624256]}
+model.layers.0.mlp.down_proj.weight           {'dtype': 'BF16', 'shape': [576, 1536], 'data_offsets': [56624256, 58393728]}
+model.layers.0.mlp.gate_proj.weight           {'dtype': 'BF16', 'shape': [1536, 576], 'data_offsets': [58393728, 60163200]}
+model.layers.0.mlp.up_proj.weight             {'dtype': 'BF16', 'shape': [1536, 576], 'data_offsets': [60163200, 61932672]}
+model.layers.0.post_attention_layernorm.weight {'dtype': 'BF16', 'shape': [576], 'data_offsets': [61932672, 61933824]}
+model.layers.0.self_attn.k_proj.weight        {'dtype': 'BF16', 'shape': [192, 576], 'data_offsets': [61933824, 62155008]}
+model.layers.0.self_attn.o_proj.weight        {'dtype': 'BF16', 'shape': [576, 576], 'data_offsets': [62155008, 62818560]}
+</code></pre>
+<p>The names follow the module tree of Hugging Face’s <code>LlamaForCausalLM</code>: an
+embedding, then <code>model.layers.0</code> through <code>model.layers.29</code>, each with
+attention projections (<code>q_proj</code>, <code>k_proj</code>, <code>v_proj</code>, <code>o_proj</code>), an MLP
+(<code>gate_proj</code>, <code>up_proj</code>, <code>down_proj</code>), and two norms. Count the parameters:</p>
+<pre><code class="language-python">n_params = sum(int(np.prod(t["shape"])) for t in header.values())
+print(f"{n_params / 1e6:.1f}M parameters")
+print(
+    f"bfloat16: {n_params * 2 / 2**20:.0f} MiB, float32: {n_params * 4 / 2**20:.0f} MiB"
+)
+print("lm_head.weight in checkpoint:", "lm_head.weight" in header)
+</code></pre>
+<pre><code class="language-text">134.5M parameters
+bfloat16: 257 MiB, float32: 513 MiB
+lm_head.weight in checkpoint: False
+</code></pre>
+<p>Where do the parameters live? Click a box to zoom in, and click the bar at
+the top to zoom back out:</p>
+<pre><code class="language-python">def part(name: str) -&gt; str:
+    if "embed_tokens" in name:
+        return "embedding"
+    if "self_attn" in name:
+        return "attention"
+    if "mlp" in name:
+        return "MLP"
+    return "norms"
+
+
+color_of = {
+    "embedding": viz.ORANGE,
+    "attention": viz.BLUE,
+    "MLP": viz.AQUA,
+    "norms": viz.VIOLET,
+}
+nodes = {
+    "SmolLM2-135M": ["", "SmolLM2-135M", 0, viz.NEUTRAL]
+}  # id -&gt; [parent, label, total, color]
+
+
+def layer_number(name: str) -&gt; int:
+    return int(name.split(".")[2]) if ".layers." in name else -1
+
+
+def order(
+    name: str,
+) -&gt; int:  # the embedding, the layers in order, then the final norm
+    return (
+        -1
+        if "embed_tokens" in name
+        else layer_number(name)
+        if ".layers." in name
+        else 99
+    )
+
+
+for name in sorted(header, key=order):
+    count = int(np.prod(header[name]["shape"]))
+    kind = part(name)
+    layer = layer_number(name)
+    path = (
+        ["SmolLM2-135M"]
+        + ([f"layer {layer}"] if layer &gt;= 0 else [])
+        + [kind, name]
+    )
+    for depth in range(1, len(path)):
+        node = "/".join(path[: depth + 1])
+        label = name.split(".")[-2] if depth == len(path) - 1 else path[depth]
+        color = color_of[kind] if path[depth] in (kind, name) else viz.NEUTRAL
+        nodes.setdefault(node, ["/".join(path[:depth]), label, 0, color])
+        nodes[node][2] += count
+    nodes["SmolLM2-135M"][2] += count
+
+fig = go.Figure(
+    go.Treemap(
+        ids=list(nodes),
+        parents=[n[0] for n in nodes.values()],
+        labels=[n[1] for n in nodes.values()],
+        values=[n[2] for n in nodes.values()],
+        branchvalues="total",
+        sort=False,
+        maxdepth=3,
+        marker=dict(
+            colors=[n[3] for n in nodes.values()],
+            line=dict(color=viz.SURFACE, width=2),
+        ),
+        hovertemplate="%{label}&lt;br&gt;%{value:,} parameters, %{percentRoot:.1%} of the model&lt;extra&gt;&lt;/extra&gt;",
+        texttemplate="%{label}&lt;br&gt;%{value:.3s}",
+    )
+)
+fig.update_layout(
+    title="SmolLM2-135M's parameters",
+    height=520,
+    margin=dict(t=56, l=8, r=8, b=8),
+)
+viz.show(fig)
+</code></pre>
+<div class="plotly-figure" data-src="generated/01_03_tokens_and_weights_13_0.json"></div>
+<ul>
+<li>Memory is parameters times bytes per parameter. The checkpoint stores
+<code>bfloat16</code> (2 bytes); this book converts to <code>float32</code> (4 bytes), so its
+results can be compared exactly with reference implementations. The handbook’s
+<a href="https://handbook.modular.com/getting-started/calculating-gpu-memory-for-llms/">GPU memory calculation</a>
+applies the same arithmetic to large models, plus the KV cache you build in
+<a href="01_08_kv_cache.html">Section 1.8</a>.</li>
+<li>There is no <code>lm_head.weight</code>. With <code>tie_word_embeddings</code>, the output layer
+reuses the embedding matrix;
+<a href="01_06_full_model.html">Section 1.6</a> uses that.</li>
+</ul>
+<p>The loader below maps the file into memory and returns NumPy arrays. NumPy
+has no <code>bfloat16</code> type, but the conversion is exact and cheap: a <code>bfloat16</code>
+value is the upper 16 bits of a <code>float32</code>, so shifting the bits left by 16
+gives the same number as a <code>float32</code>. MAX modules accept NumPy arrays
+directly, so this is all the loading code the model needs.</p>
+<pre><code class="language-python">from __future__ import annotations
+
+import json
+
+import numpy as np
+from huggingface_hub import hf_hub_download
+
+from minillm.config import MODEL_ID
+
+_NUMPY_DTYPES = {
+    "F32": np.float32,
+    "F16": np.float16,
+    "I64": np.int64,
+    "I32": np.int32,
+}
+
+
+def read_safetensors(path: str) -&gt; dict[str, np.ndarray]:
+    """Reads a safetensors file, converting floating-point tensors to float32."""
+    with open(path, "rb") as f:
+        header_len = int.from_bytes(f.read(8), "little")
+        header = json.loads(f.read(header_len))
+    data = np.memmap(path, dtype=np.uint8, mode="r", offset=8 + header_len)
+    tensors = {}
+    for name, info in header.items():
+        if name == "__metadata__":
+            continue
+        start, end = info["data_offsets"]
+        raw = data[start:end]
+        if info["dtype"] == "BF16":
+            array = (raw.view(np.uint16).astype(np.uint32) &lt;&lt; 16).view(
+                np.float32
+            )
+        else:
+            array = raw.view(_NUMPY_DTYPES[info["dtype"]])
+            if array.dtype == np.float16:
+                array = array.astype(np.float32)
+        tensors[name] = array.reshape(info["shape"])
+    return tensors
+
+
+def load_checkpoint(model_id: str = MODEL_ID) -&gt; dict[str, np.ndarray]:
+    """Downloads a model's safetensors checkpoint and returns its tensors."""
+    return read_safetensors(hf_hub_download(model_id, "model.safetensors"))
+</code></pre>
+<p><small>Saved to <code>minillm/weights.py</code>.</small></p>
+<pre><code class="language-python">weights = load_checkpoint()
+w = weights["model.embed_tokens.weight"]
+print(w.shape, w.dtype)
+</code></pre>
+<pre><code class="language-text">(49152, 576) float32
+</code></pre>
+<h2 id="token-embeddings"><a class="header" href="#token-embeddings">Token embeddings</a></h2>
+<p>The model’s first layer turns each token ID into a vector of 576 numbers.
+It is a lookup table: row <em>i</em> of a <code>[49152, 576]</code> matrix is the vector for
+token <em>i</em>. <code>max.nn.Embedding</code> implements it. <code>load_state_dict</code> replaces its
+random weight with the checkpoint’s:</p>
+<pre><code class="language-python">with default_device(DEVICE), default_dtype(DType.float32):
+    embed = Embedding(config.vocab_size, dim=config.hidden_size)
+embed.load_state_dict({"weight": weights["model.embed_tokens.weight"]})
+
+tokenizer = AutoTokenizer(MODEL_ID)
+ids = tokenizer([" Paris France banana"])["input_ids"][0]
+vectors = embed(Tensor(np.array([ids]), device=DEVICE))
+print(ids, [tokenizer.decode([i]) for i in ids])
+print(vectors.shape)
+</code></pre>
+<pre><code class="language-text">[7042, 4649, 21285] [' Paris', ' France', ' banana']
+[Dim(1), Dim(3), Dim(576)]
+</code></pre>
+<p>Check it: each output vector must equal its row of the weight matrix.</p>
+<pre><code class="language-python">table = embed.weight.to_numpy()
+v = vectors.to_numpy()[0]
+assert np.array_equal(v, table[ids])
+print("embedding rows match the checkpoint")
+</code></pre>
+<pre><code class="language-text">embedding rows match the checkpoint
+</code></pre>
+<p>Training places related tokens near each other. Cosine similarity, the cosine
+of the angle between two vectors, shows it even before any layer runs:</p>
+<p>\[\cos\theta = \frac{a \cdot b}{\lVert a \rVert \, \lVert b \rVert}\]</p>
+<p>It is 1 for vectors pointing the same way, 0 for unrelated (orthogonal)
+ones, and \(-1\) for opposite ones, whatever their lengths.</p>
+<pre><code class="language-python">def cosine(a: np.ndarray, b: np.ndarray) -&gt; float:
+    return float(a @ b / (np.linalg.norm(a) * np.linalg.norm(b)))
+
+
+print(f"Paris  ~ France: {cosine(v[0], v[1]):.2f}")
+print(f"Paris  ~ banana: {cosine(v[0], v[2]):.2f}")
+print(f"France ~ banana: {cosine(v[1], v[2]):.2f}")
+</code></pre>
+<pre><code class="language-text">Paris  ~ France: 0.59
+Paris  ~ banana: 0.36
+France ~ banana: 0.37
+</code></pre>
+<p>Three numbers don’t show much. Project the embeddings of a few dozen words
+from three groups onto the two directions along which they vary most
+(principal component analysis, done here with NumPy’s SVD). Hover over a
+point for its word:</p>
+<pre><code class="language-python">groups = {
+    "countries": [
+        "France",
+        "Italy",
+        "Germany",
+        "Spain",
+        "Japan",
+        "China",
+        "Brazil",
+        "Canada",
+        "Egypt",
+        "India",
+    ],
+    "fruits": [
+        "apple",
+        "banana",
+        "orange",
+        "grape",
+        "mango",
+        "lemon",
+        "cherry",
+        "peach",
+        "pear",
+        "melon",
+    ],
+    "numbers": [
+        "one",
+        "two",
+        "three",
+        "four",
+        "five",
+        "six",
+        "seven",
+        "eight",
+        "nine",
+        "ten",
+    ],
+}
+words, group_of, rows = [], [], []
+for group, members in groups.items():
+    for word in members:
+        token = tokenizer([" " + word])["input_ids"][0]
+        if len(token) == 1:  # keep words that are a single token
+            words.append(word)
+            group_of.append(group)
+            rows.append(table[token[0]])
+points = np.array(rows) - np.mean(rows, axis=0)
+_, _, axes = np.linalg.svd(points, full_matrices=False)
+xy = points @ axes[:2].T
+
+fig = go.Figure()
+for (group, color), symbol in zip(
+    zip(groups, viz.SERIES), ["circle", "square", "diamond"]
+):
+    index = [i for i, g in enumerate(group_of) if g == group]
+    fig.add_trace(
+        go.Scatter(
+            x=xy[index, 0],
+            y=xy[index, 1],
+            mode="markers+text",
+            name=group,
+            text=[words[i] for i in index],
+            textposition="top center",
+            textfont=dict(size=11),
+            marker=dict(
+                color=color,
+                symbol=symbol,
+                size=10,
+                line=dict(color=viz.SURFACE, width=2),
+            ),
+            hovertemplate="%{text}&lt;extra&gt;" + group + "&lt;/extra&gt;",
+        )
+    )
+fig.update_layout(
+    title="Word embeddings projected to two dimensions",
+    height=520,
+    xaxis=dict(title="first principal component", showticklabels=False),
+    yaxis=dict(title="second principal component", showticklabels=False),
+)
+viz.show(fig)
+</code></pre>
+<div class="plotly-figure" data-src="generated/01_03_tokens_and_weights_24_0.json"></div>
+<p>The groups separate without the model ever being told what a country or a
+fruit is: words used in similar contexts during training end up with
+similar vectors.</p>
+<p>The 30 layers you build next refine these vectors using context: what
+<code>Paris</code> means depends on the tokens around it.</p>
+<h2 id="exercises"><a class="header" href="#exercises">Exercises</a></h2>
+<ol>
+<li>Find the 5 tokens whose embeddings are most similar to <code>" Paris"</code>. (Hint:
+normalize the table’s rows, then take one matrix-vector product.)</li>
+<li>The treemap counts the embedding once because the output layer reuses
+it. How many parameters, and how many MiB in <code>float32</code>, would SmolLM2
+need with a separate <code>lm_head</code>?</li>
+</ol>
+<h2 id="next"><a class="header" href="#next">Next</a></h2>
+<p><a href="01_04_building_blocks.html">Section 1.4</a> builds the
+layers that run inside each of the 30 blocks: RMSNorm, rotary position
+embeddings, and the SwiGLU MLP.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="01_02_tensors_and_eager.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="01_04_building_blocks.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="01_02_tensors_and_eager.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="01_04_building_blocks.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="theme/code-highlighting.js"></script>
+        <script src="theme/sidebar.js"></script>
+        <script src="theme/init-amplitude.js"></script>
+        <script src="theme/warning.js"></script>
+        <script src="theme/plotly-figures.js"></script>
+
+
+    </div>
+    </body>
+</html>

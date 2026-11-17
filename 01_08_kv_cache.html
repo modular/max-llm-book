@@ -1,0 +1,708 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>1.8 The KV cache - Build and serve an LLM with MAX</title>
+
+
+        <!-- Custom HTML head -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap"
+            rel="stylesheet">
+        
+        <link rel="stylesheet" href="theme/css/custom.css">
+        <link rel="stylesheet" href="theme/css/highlight.css">
+        <link rel="stylesheet" id="theme">
+        
+        <!-- Additional meta tags -->
+        <meta property="og:title" content="Build an LLM from scratch with MAX">
+        <meta property="og:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
+        <meta property="og:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
+        <meta property="og:url" content="https://llm.modular.com/">
+        <meta name="twitter:card" content="summary">
+        <meta name="twitter:image:alt" content="MAX Docs">
+        <meta name="twitter:title" content="Build an LLM from scratch with MAX">
+        <meta name="twitter:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
+        <meta name="twitter:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
+        <link rel="icon" type="image/png" href="https://llm.modular.com/assets/icons/m-dark.svg">
+        <script>
+          !function(){var i="cioanalytics", analytics=(window[i]=window[i]||[]);if(!analytics.initialize)if(analytics.invoked)window.console&&console.error&&console.error("Snippet included twice.");else{analytics.invoked=!0;analytics.methods=["trackSubmit","trackClick","trackLink","trackForm","pageview","identify","reset","group","track","ready","alias","debug","page","once","off","on","addSourceMiddleware","addIntegrationMiddleware","setAnonymousId","addDestinationMiddleware"];analytics.factory=function(e){return function(){var t=Array.prototype.slice.call(arguments);t.unshift(e);analytics.push(t);return analytics}};for(var e=0;e<analytics.methods.length;e++){var key=analytics.methods[e];analytics[key]=analytics.factory(key)}analytics.load=function(key,e){var t=document.createElement("script");t.type="text/javascript";t.async=!0;t.setAttribute('data-global-customerio-analytics-key', i);t.src="https://cdp.customer.io/v1/analytics-js/snippet/" + key + "/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(t,n);analytics._writeKey=key;analytics._loadOptions=e};analytics.SNIPPET_VERSION="4.15.3";
+            analytics.load(
+              "c5c8ad95a28930735be9",
+              {
+                "integrations": {
+                    "Customer.io In-App Plugin": {
+                        anonymousInApp: true
+                    }
+                }
+              }
+            );
+            analytics.page();
+          }}();
+        </script>
+
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+
+        <meta name="description" content="Go from zero to serving: run a small LLM with MAX, rebuild it from scratch with max.nn and max.functional, then add sampling, a KV cache, batching and your own server.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/css/custom.css">
+        <link rel="stylesheet" href="theme/css/highlight.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "ayu";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc.js"></script>
+    </head>
+    <body>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden" checked>
+        <button id="vertical-sidebar-toggle" class="vertical-sidebar-toggle" aria-label="Toggle sidebar"></button>
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <button class="collapse-sidebar" aria-label="Collapse sidebar"></button>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Toggle color mode and talk to us buttons -->
+        <script>
+            document.addEventListener('click', function (event) {
+                if (!event.target.matches('.theme-toggle')) return;
+                event.preventDefault();
+                const prevTheme = theme;
+                html.classList.remove(theme);
+                const newTheme = prevTheme === 'ayu' ? 'light' : 'ayu'
+                html.classList.add(newTheme);
+                theme = newTheme
+                localStorage.setItem('mdbook-theme', theme);
+            }, false);
+        </script>
+
+        <div class="page-header">
+            <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                <i class="fa fa-bars"></i>
+            </label>
+            <div id="menu-bar" class="menu-bar">
+                <div class="left-buttons">
+                    <div class="logo-section">
+                        <a class="desktop-logo-link" href="https://modular.com"></a>
+                        <a class="mobile-logo-link" href="https://builds.modular.com"></a>
+                        <div class="slash">/</div>
+                        <a class="internal-link" href="">MAX LLM</a>
+                    </div>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Dark</button></li>
+                        </ul>
+                    </div>
+                <div class="right-buttons">
+                    <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                        <i class="fa fa-search"></i>
+                    </button>
+                    <button id="theme-toggle" class="icon-button theme-toggle-btn" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="false" aria-expanded="false">
+                        <i class="theme-toggle"></i>
+                    </button>
+                    <a class="menu-btn print" href="print.html" title="Print this book" aria-label="Print this book">
+                        <i id="print-button" class="fa fa-print"></i>
+                    </a>
+                    <a class="menu-btn" href="https://github.com/modular/max-llm-book" title="Git repository" aria-label="Git repository">
+                        <i id="git-repository-button" class="fa fa-github"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-wrapper" class="page-wrapper">
+            <div class="page">
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="18-the-kv-cache"><a class="header" href="#18-the-kv-cache">1.8 The KV cache</a></h1>
+<p><a href="https://colab.research.google.com/github/modular/max-llm-book/blob/main/notebooks/01_08_kv_cache.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab" /></a>
+<a href="https://kaggle.com/kernels/welcome?src=https://github.com/modular/max-llm-book/blob/main/notebooks/01_08_kv_cache.ipynb"><img src="https://kaggle.com/static/images/open-in-kaggle.svg" alt="Open in Kaggle" /></a>
+<a href="https://github.com/modular/max-llm-book/blob/main/notebooks/01_08_kv_cache.ipynb"><img src="https://img.shields.io/badge/GitHub-notebook-black?logo=github" alt="View on GitHub" /></a></p>
+<p><a href="01_07_sampling.html">Section 1.7</a> ended with a problem:
+each generated token reruns the model over the whole sequence, so the cost per
+token grows with the text. This section fixes it the way inference engines do,
+with a <em>KV cache</em>, and measures the difference.</p>
+<h2 id="why-caching-works"><a class="header" href="#why-caching-works">Why caching works</a></h2>
+<p>To compute attention for a new token, the model needs the keys and values of
+every earlier position, in every layer. Those keys and values depend only
+on the tokens up to their own position, so they never change once computed.
+Recomputing them every step is wasted work. The KV cache stores them
+instead, which splits generation into two phases:</p>
+<ul>
+<li><em>Prefill</em> runs the whole prompt at once, like before, and saves every
+layer’s keys and values.</li>
+<li><em>Decode</em> runs one new token per step. Each layer computes the new
+token’s query, key, and value, appends the key and value to its cache, and
+attends over the whole cache.</li>
+</ul>
+<p>The handbook’s
+<a href="https://handbook.modular.com/llm-inference-basics/how-does-llm-inference-work/">How does LLM inference work?</a>
+page describes the same two phases from the serving side.</p>
+<pre><code class="language-python">import logging
+import time
+import warnings
+
+import numpy as np
+import plotly.graph_objects as go
+from max.driver import CPU
+from plotly.subplots import make_subplots
+from max.dtype import DType
+from max.pipelines import AutoTokenizer
+from max.tensor import Tensor
+from max.tensor.tensor import TensorType
+
+from minillm import viz
+from minillm.device import pick_device
+from minillm.config import MODEL_ID, LlamaConfig
+from minillm.model import load_model
+from minillm.sampling import generate
+from minillm.weights import load_checkpoint
+
+logging.getLogger("max").setLevel(logging.ERROR)
+warnings.filterwarnings("ignore", message="The eager interpreter failed")
+DEVICE = pick_device()  # a GPU if MAX finds one, otherwise the CPU
+
+config = LlamaConfig.from_pretrained()
+weights = load_checkpoint()
+tokenizer = AutoTokenizer(MODEL_ID)
+</code></pre>
+<p>The difference in work is easy to see. Each row below is one generation
+step for a 6-token prompt; each column is a position whose key and value
+that step computes. Without a cache, every step recomputes every earlier
+position. With one, prefill computes the prompt once and each decode step
+computes one new position:</p>
+<pre><code class="language-python">prompt_len, steps = 6, 10
+step_labels = ["prefill"] + [f"decode {i}" for i in range(1, steps)]
+recompute_work = np.zeros((steps, prompt_len + steps - 1))
+cached_work = np.zeros_like(recompute_work)
+for step in range(steps):
+    end = prompt_len + step
+    recompute_work[step, :end] = 1
+    cached_work[step, :end] = 1 if step == 0 else 0
+    cached_work[step, end - 1] = 1
+
+fig = make_subplots(
+    rows=1,
+    cols=2,
+    shared_yaxes=True,
+    horizontal_spacing=0.06,
+    subplot_titles=[
+        f"Recompute: {int(recompute_work.sum())} key/value computations",
+        f"KV cache: {int(cached_work.sum())} key/value computations",
+    ],
+)
+for col, work in enumerate([recompute_work, cached_work], start=1):
+    fig.add_trace(
+        go.Heatmap(
+            z=np.where(work &gt; 0, 1, np.nan),
+            y=step_labels,
+            xgap=2,
+            ygap=2,
+            colorscale=[[0, viz.BLUE], [1, viz.BLUE]],
+            showscale=False,
+            hovertemplate="%{y}: computes position %{x}&lt;extra&gt;&lt;/extra&gt;",
+        ),
+        row=1,
+        col=col,
+    )
+fig.update_xaxes(title="position", showgrid=False, dtick=2)
+fig.update_yaxes(autorange="reversed", showgrid=False)
+fig.update_layout(height=380, title="Which keys and values each step computes")
+viz.show(fig)
+</code></pre>
+<div class="plotly-figure" data-src="generated/01_08_kv_cache_4_0.json"></div>
+<h2 id="how-big-is-the-cache"><a class="header" href="#how-big-is-the-cache">How big is the cache?</a></h2>
+<p>Each token stores one key and one value vector per key/value head, per
+layer. With \(L\) layers, \(H_{kv}\) key/value heads of dimension \(d\), and \(b\)
+bytes per number:</p>
+<p>\[\text{bytes per token} = 2 \cdot L \cdot H_{kv} \cdot d \cdot b
+= 2 \cdot 30 \cdot 3 \cdot 64 \cdot 4\]</p>
+<pre><code class="language-python">per_token = (
+    2
+    * config.num_hidden_layers
+    * config.num_key_value_heads
+    * config.head_dim
+    * 4
+)
+print(f"{per_token / 1024:.0f} KiB per token in float32")
+print(
+    f"{per_token * 8192 / 2**20:.0f} MiB for SmolLM2's full 8192-token context"
+)
+print(
+    f"{per_token * 3 * 8192 / 2**20:.0f} MiB if every query head had its own key/value head"
+)
+</code></pre>
+<pre><code class="language-text">45 KiB per token in float32
+360 MiB for SmolLM2's full 8192-token context
+1080 MiB if every query head had its own key/value head
+</code></pre>
+<p>The cache grows with the context and with the number of sequences served at
+once. Move the slider to serve more sequences, and compare the cache with
+the model’s weights:</p>
+<pre><code class="language-python">lengths = np.arange(256, 8193, 256)
+weights_mib = sum(w.nbytes for w in weights.values()) / 2**20
+batches = [1, 4, 16, 64]
+steps = []
+for batch in batches:
+    steps.append(
+        [
+            go.Scatter(
+                x=lengths,
+                y=per_token * lengths * batch / 2**20,
+                name="KV cache, 3 key/value heads",
+                line_color=viz.BLUE,
+                hovertemplate="%{x} tokens: %{y:,.0f} MiB&lt;extra&gt;&lt;/extra&gt;",
+            ),
+            go.Scatter(
+                x=lengths,
+                y=3 * per_token * lengths * batch / 2**20,
+                name="KV cache, 9 key/value heads",
+                line=dict(color=viz.ORANGE, dash="dot"),
+                hovertemplate="%{x} tokens: %{y:,.0f} MiB&lt;extra&gt;&lt;/extra&gt;",
+            ),
+        ]
+    )
+fig = go.Figure(
+    go.Scatter(
+        x=[lengths[0], lengths[-1]],
+        y=[weights_mib] * 2,
+        name="weights",
+        mode="lines",
+        line=dict(color=viz.INK_SECONDARY, dash="dash"),
+        hovertemplate="weights: %{y:,.0f} MiB&lt;extra&gt;&lt;/extra&gt;",
+    )
+)
+fig.update_layout(
+    title="float32 KV cache memory against context length",
+    height=460,
+    xaxis_title="context length (tokens)",
+    yaxis=dict(title="MiB", type="log", dtick=1),
+)
+viz.show(
+    viz.with_slider(
+        fig, steps, [str(b) for b in batches], "sequences served at once: "
+    )
+)
+</code></pre>
+<div class="plotly-figure" data-src="generated/01_08_kv_cache_8_0.json"></div>
+<p>This is where grouped-query attention
+(<a href="01_05_attention.html">Section 1.5</a>) pays off: 3
+key/value heads instead of 9 make the cache 3 times smaller. Even for SmolLM2 in
+<code>float32</code>, two sequences at the full 8,192-token context need a 720 MiB cache,
+more than the 513 MiB of weights. For large models serving many users, the cache
+often takes more GPU memory than the weights. The handbook’s
+<a href="https://handbook.modular.com/getting-started/calculating-gpu-memory-for-llms/">GPU memory calculation</a>
+adds it to the weights when sizing a deployment.</p>
+<h2 id="attention-with-a-cache"><a class="header" href="#attention-with-a-cache">Attention with a cache</a></h2>
+<p><code>CachedAttention</code> extends Section 1.5’s <code>Attention</code>. Its <code>forward</code> takes the
+layer’s cached keys and values, if any, and returns them extended by the new
+positions. <code>start</code> is the position of the first new token, so RoPE rotates
+the new queries and keys for where they really are.</p>
+<p>Prefill uses the causal mask as before. Decode has one query, the newest
+token, which may attend to every cached position, so it needs no mask.</p>
+<pre><code class="language-python">from __future__ import annotations
+
+import math
+
+import numpy as np
+from max import functional as F
+from max.driver import Device
+from max.dtype import DType
+from max.nn import ModuleList
+from max.nn.kernels.attention import flash_attention
+from max.tensor import Tensor
+from max.tensor.tensor import TensorType
+
+from minillm.attention import Attention
+from minillm.config import LlamaConfig
+from minillm.model import DecoderLayer, LlamaForCausalLM, LlamaModel
+
+KVPair = tuple[Tensor, Tensor]
+
+
+class CachedAttention(Attention):
+    """Attention that reads and extends a key/value cache."""
+
+    def forward(
+        self, x: Tensor, start: Tensor, past: KVPair | None = None
+    ) -&gt; tuple[Tensor, KVPair]:
+        q, k, v = self.project(x, start)
+        if past is None:  # prefill: causal attention over the prompt
+            return self.attend(q, k, v), (k, v)
+        k = F.concat([past[0], k], axis=1)
+        v = F.concat([past[1], v], axis=1)
+        # The one new token may attend to every cached position: no mask.
+        out = flash_attention(q, k, v, 1 / math.sqrt(self.head_dim))
+        out = out.rebind_mapping(q.mapping)
+        batch, seq = q.shape[0], q.shape[1]
+        out = out.reshape([batch, seq, self.num_heads * self.head_dim])
+        return self.o_proj(out), (k, v)
+</code></pre>
+<p><small>Saved to <code>minillm/kv_cache.py</code>.</small></p>
+<p>The layer and model pass each layer’s cache through. The model returns
+logits for the last position only: generation never needs the others, and
+skipping them saves most of the LM head’s work during prefill.</p>
+<pre><code class="language-python">class CachedDecoderLayer(DecoderLayer):
+    def __init__(self, config: LlamaConfig) -&gt; None:
+        super().__init__(config)
+        self.self_attn = CachedAttention(config)
+
+    def forward(
+        self, x: Tensor, start: Tensor, past: KVPair | None = None
+    ) -&gt; tuple[Tensor, KVPair]:
+        attn, kv = self.self_attn(self.input_layernorm(x), start, past)
+        x = x + attn
+        return x + self.mlp(self.post_attention_layernorm(x)), kv
+
+
+class CachedLlamaModel(LlamaModel):
+    def __init__(self, config: LlamaConfig) -&gt; None:
+        super().__init__(config)
+        self.layers = ModuleList(
+            [
+                CachedDecoderLayer(config)
+                for _ in range(config.num_hidden_layers)
+            ]
+        )
+
+    def forward(
+        self,
+        input_ids: Tensor,
+        start: Tensor,
+        cache: list[KVPair] | None = None,
+    ) -&gt; tuple[Tensor, list[KVPair]]:
+        x = self.embed_tokens(input_ids)
+        new_cache = []
+        for i, layer in enumerate(self.layers):
+            x, kv = layer(x, start, None if cache is None else cache[i])
+            new_cache.append(kv)
+        return self.norm(x), new_cache
+
+
+class CachedLlamaForCausalLM(LlamaForCausalLM):
+    """Returns the last position's logits and the updated cache."""
+
+    def __init__(self, config: LlamaConfig) -&gt; None:
+        super().__init__(config)
+        self.model = CachedLlamaModel(config)
+
+    def forward(
+        self,
+        input_ids: Tensor,
+        start: Tensor,
+        cache: list[KVPair] | None = None,
+    ) -&gt; tuple[Tensor, list[KVPair]]:
+        hidden, new_cache = self.model(input_ids, start, cache)
+        return self.lm_head(hidden[:, -1]), new_cache
+</code></pre>
+<p><small>Saved to <code>minillm/kv_cache.py</code>.</small></p>
+<h2 id="two-compiled-graphs"><a class="header" href="#two-compiled-graphs">Two compiled graphs</a></h2>
+<p>Prefill and decode have different inputs, so they compile into two graphs
+that share the same weights. The cache is a list of 30 <code>(key, value)</code> pairs.
+Its length, <code>cache_len</code>, is a named dimension, so one decode graph serves
+every step. <code>start</code> is a one-element tensor rather than a Python number, so
+that it is an input of the graph instead of a constant baked into it.</p>
+<p><code>KVCacheDecoder</code> keeps the cache between calls. It has the same interface as
+Section 1.7’s <code>next_logits</code>: given the tokens so far, it returns the next
+token’s logits, running a prefill for a new prompt and a decode step when
+exactly one token was added. It plugs straight into <code>generate</code>.</p>
+<pre><code class="language-python">class KVCacheDecoder:
+    """Returns next-token logits like a full forward pass, using a cache."""
+
+    def __init__(
+        self, model: CachedLlamaForCausalLM, config: LlamaConfig, device: Device
+    ) -&gt; None:
+        self.device = device
+        tokens = TensorType(DType.int64, ("batch", "seq_len"), device=device)
+        one_token = TensorType(DType.int64, ("batch", 1), device=device)
+        start = TensorType(DType.float32, [1], device=device)
+        kv = TensorType(
+            DType.float32,
+            ("batch", "cache_len", config.num_key_value_heads, config.head_dim),
+            device=device,
+        )
+        self.prefill = model.compile(tokens, start)
+        self.decode = model.compile(
+            one_token, start, [(kv, kv)] * config.num_hidden_layers
+        )
+        self.cache: list[KVPair] | None = None
+        self.length = 0
+
+    def __call__(self, ids: list[int]) -&gt; Tensor:
+        if self.cache is not None and len(ids) == self.length + 1:
+            logits, self.cache = self.decode(
+                self._tokens(ids[-1:]), self._position(self.length), self.cache
+            )
+        else:
+            logits, self.cache = self.prefill(
+                self._tokens(ids), self._position(0)
+            )
+        self.length = len(ids)
+        return logits[0]
+
+    def _tokens(self, ids: list[int]) -&gt; Tensor:
+        return Tensor(np.array([ids], dtype=np.int64), device=self.device)
+
+    def _position(self, position: int) -&gt; Tensor:
+        return Tensor(
+            np.array([position], dtype=np.float32), device=self.device
+        )
+</code></pre>
+<p><small>Saved to <code>minillm/kv_cache.py</code>.</small></p>
+<pre><code class="language-python">start = time.perf_counter()
+cached = KVCacheDecoder(
+    load_model(config, weights, DEVICE, CachedLlamaForCausalLM), config, DEVICE
+)
+print(f"compiled prefill and decode in {time.perf_counter() - start:.0f} s")
+</code></pre>
+<pre><code class="language-text">compiled prefill and decode in 24 s
+</code></pre>
+<h2 id="check-it"><a class="header" href="#check-it">Check it</a></h2>
+<p>The cache must not change the result. Generate greedily with Section 1.7’s
+full recompute and with the cache, and compare the tokens:</p>
+<pre><code class="language-python">full = load_model(config, weights, DEVICE).compile(
+    TensorType(DType.int64, ("batch", "seq_len"), device=DEVICE)
+)
+
+
+def recompute(ids: list[int]) -&gt; Tensor:
+    return full(Tensor(np.array([ids]), device=DEVICE))[0, -1]
+
+
+prompt = tokenizer(["The capital of France is"])["input_ids"][0]
+slow = generate(recompute, prompt, 48, temperature=0)
+fast = generate(cached, prompt, 48, temperature=0)
+print("identical tokens:", slow == fast)
+assert slow == fast
+print(tokenizer.decode(prompt + fast))
+print("cached keys per layer:", [int(d) for d in cached.cache[0][0].shape])
+</code></pre>
+<pre><code class="language-text">identical tokens: True
+The capital of France is Paris. Paris is the largest city in France and the capital of the French department of the Espace de Paris.
+
+The Eiffel Tower, also known as the Eiffel Tower, is a monumental structure that stands 324
+cached keys per layer: [1, 52, 3, 64]
+</code></pre>
+<h2 id="measure-it"><a class="header" href="#measure-it">Measure it</a></h2>
+<p>Time one decode step at several context lengths, with random prompts so that
+only the length matters:</p>
+<pre><code class="language-python">def ms_per_token(next_logits, prompt: list[int], steps: int = 24) -&gt; float:
+    ids = list(prompt)
+    ids.append(int(np.argmax(next_logits(ids).to_numpy())))  # prefill, untimed
+    start = time.perf_counter()
+    for _ in range(steps):
+        ids.append(int(np.argmax(next_logits(ids).to_numpy())))
+    return (time.perf_counter() - start) / steps * 1000
+
+
+rng = np.random.default_rng(0)
+lengths = [32, 128, 256, 512, 1024]
+timings = {"recompute": [], "KV cache": []}
+for length in lengths:
+    prompt = rng.integers(0, config.vocab_size, length).tolist()
+    timings["recompute"].append(ms_per_token(recompute, prompt))
+    timings["KV cache"].append(ms_per_token(cached, prompt))
+
+fig = go.Figure(
+    [
+        go.Scatter(
+            x=lengths,
+            y=ms,
+            name=name,
+            mode="lines+markers",
+            line_color=color,
+            hovertemplate=name + ", %{x} tokens: %{y:.1f} ms&lt;extra&gt;&lt;/extra&gt;",
+        )
+        for (name, ms), color in zip(timings.items(), [viz.ORANGE, viz.BLUE])
+    ]
+)
+fig.update_layout(
+    title="Time per decode step",
+    height=420,
+    xaxis_title="context length (tokens)",
+    yaxis_title="ms per token",
+    yaxis_rangemode="tozero",
+)
+viz.show(fig)
+</code></pre>
+<div class="plotly-figure" data-src="generated/01_08_kv_cache_19_0.json"></div>
+<p>Hover over the points to read the timings. On this page’s machine, an
+Apple-silicon Mac with a Metal GPU, a cached decode step took about 130 to 160
+ms at every length, while recompute grew from about 150 ms at 32 tokens to about
+610 ms at 1,024. Treat these numbers as an example: yours depend on your
+hardware and vary from run to run. At short contexts the two take about the same
+time, because fixed work, such as launching kernels and reading every weight,
+dominates a step of a model this small. The cached step still does more work as
+the context grows: attention reads a longer cache, and <code>F.concat</code> copies the
+whole cache into a new tensor every step. At these lengths that growth is
+smaller than the variation between runs.</p>
+<p>This simple cache has limits that production engines address:</p>
+<ul>
+<li>Memory is allocated per sequence, as it grows. A server doesn’t know how
+long each reply will be, and contiguous per-sequence buffers fragment
+memory. <em>Paged attention</em> stores the cache in fixed-size blocks instead,
+like virtual memory pages.</li>
+<li>It serves one sequence at a time. A decode step for one token barely uses
+the hardware. Engines batch many sequences per step, which needs a cache
+that holds sequences of different lengths.</li>
+<li>Shared prompts are recomputed. Requests that start with the same system
+prompt could share those cache blocks (<em>prefix caching</em>).</li>
+</ul>
+<p><a href="ch05.html">Chapter 5</a> builds these into a small serving
+engine: <a href="05_02_continuous_batching.html">Section 5.2</a>
+adds continuous batching,
+<a href="05_03_paged_kv_cache.html">Section 5.3</a> a paged KV
+cache, and <a href="05_04_prefix_caching.html">Section 5.4</a>
+prefix caching. The handbook covers each one:
+<a href="https://handbook.modular.com/inference-optimization/pagedattention/">PagedAttention</a>,
+<a href="https://handbook.modular.com/inference-optimization/static-dynamic-continuous-batching/">batching</a>,
+and
+<a href="https://handbook.modular.com/inference-optimization/prefix-caching/">prefix caching</a>.</p>
+<h2 id="exercises"><a class="header" href="#exercises">Exercises</a></h2>
+<ol>
+<li>Extend the timing chart to context lengths from 16 to 2048. Below what
+length does the cache stop paying off on your device, and why?</li>
+<li>Make <code>KVCacheDecoder</code> keep the cache across two turns of a conversation:
+prefill only the new turn’s tokens after the first reply.</li>
+<li>Store the cache in <code>bfloat16</code> instead of <code>float32</code>. How much memory does
+it save, and do the greedy tokens change?</li>
+</ol>
+<h2 id="what-you-built"><a class="header" href="#what-you-built">What you built</a></h2>
+<p>Chapter 1 is complete. You have a working LLM inference stack written with MAX:
+a tokenizer and weight loader, a Llama-architecture model that matches MAX’s
+own, sampling, and a KV cache. <a href="ch02.html">Chapter 2</a>
+splits this model across several devices with MAX’s distributed tensors.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="01_07_sampling.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="ch02.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="01_07_sampling.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="ch02.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="theme/code-highlighting.js"></script>
+        <script src="theme/sidebar.js"></script>
+        <script src="theme/init-amplitude.js"></script>
+        <script src="theme/warning.js"></script>
+        <script src="theme/plotly-figures.js"></script>
+
+
+    </div>
+    </body>
+</html>

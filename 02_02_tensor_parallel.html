@@ -1,0 +1,574 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>2.2 A tensor-parallel model - Build and serve an LLM with MAX</title>
+
+
+        <!-- Custom HTML head -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap"
+            rel="stylesheet">
+        
+        <link rel="stylesheet" href="theme/css/custom.css">
+        <link rel="stylesheet" href="theme/css/highlight.css">
+        <link rel="stylesheet" id="theme">
+        
+        <!-- Additional meta tags -->
+        <meta property="og:title" content="Build an LLM from scratch with MAX">
+        <meta property="og:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
+        <meta property="og:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
+        <meta property="og:url" content="https://llm.modular.com/">
+        <meta name="twitter:card" content="summary">
+        <meta name="twitter:image:alt" content="MAX Docs">
+        <meta name="twitter:title" content="Build an LLM from scratch with MAX">
+        <meta name="twitter:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
+        <meta name="twitter:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
+        <link rel="icon" type="image/png" href="https://llm.modular.com/assets/icons/m-dark.svg">
+        <script>
+          !function(){var i="cioanalytics", analytics=(window[i]=window[i]||[]);if(!analytics.initialize)if(analytics.invoked)window.console&&console.error&&console.error("Snippet included twice.");else{analytics.invoked=!0;analytics.methods=["trackSubmit","trackClick","trackLink","trackForm","pageview","identify","reset","group","track","ready","alias","debug","page","once","off","on","addSourceMiddleware","addIntegrationMiddleware","setAnonymousId","addDestinationMiddleware"];analytics.factory=function(e){return function(){var t=Array.prototype.slice.call(arguments);t.unshift(e);analytics.push(t);return analytics}};for(var e=0;e<analytics.methods.length;e++){var key=analytics.methods[e];analytics[key]=analytics.factory(key)}analytics.load=function(key,e){var t=document.createElement("script");t.type="text/javascript";t.async=!0;t.setAttribute('data-global-customerio-analytics-key', i);t.src="https://cdp.customer.io/v1/analytics-js/snippet/" + key + "/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(t,n);analytics._writeKey=key;analytics._loadOptions=e};analytics.SNIPPET_VERSION="4.15.3";
+            analytics.load(
+              "c5c8ad95a28930735be9",
+              {
+                "integrations": {
+                    "Customer.io In-App Plugin": {
+                        anonymousInApp: true
+                    }
+                }
+              }
+            );
+            analytics.page();
+          }}();
+        </script>
+
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+
+        <meta name="description" content="Go from zero to serving: run a small LLM with MAX, rebuild it from scratch with max.nn and max.functional, then add sampling, a KV cache, batching and your own server.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/css/custom.css">
+        <link rel="stylesheet" href="theme/css/highlight.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "ayu";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc.js"></script>
+    </head>
+    <body>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden" checked>
+        <button id="vertical-sidebar-toggle" class="vertical-sidebar-toggle" aria-label="Toggle sidebar"></button>
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <button class="collapse-sidebar" aria-label="Collapse sidebar"></button>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Toggle color mode and talk to us buttons -->
+        <script>
+            document.addEventListener('click', function (event) {
+                if (!event.target.matches('.theme-toggle')) return;
+                event.preventDefault();
+                const prevTheme = theme;
+                html.classList.remove(theme);
+                const newTheme = prevTheme === 'ayu' ? 'light' : 'ayu'
+                html.classList.add(newTheme);
+                theme = newTheme
+                localStorage.setItem('mdbook-theme', theme);
+            }, false);
+        </script>
+
+        <div class="page-header">
+            <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                <i class="fa fa-bars"></i>
+            </label>
+            <div id="menu-bar" class="menu-bar">
+                <div class="left-buttons">
+                    <div class="logo-section">
+                        <a class="desktop-logo-link" href="https://modular.com"></a>
+                        <a class="mobile-logo-link" href="https://builds.modular.com"></a>
+                        <div class="slash">/</div>
+                        <a class="internal-link" href="">MAX LLM</a>
+                    </div>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Dark</button></li>
+                        </ul>
+                    </div>
+                <div class="right-buttons">
+                    <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                        <i class="fa fa-search"></i>
+                    </button>
+                    <button id="theme-toggle" class="icon-button theme-toggle-btn" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="false" aria-expanded="false">
+                        <i class="theme-toggle"></i>
+                    </button>
+                    <a class="menu-btn print" href="print.html" title="Print this book" aria-label="Print this book">
+                        <i id="print-button" class="fa fa-print"></i>
+                    </a>
+                    <a class="menu-btn" href="https://github.com/modular/max-llm-book" title="Git repository" aria-label="Git repository">
+                        <i id="git-repository-button" class="fa fa-github"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-wrapper" class="page-wrapper">
+            <div class="page">
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="22-a-tensor-parallel-model"><a class="header" href="#22-a-tensor-parallel-model">2.2 A tensor-parallel model</a></h1>
+<p><a href="https://colab.research.google.com/github/modular/max-llm-book/blob/main/notebooks/02_02_tensor_parallel.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab" /></a>
+<a href="https://kaggle.com/kernels/welcome?src=https://github.com/modular/max-llm-book/blob/main/notebooks/02_02_tensor_parallel.ipynb"><img src="https://kaggle.com/static/images/open-in-kaggle.svg" alt="Open in Kaggle" /></a>
+<a href="https://github.com/modular/max-llm-book/blob/main/notebooks/02_02_tensor_parallel.ipynb"><img src="https://img.shields.io/badge/GitHub-notebook-black?logo=github" alt="View on GitHub" /></a></p>
+<p>This section splits your SmolLM2 from
+<a href="ch01.html">Chapter 1</a> across three devices with tensor
+parallelism, the strategy servers use to run a model too big or too slow for one
+GPU. The model code doesn’t change. You change where its weights live, and MAX
+runs every layer on all three devices and adds the communication. Then you check
+that the logits match the single-device model’s.</p>
+<pre><code class="language-python">import logging
+import time
+import warnings
+
+import numpy as np
+import plotly.graph_objects as go
+from max import functional as F
+from max.driver import CPU
+from max.dtype import DType
+from max.nn.common_layers.linear import col_parallel, row_parallel
+from max.pipelines import AutoTokenizer
+from max.tensor import Tensor, default_device, default_dtype
+from max.tensor.sharding import (
+    DeviceMapping,
+    DeviceMesh,
+    Replicated,
+    auto_reshard,
+    visualize,
+)
+from max.tensor.tensor import TensorType
+
+from minillm import viz
+from minillm.config import MODEL_ID, LlamaConfig
+from minillm.model import LlamaForCausalLM, load_model
+from minillm.weights import load_checkpoint
+
+logging.getLogger("max").setLevel(logging.ERROR)
+warnings.filterwarnings("ignore", message="The eager interpreter failed")
+
+config = LlamaConfig.from_pretrained()
+weights = load_checkpoint()
+</code></pre>
+<h2 id="the-plan"><a class="header" href="#the-plan">The plan</a></h2>
+<p><a href="02_01_distributed_tensors.html">Section 2.1</a> showed the
+pattern: a column-parallel layer followed by a row-parallel layer needs one
+all-reduce. Each SmolLM2 layer has two such pairs:</p>
+<div class="table-wrapper"><table><thead><tr><th>Block</th><th>Column parallel (split outputs)</th><th>Row parallel (split inputs)</th></tr></thead><tbody>
+<tr><td>Attention</td><td><code>q_proj</code>, <code>k_proj</code>, <code>v_proj</code></td><td><code>o_proj</code></td></tr>
+<tr><td>MLP</td><td><code>gate_proj</code>, <code>up_proj</code></td><td><code>down_proj</code></td></tr>
+</tbody></table>
+</div>
+<p>Splitting <code>q_proj</code>’s outputs three ways gives each device 3 of the 9 query
+heads, and splitting <code>k_proj</code> and <code>v_proj</code> gives each device 1 of the 3
+key/value heads, the one those queries share under grouped-query attention
+(<a href="01_05_attention.html">Section 1.5</a>). So attention runs
+on each device independently, on its own heads. The embedding, the norms, and
+the LM head stay whole on every device (replicated).</p>
+<p><code>max.nn</code> provides <code>col_parallel</code> and <code>row_parallel</code>, which change a <code>Linear</code>
+layer’s weight placement on the mesh axis you name:</p>
+<pre><code class="language-python">from __future__ import annotations
+
+from max.nn.common_layers.linear import col_parallel, row_parallel
+
+from minillm.model import LlamaForCausalLM
+
+
+def tensor_parallel(
+    model: LlamaForCausalLM, axis: str = "tp"
+) -&gt; LlamaForCausalLM:
+    """Shards every layer's projections across mesh axis ``axis``."""
+    for layer in model.model.layers:
+        attn, mlp = layer.self_attn, layer.mlp
+        for linear in (
+            attn.q_proj,
+            attn.k_proj,
+            attn.v_proj,
+            mlp.gate_proj,
+            mlp.up_proj,
+        ):
+            col_parallel(linear, axis)
+        for linear in (attn.o_proj, mlp.down_proj):
+            row_parallel(linear, axis)
+    return model
+</code></pre>
+<p><small>Saved to <code>minillm/parallel.py</code>.</small></p>
+<h2 id="build-the-model-on-a-mesh"><a class="header" href="#build-the-model-on-a-mesh">Build the model on a mesh</a></h2>
+<p>Build the model inside <code>default_device(mesh)</code> so its weights are created on
+the mesh, apply the plan, and load the checkpoint. <code>load_state_dict</code> cuts
+each weight into the shards its placement asks for:</p>
+<pre><code class="language-python">mesh = DeviceMesh((CPU(),) * 3, (3,), ("tp",))
+
+with F.lazy(), default_device(mesh), default_dtype(DType.float32):
+    tp_model = tensor_parallel(LlamaForCausalLM(config))
+tp_model.load_state_dict(
+    {**weights, "lm_head.weight": weights["model.embed_tokens.weight"]}
+)
+
+visualize(tp_model.model.layers[0].self_attn.q_proj.weight)
+visualize(tp_model.model.layers[0].self_attn.o_proj.weight)
+</code></pre>
+<pre><code class="language-text">DType.float32 [576, 576] with DeviceMapping(DeviceMesh(tp=3), [Sharded(axis=0)])
+┌──────────────┐   tensor[:, :]
+│   device 0   │   ├── tp=0  device 0 - tensor[:192, :]
+│  [:192, :]   │   ├── tp=1  device 1 - tensor[192:384, :]
+├──────────────┤   └── tp=2  device 2 - tensor[384:, :]
+│   device 1   │
+│ [192:384, :] │
+├──────────────┤
+│   device 2   │
+│  [384:, :]   │
+└──────────────┘
+DType.float32 [576, 576] with DeviceMapping(DeviceMesh(tp=3), [Sharded(axis=1)])
+┌──────────────┬──────────────┬──────────────┐   tensor[:, :]
+│   device 0   │   device 1   │   device 2   │   ├── tp=0  device 0 - tensor[:, :192]
+│  [:, :192]   │ [:, 192:384] │  [:, 384:]   │   ├── tp=1  device 1 - tensor[:, 192:384]
+└──────────────┴──────────────┴──────────────┘   └── tp=2  device 2 - tensor[:, 384:]
+</code></pre>
+<p>Read the head assignment straight from the shards: each device’s slice of
+<code>q_proj</code> holds whole query heads, and its slice of <code>k_proj</code> holds the
+key/value head those queries share. Hover over a box to see its device:</p>
+<pre><code class="language-python">attn = tp_model.model.layers[0].self_attn
+rows = {
+    "query heads": attn.q_proj.weight,
+    "key/value heads": attn.k_proj.weight,
+}
+device_colors = [viz.BLUE, viz.ORANGE, viz.AQUA]
+fig = go.Figure()
+for y, (name, weight) in enumerate(rows.items()):
+    head = 0
+    for device, shard in enumerate(weight.local_shards):
+        for _ in range(int(shard.shape[0]) // config.head_dim):
+            width = (
+                9 / int(weight.shape[0]) * config.head_dim
+            )  # key/value heads span their group
+            fig.add_trace(
+                go.Bar(
+                    x=[width],
+                    base=[head * width],
+                    y=[name],
+                    orientation="h",
+                    width=0.6,
+                    marker=dict(
+                        color=device_colors[device],
+                        line=dict(color=viz.SURFACE, width=3),
+                    ),
+                    text=f"{'q' if y == 0 else 'kv'}{head}",
+                    textposition="inside",
+                    insidetextanchor="middle",
+                    name=f"device {device}",
+                    legendgroup=str(device),
+                    showlegend=y == 0 and head % 3 == 0,
+                    hovertemplate=f"{name[:-1]} {head} on device {device}&lt;extra&gt;&lt;/extra&gt;",
+                )
+            )
+            head += 1
+fig.update_layout(
+    title="Layer 0's attention heads on a 3-device mesh",
+    height=260,
+    barmode="overlay",
+    xaxis=dict(visible=False),
+    yaxis=dict(autorange="reversed", showgrid=False),
+)
+viz.show(fig)
+</code></pre>
+<div class="plotly-figure" data-src="generated/02_02_tensor_parallel_8_0.json"></div>
+<p><code>Linear</code> stores its weight as <code>[out, in]</code>, so column parallel splits axis 0
+and row parallel splits axis 1. Each device now holds a third of every
+projection, which is most of the model:</p>
+<pre><code class="language-python">def elements_on_device_0(model) -&gt; int:
+    total = 0
+    for _, p in model.parameters:
+        shard = p.local_shards[0] if p.is_distributed else p
+        total += int(np.prod([int(d) for d in shard.shape]))
+    return total
+
+
+total = sum(p.num_elements() for _, p in tp_model.parameters)
+print(
+    f"whole model: {total / 1e6:.0f}M values, device 0 holds {elements_on_device_0(tp_model) / 1e6:.0f}M"
+)
+</code></pre>
+<pre><code class="language-text">whole model: 163M values, device 0 holds 92M
+</code></pre>
+<p>Broken down by part, for the single-device model and for each device of
+the mesh:</p>
+<pre><code class="language-python">def part(name: str) -&gt; str:
+    for key, label in [
+        ("embed_tokens", "embedding"),
+        ("lm_head", "LM head"),
+        ("self_attn", "attention"),
+        ("mlp", "MLP"),
+    ]:
+        if key in name:
+            return label
+    return "norms"
+
+
+parts = ["embedding", "LM head", "attention", "MLP", "norms"]
+columns = ["one device", "mesh device 0", "mesh device 1", "mesh device 2"]
+counts = {p: [0] * 4 for p in parts}
+for name, param in tp_model.parameters:
+    counts[part(name)][0] += param.num_elements()
+    shards = param.local_shards if param.is_distributed else [param] * 3
+    for device, shard in enumerate(shards):
+        counts[part(name)][device + 1] += int(
+            np.prod([int(d) for d in shard.shape])
+        )
+
+fig = go.Figure(
+    [
+        go.Bar(
+            x=columns,
+            y=np.array(values) / 1e6,
+            name=p,
+            marker_color=color,
+            hovertemplate=p + ": %{y:.1f}M values&lt;extra&gt;%{x}&lt;/extra&gt;",
+        )
+        for (p, values), color in zip(counts.items(), viz.SERIES)
+    ]
+)
+fig.update_layout(
+    title="Parameter values per device",
+    barmode="stack",
+    height=420,
+    yaxis_title="millions of values",
+    legend_traceorder="normal",
+)
+viz.show(fig)
+</code></pre>
+<div class="plotly-figure" data-src="generated/02_02_tensor_parallel_12_0.json"></div>
+<p>The replicated embedding and LM head (28M values each) keep device 0 well
+above a third. Large models also split those across the vocabulary.</p>
+<h2 id="run-it"><a class="header" href="#run-it">Run it</a></h2>
+<p>The input token IDs are replicated: every device sees the whole prompt. Run
+the model with <code>auto_reshard(mode="warn")</code> to see each collective MAX
+inserts:</p>
+<pre><code class="language-python">tokenizer = AutoTokenizer(MODEL_ID)
+ids = tokenizer(["The capital of France is"])["input_ids"][0]
+tokens = Tensor(np.array([ids]), device=DeviceMapping(mesh, (Replicated(),)))
+
+start = time.perf_counter()
+with warnings.catch_warnings(record=True) as caught:
+    warnings.simplefilter("always")
+    with auto_reshard(mode="warn"):
+        tp_logits = tp_model(tokens).to_numpy()
+reshards = [str(w.message) for w in caught if "reshards" in str(w.message)]
+print(
+    f"forward pass in {time.perf_counter() - start:.0f} s, {len(reshards)} collectives inserted"
+)
+assert len(reshards) == 2 * config.num_hidden_layers
+print(reshards[0])
+</code></pre>
+<pre><code class="language-text">forward pass in 79 s, 60 collectives inserted
+
+add(lhs, rhs) reshards rhs
+  lhs    : float32[1, 5, 576]@mesh(tp=3){"tp":R}
+  rhs    : float32[1, 5, 576]@mesh(tp=3){"tp":P}
+  region : auto_reshard(DEFAULT_TRANSITIONS, mode="warn")
+
+  decided per mesh axis
+  axis    lhs          rhs          -&gt; out       collective                             bytes   status
+  "tp"    lhs{R-&gt;P}    rhs{P}       -&gt; P         keep_one_copy(lhs)                         60  not allowed
+          lhs{R-&gt;S1}   rhs{P-&gt;S1}   -&gt; S1        local_slice(lhs), reduce_scatter(rhs)    7740  not allowed
+          lhs{R-&gt;S2}   rhs{P-&gt;S2}   -&gt; S2        local_slice(lhs), reduce_scatter(rhs)    7740  not allowed
+          lhs{R}       rhs{P-&gt;R}    -&gt; R         allreduce(rhs)                          15360  chosen, reshards rhs
+  result  lhs{"tp":R}  rhs{"tp":R}  -&gt; {"tp":R}
+
+  rhs = transfer_to(rhs, DeviceMapping(mesh, (R,)))
+  with auto_reshard(mode="silent"):
+  with auto_reshard(ALL_TRANSITIONS, mode="silent"):   # also allows the cheaper rows above
+  at /Users/ehsan/workspace/modular/oss/max-llm-book/minillm/model.py:43 in forward()
+</code></pre>
+<p>That makes 60 collectives for 30 layers, two all-reduces per layer: one where
+the output of attention’s row-parallel <code>o_proj</code> meets the residual addition,
+and one where the MLP’s <code>down_proj</code> output does. This layout can’t do with
+fewer. Everything else, including attention itself, ran on each device
+without communication.</p>
+<h2 id="check-it"><a class="header" href="#check-it">Check it</a></h2>
+<p>The sharded model must produce the same logits as the single-device model
+from <a href="01_06_full_model.html">Section 1.6</a>:</p>
+<pre><code class="language-python">single = load_model(config, weights, CPU()).compile(
+    TensorType(DType.int64, ("batch", "seq_len"), device=CPU())
+)
+reference = single(Tensor(np.array([ids]), device=CPU())).to_numpy()
+
+print(f"max difference {np.abs(tp_logits - reference).max():.1e}")
+print("next token:", repr(tokenizer.decode([int(tp_logits[0, -1].argmax())])))
+assert (
+    np.abs(tp_logits - reference).max() &lt; 1e-3
+    and tp_logits[0, -1].argmax() == reference[0, -1].argmax()
+)
+</code></pre>
+<pre><code class="language-text">max difference 7.0e-05
+next token: ' Paris'
+</code></pre>
+<p>The logits agree to within <code>1e-4</code>, the size of a change in summation order:
+the all-reduce adds three partial sums where one device computed one full
+sum. On real hardware, replace the mesh’s <code>CPU()</code> entries with
+<code>Accelerator(0)</code>, <code>Accelerator(1)</code>, and <code>Accelerator(2)</code>, and nothing else
+changes. <code>max serve</code> splits models across GPUs too: pass
+<code>--devices gpu:0,1,2</code> to use three. MAX’s Llama implementation, which serves
+SmolLM2, uses the same column-then-row layout, built from the older
+tensor-parallel layers in <code>max.nn.legacy</code> instead of distributed tensors, and
+it also splits the embedding and the LM head across the vocabulary.</p>
+<p>Simulation answers <em>is it correct?</em> cheaply. Whether a layout is <em>fast</em> depends
+on the hardware: an all-reduce over NVLink costs microseconds, over PCIe or a
+network much more, and for a model this small on real GPUs the communication
+would cost more than it saves. The handbook’s
+<a href="https://handbook.modular.com/infrastructure-and-operations/distributed-inference/">distributed inference</a>
+and
+<a href="https://handbook.modular.com/inference-optimization/data-tensor-pipeline-expert-hybrid-parallelism/">parallelism strategies</a>
+pages discuss when each layout pays off.</p>
+<h2 id="exercises"><a class="header" href="#exercises">Exercises</a></h2>
+<ol>
+<li>Run on a 9-device mesh, one query head per device. What happens to the
+key/value heads, which only split three ways?</li>
+<li>Shard the embedding by vocabulary (rows) and the LM head to match. Which
+collectives does MAX add, and how much memory does device 0 save?</li>
+<li>Add a <code>dp</code> axis for a 2 × 3 mesh and run a batch of two prompts with the
+batch split along <code>dp</code>. Check both rows against the single-device model.</li>
+</ol>
+<h2 id="next"><a class="header" href="#next">Next</a></h2>
+<p><a href="ch03.html">Chapter 3</a> goes below the operations: you
+write a kernel in Mojo and call it from your model.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="02_01_distributed_tensors.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="ch03.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="02_01_distributed_tensors.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="ch03.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="theme/code-highlighting.js"></script>
+        <script src="theme/sidebar.js"></script>
+        <script src="theme/init-amplitude.js"></script>
+        <script src="theme/warning.js"></script>
+        <script src="theme/plotly-figures.js"></script>
+
+
+    </div>
+    </body>
+</html>

@@ -1,0 +1,600 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>4.1 Testing layers against references - Build and serve an LLM with MAX</title>
+
+
+        <!-- Custom HTML head -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap"
+            rel="stylesheet">
+        
+        <link rel="stylesheet" href="theme/css/custom.css">
+        <link rel="stylesheet" href="theme/css/highlight.css">
+        <link rel="stylesheet" id="theme">
+        
+        <!-- Additional meta tags -->
+        <meta property="og:title" content="Build an LLM from scratch with MAX">
+        <meta property="og:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
+        <meta property="og:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
+        <meta property="og:url" content="https://llm.modular.com/">
+        <meta name="twitter:card" content="summary">
+        <meta name="twitter:image:alt" content="MAX Docs">
+        <meta name="twitter:title" content="Build an LLM from scratch with MAX">
+        <meta name="twitter:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
+        <meta name="twitter:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
+        <link rel="icon" type="image/png" href="https://llm.modular.com/assets/icons/m-dark.svg">
+        <script>
+          !function(){var i="cioanalytics", analytics=(window[i]=window[i]||[]);if(!analytics.initialize)if(analytics.invoked)window.console&&console.error&&console.error("Snippet included twice.");else{analytics.invoked=!0;analytics.methods=["trackSubmit","trackClick","trackLink","trackForm","pageview","identify","reset","group","track","ready","alias","debug","page","once","off","on","addSourceMiddleware","addIntegrationMiddleware","setAnonymousId","addDestinationMiddleware"];analytics.factory=function(e){return function(){var t=Array.prototype.slice.call(arguments);t.unshift(e);analytics.push(t);return analytics}};for(var e=0;e<analytics.methods.length;e++){var key=analytics.methods[e];analytics[key]=analytics.factory(key)}analytics.load=function(key,e){var t=document.createElement("script");t.type="text/javascript";t.async=!0;t.setAttribute('data-global-customerio-analytics-key', i);t.src="https://cdp.customer.io/v1/analytics-js/snippet/" + key + "/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(t,n);analytics._writeKey=key;analytics._loadOptions=e};analytics.SNIPPET_VERSION="4.15.3";
+            analytics.load(
+              "c5c8ad95a28930735be9",
+              {
+                "integrations": {
+                    "Customer.io In-App Plugin": {
+                        anonymousInApp: true
+                    }
+                }
+              }
+            );
+            analytics.page();
+          }}();
+        </script>
+
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+
+        <meta name="description" content="Go from zero to serving: run a small LLM with MAX, rebuild it from scratch with max.nn and max.functional, then add sampling, a KV cache, batching and your own server.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/css/custom.css">
+        <link rel="stylesheet" href="theme/css/highlight.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "ayu";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc.js"></script>
+    </head>
+    <body>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden" checked>
+        <button id="vertical-sidebar-toggle" class="vertical-sidebar-toggle" aria-label="Toggle sidebar"></button>
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <button class="collapse-sidebar" aria-label="Collapse sidebar"></button>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Toggle color mode and talk to us buttons -->
+        <script>
+            document.addEventListener('click', function (event) {
+                if (!event.target.matches('.theme-toggle')) return;
+                event.preventDefault();
+                const prevTheme = theme;
+                html.classList.remove(theme);
+                const newTheme = prevTheme === 'ayu' ? 'light' : 'ayu'
+                html.classList.add(newTheme);
+                theme = newTheme
+                localStorage.setItem('mdbook-theme', theme);
+            }, false);
+        </script>
+
+        <div class="page-header">
+            <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                <i class="fa fa-bars"></i>
+            </label>
+            <div id="menu-bar" class="menu-bar">
+                <div class="left-buttons">
+                    <div class="logo-section">
+                        <a class="desktop-logo-link" href="https://modular.com"></a>
+                        <a class="mobile-logo-link" href="https://builds.modular.com"></a>
+                        <div class="slash">/</div>
+                        <a class="internal-link" href="">MAX LLM</a>
+                    </div>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Dark</button></li>
+                        </ul>
+                    </div>
+                <div class="right-buttons">
+                    <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                        <i class="fa fa-search"></i>
+                    </button>
+                    <button id="theme-toggle" class="icon-button theme-toggle-btn" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="false" aria-expanded="false">
+                        <i class="theme-toggle"></i>
+                    </button>
+                    <a class="menu-btn print" href="print.html" title="Print this book" aria-label="Print this book">
+                        <i id="print-button" class="fa fa-print"></i>
+                    </a>
+                    <a class="menu-btn" href="https://github.com/modular/max-llm-book" title="Git repository" aria-label="Git repository">
+                        <i id="git-repository-button" class="fa fa-github"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-wrapper" class="page-wrapper">
+            <div class="page">
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="41-testing-layers-against-references"><a class="header" href="#41-testing-layers-against-references">4.1 Testing layers against references</a></h1>
+<p><a href="https://colab.research.google.com/github/modular/max-llm-book/blob/main/notebooks/04_01_layer_tests.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab" /></a>
+<a href="https://kaggle.com/kernels/welcome?src=https://github.com/modular/max-llm-book/blob/main/notebooks/04_01_layer_tests.ipynb"><img src="https://kaggle.com/static/images/open-in-kaggle.svg" alt="Open in Kaggle" /></a>
+<a href="https://github.com/modular/max-llm-book/blob/main/notebooks/04_01_layer_tests.ipynb"><img src="https://img.shields.io/badge/GitHub-notebook-black?logo=github" alt="View on GitHub" /></a></p>
+<p><a href="ch01.html">Chapter 1</a> checked each layer once, on one
+input. Real tests check many shapes against an independent reference, with
+metrics that tell a rounding difference from a bug. This section builds the
+pattern MAX uses for its own layers, in
+<a href="https://github.com/modular/modular/tree/main/max/python/layer_benchmarks"><code>max/python/layer_benchmarks</code></a>,
+and applies it to your decoder layer, with Hugging Face’s PyTorch Llama as the
+reference.</p>
+<pre><code class="language-python">import logging
+import warnings
+
+import numpy as np
+import plotly.graph_objects as go
+import torch
+from max import functional as F
+from max.driver import CPU
+from max.dtype import DType
+from max.tensor import Tensor, default_device, default_dtype
+from max.tensor.tensor import TensorType
+from transformers import AutoConfig
+from transformers.models.llama.modeling_llama import (
+    LlamaDecoderLayer,
+    LlamaRotaryEmbedding,
+)
+
+from minillm import viz
+from minillm.device import pick_device
+from minillm.config import MODEL_ID, LlamaConfig
+from minillm.model import DecoderLayer
+from minillm.weights import load_checkpoint, select
+
+logging.getLogger("max").setLevel(logging.ERROR)
+warnings.filterwarnings("ignore", message="The eager interpreter failed")
+DEVICE = pick_device()  # a GPU if MAX finds one, otherwise the CPU
+
+config = LlamaConfig.from_pretrained()
+layer0 = select(load_checkpoint(), "model.layers.0.")
+</code></pre>
+<h2 id="how-to-compare-outputs"><a class="header" href="#how-to-compare-outputs">How to compare outputs</a></h2>
+<p>One number is not enough. MAX’s test harness reports three:</p>
+<ul>
+<li>The maximum absolute error catches any single element that is far off.</li>
+<li>The mean absolute error is the typical error, which tells a few outliers
+from a systematic drift.</li>
+<li>The cosine distance, \(1 - \cos\theta\) between the flattened outputs, is
+near 0 when the outputs point the same way even if their scale differs
+slightly, and large for a structural bug such as a wrong head layout.</li>
+</ul>
+<p>A test passes when the outputs are <code>allclose</code>, within an absolute and a
+relative tolerance, and the cosine distance is below a threshold.</p>
+<pre><code class="language-python">from __future__ import annotations
+
+from dataclasses import dataclass
+
+import numpy as np
+
+
+@dataclass
+class CorrectnessResult:
+    """How far an output is from its reference, as MAX's layer tests report it."""
+
+    label: str
+    mae: float
+    max_abs_err: float
+    cos_dist: float
+    passed: bool
+
+    def __str__(self) -&gt; str:
+        status = "pass" if self.passed else "FAIL"
+        return (
+            f"{self.label:16} mae {self.mae:.1e}  max {self.max_abs_err:.1e}  "
+            f"cos dist {self.cos_dist:.1e}  {status}"
+        )
+
+
+def compare_outputs(
+    actual: np.ndarray,
+    expected: np.ndarray,
+    label: str = "",
+    atol: float = 1e-3,
+    rtol: float = 1e-3,
+    cos_threshold: float = 1e-5,
+) -&gt; CorrectnessResult:
+    """Compares ``actual`` with ``expected``; passes when they are allclose
+    and their cosine distance is below ``cos_threshold``."""
+    a = actual.astype(np.float64).ravel()
+    e = expected.astype(np.float64).ravel()
+    cos_dist = 1.0 - float(
+        a @ e / (np.linalg.norm(a) * np.linalg.norm(e) + 1e-12)
+    )
+    allclose = bool(np.allclose(actual, expected, atol=atol, rtol=rtol))
+    return CorrectnessResult(
+        label=label,
+        mae=float(np.mean(np.abs(a - e))),
+        max_abs_err=float(np.max(np.abs(a - e))),
+        cos_dist=cos_dist,
+        passed=allclose and cos_dist &lt; cos_threshold,
+    )
+</code></pre>
+<p><small>Saved to <code>minillm/testing.py</code>.</small></p>
+<h2 id="the-reference"><a class="header" href="#the-reference">The reference</a></h2>
+<p>Hugging Face’s <code>LlamaDecoderLayer</code> is an independent implementation of the
+same layer, in PyTorch. Its parameter names match yours, so the same
+checkpoint entries load into both. <code>"eager"</code> selects its plain attention
+code instead of a fused kernel, so the reference stays simple.</p>
+<pre><code class="language-python">hf_config = AutoConfig.from_pretrained(MODEL_ID)
+hf_config._attn_implementation = "eager"
+reference = LlamaDecoderLayer(hf_config, layer_idx=0).float().eval()
+reference.load_state_dict(
+    {name: torch.from_numpy(w.copy()) for name, w in layer0.items()}
+)
+rotary = LlamaRotaryEmbedding(hf_config)
+
+
+def reference_layer(x: np.ndarray) -&gt; np.ndarray:
+    batch, seq, _ = x.shape
+    hidden = torch.from_numpy(x)
+    positions = torch.arange(seq).expand(batch, seq)
+    mask = torch.full((seq, seq), float("-inf")).triu(1)[None, None]
+    with torch.no_grad():
+        out = reference(
+            hidden,
+            attention_mask=mask,
+            position_ids=positions,
+            position_embeddings=rotary(hidden, positions),
+        )
+    return out.numpy()
+</code></pre>
+<h2 id="compile-once-test-many-shapes"><a class="header" href="#compile-once-test-many-shapes">Compile once, test many shapes</a></h2>
+<p>MAX’s harness separates <em>static</em> parameters, which fix the graph (here, the
+layer’s sizes), from <em>dynamic</em> ones, which vary per run (batch size and
+sequence length). Compile once with symbolic dimensions, then run every
+shape through the same compiled layer. The shapes cover the edges: a single
+token (a decode step), odd lengths, a batch, and a long prefill.</p>
+<pre><code class="language-python">def compiled_layer(layer_class=DecoderLayer, weights=layer0, cfg=config):
+    with F.lazy(), default_device(DEVICE), default_dtype(DType.float32):
+        layer = layer_class(cfg)
+    layer.load_state_dict(weights)
+    return layer.compile(
+        TensorType(
+            DType.float32, ("batch", "seq_len", cfg.hidden_size), device=DEVICE
+        )
+    )
+
+
+SHAPES = [(1, 1), (1, 7), (2, 33), (1, 512)]
+
+
+def check(run, shapes=SHAPES) -&gt; list:
+    rng = np.random.default_rng(0)
+    results = []
+    for batch, seq in shapes:
+        x = rng.standard_normal((batch, seq, config.hidden_size)).astype(
+            np.float32
+        )
+        actual = run(Tensor(x, device=DEVICE)).to_numpy()
+        results.append(
+            compare_outputs(
+                actual, reference_layer(x), label=f"batch {batch}, seq {seq}"
+            )
+        )
+    return results
+
+
+correct = check(compiled_layer())
+for result in correct:
+    print(result)
+assert all(r.passed for r in correct)
+</code></pre>
+<pre><code class="language-text">batch 1, seq 1   mae 2.7e-07  max 2.9e-06  cos dist 2.4e-14  pass
+batch 1, seq 7   mae 6.5e-07  max 1.7e-05  cos dist 1.9e-13  pass
+batch 2, seq 33  mae 7.0e-07  max 2.1e-05  cos dist 1.9e-13  pass
+batch 1, seq 512 mae 7.1e-07  max 3.8e-05  cos dist 2.0e-13  pass
+</code></pre>
+<p>Every shape passes, with maximum errors of <code>4e-5</code> or less and cosine
+distances near zero.</p>
+<h2 id="a-test-must-be-able-to-fail"><a class="header" href="#a-test-must-be-able-to-fail">A test must be able to fail</a></h2>
+<p>A test that never fails proves nothing, so check that this one catches a real
+bug. A plausible one is a config read wrong, with the base of RoPE
+(<a href="01_04_building_blocks.html">Section 1.4</a>) at Llama 2’s
+<code>10000</code> instead of SmolLM2’s <code>100000</code>:</p>
+<pre><code class="language-python">from dataclasses import replace
+
+buggy = compiled_layer(cfg=replace(config, rope_theta=10000.0))
+buggy_results = check(buggy)
+for result in buggy_results:
+    print(result)
+assert not all(r.passed for r in buggy_results)
+</code></pre>
+<pre><code class="language-text">batch 1, seq 1   mae 2.7e-07  max 2.9e-06  cos dist 2.4e-14  pass
+batch 1, seq 7   mae 4.9e-04  max 6.6e-03  cos dist 1.2e-07  FAIL
+batch 2, seq 33  mae 2.2e-03  max 1.3e-01  cos dist 2.3e-06  FAIL
+batch 1, seq 512 mae 5.0e-03  max 2.3e-01  cos dist 1.1e-05  FAIL
+</code></pre>
+<pre><code class="language-python">labels = [r.label for r in correct]
+fig = go.Figure(
+    [
+        go.Bar(
+            x=labels,
+            y=[r.max_abs_err for r in results],
+            name=name,
+            marker_color=color,
+            hovertemplate="%{x}: max error %{y:.1e}&lt;extra&gt;" + name + "&lt;/extra&gt;",
+        )
+        for name, results, color in [
+            ("correct layer", correct, viz.BLUE),
+            ("rope_theta = 10000", buggy_results, viz.ORANGE),
+        ]
+    ]
+)
+fig.update_layout(
+    title="Max absolute error against Hugging Face, per shape",
+    barmode="group",
+    height=400,
+    yaxis=dict(title="max |error| (log scale)", type="log", dtick=1),
+)
+viz.show(fig)
+</code></pre>
+<div class="plotly-figure" data-src="generated/04_01_layer_tests_11_0.json"></div>
+<p>The single-token case still passes: at position 0, RoPE doesn’t rotate at
+all, so the bug can’t show there. Every longer input fails. The maximum
+error grows by two to four orders of magnitude and breaks the <code>allclose</code>
+check. The cosine distance grows by six to eight orders of magnitude, but it
+crosses its <code>1e-5</code> threshold only on the 512-token input. The two checks
+catch different bugs, which is why the test uses both, and why the shape
+list must include sequences, not just one token.</p>
+<p>Where in the sequence does the bug show? Run the 512-token input through
+both layers and plot the largest error at each position:</p>
+<pre><code class="language-python">x = (
+    np.random.default_rng(1)
+    .standard_normal((1, 512, config.hidden_size))
+    .astype(np.float32)
+)
+expected = reference_layer(x)[0]
+per_position = {
+    name: np.abs(run(Tensor(x, device=DEVICE)).to_numpy()[0] - expected).max(-1)
+    for name, run in [
+        ("correct layer", compiled_layer()),
+        ("rope_theta = 10000", buggy),
+    ]
+}
+fig = go.Figure(
+    [
+        go.Scatter(
+            x=np.arange(512),
+            y=np.maximum(err, 1e-9),
+            name=name,
+            mode="lines",
+            line_color=color,
+            hovertemplate="position %{x}: %{y:.1e}&lt;extra&gt;" + name + "&lt;/extra&gt;",
+        )
+        for (name, err), color in zip(
+            per_position.items(), [viz.BLUE, viz.ORANGE]
+        )
+    ]
+)
+fig.update_layout(
+    title="Largest error at each position of a 512-token input",
+    height=400,
+    xaxis_title="position",
+    yaxis=dict(title="max |error| (log scale)", type="log", dtick=1),
+)
+viz.show(fig)
+</code></pre>
+<div class="plotly-figure" data-src="generated/04_01_layer_tests_13_0.json"></div>
+<p>At position 0 the two layers agree, because RoPE doesn’t rotate there.
+Within a few positions the buggy layer’s error is three to four orders of
+magnitude larger, and it stays there for the whole sequence, while the
+correct layer’s error stays near <code>1e-5</code>. A test that only ran one token
+would have passed both.</p>
+<h2 id="as-a-pytest-file"><a class="header" href="#as-a-pytest-file">As a pytest file</a></h2>
+<p>In a repository, these checks belong in a test file that runs on every
+change. <code>%%writefile</code> saves a cell as a file. The test compiles the layer
+once per module, as MAX’s own tests do, and checks every shape:</p>
+<pre><code class="language-python">%%writefile test_decoder_layer.py
+import numpy as np
+import pytest
+import torch
+from max.dtype import DType
+from max.tensor import Tensor, default_device, default_dtype
+from max.tensor.tensor import TensorType
+from transformers import AutoConfig
+from transformers.models.llama.modeling_llama import LlamaDecoderLayer, LlamaRotaryEmbedding
+
+from minillm.config import MODEL_ID, LlamaConfig
+from minillm.device import pick_device
+from minillm.model import DecoderLayer
+from minillm.testing import compare_outputs
+from minillm.weights import load_checkpoint, select
+
+CONFIG = LlamaConfig.from_pretrained()
+
+
+@pytest.fixture(scope="module")
+def layers():
+    weights = select(load_checkpoint(), "model.layers.0.")
+    with default_device(pick_device()), default_dtype(DType.float32):
+        ours = DecoderLayer(CONFIG)
+    ours.load_state_dict(weights)
+    compiled = ours.compile(
+        TensorType(DType.float32, ("batch", "seq_len", CONFIG.hidden_size), device=pick_device())
+    )
+    hf_config = AutoConfig.from_pretrained(MODEL_ID)
+    hf_config._attn_implementation = "eager"
+    reference = LlamaDecoderLayer(hf_config, layer_idx=0).float().eval()
+    reference.load_state_dict({k: torch.from_numpy(v.copy()) for k, v in weights.items()})
+    return compiled, reference, LlamaRotaryEmbedding(hf_config)
+
+
+@pytest.mark.parametrize("batch, seq", [(1, 1), (1, 7), (2, 33)])
+def test_decoder_layer_matches_reference(layers, batch, seq):
+    compiled, reference, rotary = layers
+    x = np.random.default_rng(seq).standard_normal((batch, seq, CONFIG.hidden_size)).astype(np.float32)
+    hidden, positions = torch.from_numpy(x), torch.arange(seq).expand(batch, seq)
+    mask = torch.full((seq, seq), float("-inf")).triu(1)[None, None]
+    with torch.no_grad():
+        expected = reference(hidden, attention_mask=mask, position_ids=positions,
+                             position_embeddings=rotary(hidden, positions)).numpy()
+    result = compare_outputs(compiled(Tensor(x, device=pick_device())).to_numpy(), expected)
+    assert result.passed, result
+</code></pre>
+<pre><code class="language-text">Overwriting test_decoder_layer.py
+</code></pre>
+<pre><code class="language-python">!python -m pytest -q -p no:cacheprovider test_decoder_layer.py 2&gt;&amp;1 | tail -n 3
+</code></pre>
+<pre><code class="language-text">...                                                                      [100%]
+3 passed in 4.34s
+</code></pre>
+<p>MAX’s own layer tests follow the same shape, with one more step: each harness
+also <em>benchmarks</em> the layer on the same shapes, so correctness and speed are
+measured together.
+<a href="04_03_kernel_benchmarks.html">Section 4.3</a> covers
+benchmarking.</p>
+<h2 id="exercises"><a class="header" href="#exercises">Exercises</a></h2>
+<ol>
+<li>Add a <code>bfloat16</code> run: cast the input and the weights, and compare with the
+<code>float32</code> reference. Which tolerances do you need, and which metric moves
+most?</li>
+<li>Test <code>CachedAttention</code> from
+<a href="01_08_kv_cache.html">Section 1.8</a>: compare a prefill
+of 8 tokens followed by one decode step with a single 9-token pass.</li>
+<li>Plant a different bug, such as swapping <code>gate_proj</code> and <code>up_proj</code>. Which
+metric catches it first?</li>
+</ol>
+<h2 id="next"><a class="header" href="#next">Next</a></h2>
+<p><a href="04_02_logit_verification.html">Section 4.2</a> tests the
+whole model: its logits on real prompts, against the same reference.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="ch04.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="04_02_logit_verification.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="ch04.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="04_02_logit_verification.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="theme/code-highlighting.js"></script>
+        <script src="theme/sidebar.js"></script>
+        <script src="theme/init-amplitude.js"></script>
+        <script src="theme/warning.js"></script>
+        <script src="theme/plotly-figures.js"></script>
+
+
+    </div>
+    </body>
+</html>

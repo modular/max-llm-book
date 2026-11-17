@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Introduction - Build an LLM from scratch with MAX</title>
+        <title>Introduction - Build and serve an LLM with MAX</title>
 
 
         <!-- Custom HTML head -->
@@ -47,7 +47,7 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
 
-        <meta name="description" content="This guide walks you through implementing GPT-2 using Modular’s MAX framework.">
+        <meta name="description" content="Go from zero to serving: run a small LLM with MAX, rebuild it from scratch with max.nn and max.functional, then add sampling, a KV cache, batching and your own server.">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
@@ -139,12 +139,6 @@
                 theme = newTheme
                 localStorage.setItem('mdbook-theme', theme);
             }, false);
-            document.addEventListener('click', function() {
-                if (!event.target.matches('.log-in')) return;
-                event.preventDefault();
-                window.amplitude.logEvent('LoginClickedFromGPT2Tutorial');
-                window.open('https://developer.modular.com', '_blank');
-            });
         </script>
 
         <div class="page-header">
@@ -197,79 +191,178 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="build-an-llm-from-scratch-in-max"><a class="header" href="#build-an-llm-from-scratch-in-max">Build an LLM from scratch in MAX</a></h1>
-<p>Transformer models power today’s most impactful AI applications, from language
-models like ChatGPT to code generation tools like GitHub Copilot. If you want
-to understand what’s actually happening when you call an inference API, or you
-need to adapt one of these models for your own work, building one from scratch
-is the fastest path to that understanding.</p>
-<p>This guide walks you through a complete GPT-2 implementation using the
-<a href="https://max.modular.com/api/python/">MAX Python API</a>. You’ll start by
-running a working model, then build it component by component: embeddings,
-attention, feed-forward layers, and the serving layer that connects it all.
-Everything runs from the
-<a href="https://github.com/modular/max-llm-book">GitHub repository</a>.</p>
-<h2 id="why-gpt-2"><a class="header" href="#why-gpt-2">Why GPT-2?</a></h2>
-<p>It’s the architectural foundation for modern language models. LLaMA, Mistral,
-GPT-4; they’re all built on the same core components you’ll find here:</p>
+                        <h1 id="build-and-serve-an-llm-with-max"><a class="header" href="#build-and-serve-an-llm-with-max">Build and serve an LLM with MAX</a></h1>
+<p>This book takes you from zero to serving your own language model with
+<a href="https://max.modular.com/">MAX</a>, Modular’s framework for AI inference. You
+start by running a real model in three lines of Python. Then you rebuild
+that model from scratch, check every part against MAX’s own implementation,
+and go on to the techniques that production inference engines use:
+distributing a model across devices, writing your own Mojo kernels, testing
+and benchmarking, building a serving engine, bringing up newer models, and
+serving your own architecture.</p>
+<h2 id="why-this-book"><a class="header" href="#why-this-book">Why this book</a></h2>
+<p>Most explanations of LLM inference stop at diagrams, and most inference
+engines are too large to read. This book sits between the two. You write
+every piece yourself, small enough to read in one sitting, and you run it on
+a real model so that each claim is a number you measured: the logits match
+the reference, the KV cache makes decoding flat, batching raises
+throughput.</p>
+<p>You do it with MAX’s own APIs, the same ones its production models use, so
+what you learn carries over directly:</p>
 <ul>
-<li>multi-head attention</li>
-<li>feed-forward layers</li>
-<li>layer normalization</li>
+<li><code>max.pipelines</code>: <code>AutoPipeline</code>, <code>AutoModel</code>, and <code>AutoTokenizer</code> for
+running models from Python.</li>
+<li><code>max.tensor</code> and <code>max.functional</code>: tensors and operations that run eagerly,
+like NumPy, and compile into fast graphs.</li>
+<li><code>max.nn</code>: modules and layers for building models.</li>
+<li>Mojo custom ops: kernels you write yourself and call from Python.</li>
+<li><code>max.graph</code>: the graph API that <code>compile</code> builds on, for full control.</li>
+<li><code>max serve</code>, <code>max generate</code>, and <code>max benchmark</code>: the command-line tools
+for serving, testing, and measuring models.</li>
 </ul>
-<p>Modern variants add refinements like grouped-query attention or mixture of
-experts, but the fundamentals remain the same. GPT-2 is complex enough to teach
-real transformer architecture but simple enough to implement completely and
-understand deeply. When you grasp how its pieces fit together, you understand
-how to build any transformer-based model.</p>
-<h2 id="why-max"><a class="header" href="#why-max">Why MAX?</a></h2>
-<p>Building a model for inference typically means a separate tool for each stage:
-one framework for model definition, another for optimization, another for
-serving. Each handoff is another thing to learn and another place for things
-to break.</p>
-<p>MAX handles all of it in one Python API. You define the model, load weights,
-run inference, and serve with <code>max serve</code>, all in the same environment.</p>
-<p>The GPT-2 implementation in this guide loads pretrained weights from Hugging
-Face, implements the architecture, and serves text generation, all in that same
-environment.</p>
-<h2 id="how-to-read-this-book"><a class="header" href="#how-to-read-this-book">How to read this book</a></h2>
-<p>You’ll start by serving GPT-2 with MAX, getting a working model running before
-you write a line of model code. From there, you’ll build the transformer block
-component by component, assemble those components into the full model, and
-finish by learning how inference and serving work with <code>max serve</code>.</p>
-<div class="note">
-<p><strong>Interactive companion notebook</strong> — prefer to learn by running code? Open
-<code>notebooks/tutorial.ipynb</code> with <code>pixi run notebook</code>. Each section maps to a
-chapter here: you can inspect real tensor shapes, see activation visualizations,
-and generate text from pretrained weights, all without leaving JupyterLab. Read
-the chapters for the why; run the notebook for the how.</p>
+<p>Every section is a notebook with interactive figures you can hover, zoom,
+and slide through, and every notebook checks its own results.</p>
+<h2 id="the-model"><a class="header" href="#the-model">The model</a></h2>
+<p>The book uses
+<a href="https://huggingface.co/HuggingFaceTB/SmolLM2-135M-Instruct">SmolLM2-135M-Instruct</a>.
+It is a real chat model, small enough to run on a laptop CPU, and it uses the
+Llama architecture that most open models share: RMSNorm, rotary position
+embeddings, grouped-query attention, and a SwiGLU MLP. What you build for it
+applies to Llama, Qwen, Mistral, and their relatives, and <a href="./ch06.html">Chapter 6</a>
+extends it to Qwen3, Gemma 3, and mixture-of-experts models.</p>
+<h2 id="get-started"><a class="header" href="#get-started">Get started</a></h2>
+<div class="callout">
+<p class="callout-title">Check your hardware first</p>
+<p>Before you install anything, check that MAX supports your machine and GPU
+in the
+<a href="https://max.modular.com/system-requirements/">MAX
+system requirements</a>. MAX runs on Linux and on macOS with Apple silicon.
+These notebooks need an NVIDIA GPU from the Ampere generation or newer; on
+an older one, such as a T4 or P100, they run on the CPU instead.</p>
 </div>
-<div class="table-wrapper"><table><thead><tr><th>Chapter</th><th>What you’ll learn</th></tr></thead><tbody>
-<tr><td><a href="./setup.html">Project setup</a></td><td>Install MAX and clone the repository</td></tr>
-<tr><td><a href="./serve_first.html">Run the model</a></td><td>Serve GPT-2 and call the endpoint</td></tr>
-<tr><td><a href="./step_01.html">Model configuration</a></td><td>Define the architecture hyperparameters</td></tr>
-<tr><td><a href="./step_02.html">Feed-forward network</a></td><td>Build the position-wise MLP with GELU activation</td></tr>
-<tr><td><a href="./step_03.html">Causal masking</a></td><td>Create attention masks that prevent looking at future tokens</td></tr>
-<tr><td><a href="./step_04.html">Multi-head attention</a></td><td>Implement scaled dot-product attention with multiple heads</td></tr>
-<tr><td><a href="./step_05.html">Layer normalization</a></td><td>Stabilize activations between sub-layers</td></tr>
-<tr><td><a href="./step_06.html">Transformer block</a></td><td>Combine attention and MLP with residual connections</td></tr>
-<tr><td><a href="./step_07.html">Stack transformer blocks</a></td><td>Build the complete 12-layer GPT-2 with embeddings</td></tr>
-<tr><td><a href="./step_08.html">Language model head</a></td><td>Project hidden states to vocabulary logits</td></tr>
-<tr><td><a href="./step_09.html">Weight adaptation</a></td><td>Reconcile GPT-2’s Hugging Face checkpoint with MAX’s weight layout</td></tr>
-<tr><td><a href="./step_10.html">KV cache configuration</a></td><td>Expose attention dimensions for cache pre-allocation</td></tr>
-<tr><td><a href="./step_11.html">Pipeline model</a></td><td>Load, compile, and execute the model inside <code>max serve</code></td></tr>
-<tr><td><a href="./step_12.html">Architecture registration</a></td><td>Declare the package to <code>max serve</code> and wire all pieces together</td></tr>
+<p>You can run the notebooks in Colab or Kaggle with nothing installed, or on
+your own machine.</p>
+<h3 id="in-colab-or-kaggle"><a class="header" href="#in-colab-or-kaggle">In Colab or Kaggle</a></h3>
+<p>Every section page starts with Open in Colab and Open in Kaggle buttons. The
+first cell of every notebook installs what the notebook needs, so run the cells
+in order from the top:</p>
+<pre><code class="language-python"># The setup cell, shortened: it installs MAX and this book's package
+# with uv, but only if they're missing.
+if importlib.util.find_spec("max") is None:
+    uv_install("max[all]")  # from https://whl.modular.com/nightly/simple/
+if importlib.util.find_spec("minillm") is None:
+    uv_install("git+https://github.com/modular/max-llm-book@main")
+</code></pre>
+<p><code>max[all]</code> is the MAX package with everything the book uses: the Python
+APIs, the <code>max</code> and <code>mojo</code> commands, serving, and the Jupyter <code>%%mojo</code>
+magic. <code>minillm</code> is the package you build in the book, installed so that
+later sections can import what earlier ones wrote.</p>
+<p>Choose the runtime before you run the first cell:</p>
+<ul>
+<li>In Colab, the CPU runtime works for every notebook. For a GPU, choose an
+L4 or A100 runtime. MAX’s matrix multiplication needs an NVIDIA GPU from
+the Ampere generation or later, so on a T4 runtime the setup cell hides
+the GPU and the notebook runs on the CPU.</li>
+<li>In Kaggle, turn on Internet in the notebook settings so that the setup
+cell can download packages. Kaggle’s GPUs, the T4 and the P100, are older
+than Ampere, so the notebooks run on the CPU there.</li>
+</ul>
+<h3 id="on-your-own-machine"><a class="header" href="#on-your-own-machine">On your own machine</a></h3>
+<p>Install with pixi or uv, on a machine that meets the
+<a href="https://max.modular.com/system-requirements/">system requirements</a>.</p>
+<p>With <a href="https://pixi.sh">pixi</a>, which installs Python, MAX, and every other
+dependency into a project environment:</p>
+<ol>
+<li>
+<p>Install pixi:</p>
+<pre><code class="language-bash">curl -fsSL https://pixi.sh/install.sh | sh
+</code></pre>
+</li>
+<li>
+<p>Clone the book:</p>
+<pre><code class="language-bash">git clone https://github.com/modular/max-llm-book
+cd max-llm-book
+</code></pre>
+</li>
+<li>
+<p>Open the notebooks in JupyterLab:</p>
+<pre><code class="language-bash">pixi run notebook
+</code></pre>
+</li>
+</ol>
+<p>With <a href="https://docs.astral.sh/uv/">uv</a> and Python 3.10 or later:</p>
+<ol>
+<li>
+<p>Create and activate an environment:</p>
+<pre><code class="language-bash">uv venv --python 3.12
+source .venv/bin/activate
+</code></pre>
+</li>
+<li>
+<p>Install MAX from the nightly package index:</p>
+<pre><code class="language-bash">uv pip install --prerelease allow --index-strategy unsafe-best-match \
+  --extra-index-url https://whl.modular.com/nightly/simple/ "max[all]"
+</code></pre>
+</li>
+<li>
+<p>Clone the book and install its package, with JupyterLab:</p>
+<pre><code class="language-bash">git clone https://github.com/modular/max-llm-book
+cd max-llm-book
+uv pip install -e . jupyterlab
+</code></pre>
+</li>
+<li>
+<p>Open the notebooks:</p>
+<pre><code class="language-bash">jupyter lab notebooks
+</code></pre>
+</li>
+</ol>
+<p>Check the installation, and whether MAX found a GPU:</p>
+<pre><code class="language-bash">max --version
+python -c "from max.driver import accelerator_count; print('GPUs:', accelerator_count())"
+</code></pre>
+<p>The book uses the MAX nightly build, because some of the APIs it teaches are
+newer than the last stable release. Every notebook runs on a CPU and uses a GPU
+automatically when MAX finds a supported one.</p>
+<div class="callout">
+<p class="callout-title">About the numbers</p>
+<p>Timings, speedups, and other measurements on these pages come from one
+run on an Apple-silicon Mac with a Metal GPU. Treat them as examples. Your
+numbers depend on your hardware and vary from run to run; the notebooks
+check results, such as matching logits, that hold on every machine.</p>
+</div>
+<h2 id="chapters"><a class="header" href="#chapters">Chapters</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>Chapter</th><th>What you do</th></tr></thead><tbody>
+<tr><td><a href="./ch01.html">1. Foundations</a></td><td>Run and serve SmolLM2, then rebuild it from scratch: tensors, weights, layers, attention, the full model checked against MAX’s, sampling, and a KV cache.</td></tr>
+<tr><td><a href="./ch02.html">2. Distributed tensors</a></td><td>Shard tensors and the model across a device mesh, simulated on one machine, and check that the result doesn’t change.</td></tr>
+<tr><td><a href="./ch03.html">3. Custom ops in Mojo</a></td><td>Write a kernel in Mojo, call it from your model, and see the graph API that <code>compile</code> builds on.</td></tr>
+<tr><td><a href="./ch04.html">4. Testing and benchmarking</a></td><td>Test layers against references, verify logits, and benchmark and profile models and kernels.</td></tr>
+<tr><td><a href="./ch05.html">5. A serving engine</a></td><td>Build the core of an inference engine: continuous batching, a paged KV cache, prefix caching, and speculative decoding.</td></tr>
+<tr><td><a href="./ch06.html">6. Bigger models</a></td><td>Extend your model to Qwen3, Gemma 3, and mixture-of-experts.</td></tr>
+<tr><td><a href="./ch07.html">7. Production serving</a></td><td>Serve your own architecture with <code>max serve</code>, benchmark it, use structured output and tools, and call state-of-the-art open models on <a href="https://www.modular.com/">Modular’s cloud</a>.</td></tr>
 </tbody></table>
 </div>
-<p>The code is pre-written in the repository. Training is not in scope.</p>
-<p>Start with <a href="./setup.html">Project setup</a> to get your environment ready.</p>
+<p>Read the chapters in order the first time: each section builds on code from
+earlier ones, which the <code>minillm</code> package collects for you.</p>
+<h2 id="the-handbook"><a class="header" href="#the-handbook">The handbook</a></h2>
+<p>The <a href="https://handbook.modular.com/">Modular handbook</a> explains how LLM
+inference works in production: metrics, batching, KV cache management,
+quantization, and GPU kernels. This book is its hands-on companion. Each
+section links the handbook pages for the ideas it implements, so you can
+read the concept and then build it.</p>
+<h2 id="prerequisites"><a class="header" href="#prerequisites">Prerequisites</a></h2>
+<p>You should be comfortable with Python and NumPy-style array code. Knowing
+what a neural network layer is helps; the book explains everything specific
+to transformers as it goes. <a href="./06_02_gemma3.html">Section 6.2</a> uses Gemma 3,
+whose weights require you to accept Google’s license on Hugging Face and log
+in with <code>hf auth login</code>.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
 
-                            <a rel="next prefetch" href="setup.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="ch01.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -280,7 +373,7 @@ the chapters for the why; run the notebook for the how.</p>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
 
-                    <a rel="next prefetch" href="setup.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="ch01.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
@@ -308,6 +401,7 @@ the chapters for the why; run the notebook for the how.</p>
         <script src="theme/sidebar.js"></script>
         <script src="theme/init-amplitude.js"></script>
         <script src="theme/warning.js"></script>
+        <script src="theme/plotly-figures.js"></script>
 
 
     </div>

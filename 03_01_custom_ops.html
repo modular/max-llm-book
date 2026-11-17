@@ -1,0 +1,576 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>3.1 Your first custom op - Build and serve an LLM with MAX</title>
+
+
+        <!-- Custom HTML head -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap"
+            rel="stylesheet">
+        
+        <link rel="stylesheet" href="theme/css/custom.css">
+        <link rel="stylesheet" href="theme/css/highlight.css">
+        <link rel="stylesheet" id="theme">
+        
+        <!-- Additional meta tags -->
+        <meta property="og:title" content="Build an LLM from scratch with MAX">
+        <meta property="og:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
+        <meta property="og:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
+        <meta property="og:url" content="https://llm.modular.com/">
+        <meta name="twitter:card" content="summary">
+        <meta name="twitter:image:alt" content="MAX Docs">
+        <meta name="twitter:title" content="Build an LLM from scratch with MAX">
+        <meta name="twitter:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
+        <meta name="twitter:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
+        <link rel="icon" type="image/png" href="https://llm.modular.com/assets/icons/m-dark.svg">
+        <script>
+          !function(){var i="cioanalytics", analytics=(window[i]=window[i]||[]);if(!analytics.initialize)if(analytics.invoked)window.console&&console.error&&console.error("Snippet included twice.");else{analytics.invoked=!0;analytics.methods=["trackSubmit","trackClick","trackLink","trackForm","pageview","identify","reset","group","track","ready","alias","debug","page","once","off","on","addSourceMiddleware","addIntegrationMiddleware","setAnonymousId","addDestinationMiddleware"];analytics.factory=function(e){return function(){var t=Array.prototype.slice.call(arguments);t.unshift(e);analytics.push(t);return analytics}};for(var e=0;e<analytics.methods.length;e++){var key=analytics.methods[e];analytics[key]=analytics.factory(key)}analytics.load=function(key,e){var t=document.createElement("script");t.type="text/javascript";t.async=!0;t.setAttribute('data-global-customerio-analytics-key', i);t.src="https://cdp.customer.io/v1/analytics-js/snippet/" + key + "/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(t,n);analytics._writeKey=key;analytics._loadOptions=e};analytics.SNIPPET_VERSION="4.15.3";
+            analytics.load(
+              "c5c8ad95a28930735be9",
+              {
+                "integrations": {
+                    "Customer.io In-App Plugin": {
+                        anonymousInApp: true
+                    }
+                }
+              }
+            );
+            analytics.page();
+          }}();
+        </script>
+
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+
+        <meta name="description" content="Go from zero to serving: run a small LLM with MAX, rebuild it from scratch with max.nn and max.functional, then add sampling, a KV cache, batching and your own server.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/css/custom.css">
+        <link rel="stylesheet" href="theme/css/highlight.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "ayu";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc.js"></script>
+    </head>
+    <body>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden" checked>
+        <button id="vertical-sidebar-toggle" class="vertical-sidebar-toggle" aria-label="Toggle sidebar"></button>
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <button class="collapse-sidebar" aria-label="Collapse sidebar"></button>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Toggle color mode and talk to us buttons -->
+        <script>
+            document.addEventListener('click', function (event) {
+                if (!event.target.matches('.theme-toggle')) return;
+                event.preventDefault();
+                const prevTheme = theme;
+                html.classList.remove(theme);
+                const newTheme = prevTheme === 'ayu' ? 'light' : 'ayu'
+                html.classList.add(newTheme);
+                theme = newTheme
+                localStorage.setItem('mdbook-theme', theme);
+            }, false);
+        </script>
+
+        <div class="page-header">
+            <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                <i class="fa fa-bars"></i>
+            </label>
+            <div id="menu-bar" class="menu-bar">
+                <div class="left-buttons">
+                    <div class="logo-section">
+                        <a class="desktop-logo-link" href="https://modular.com"></a>
+                        <a class="mobile-logo-link" href="https://builds.modular.com"></a>
+                        <div class="slash">/</div>
+                        <a class="internal-link" href="">MAX LLM</a>
+                    </div>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Dark</button></li>
+                        </ul>
+                    </div>
+                <div class="right-buttons">
+                    <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                        <i class="fa fa-search"></i>
+                    </button>
+                    <button id="theme-toggle" class="icon-button theme-toggle-btn" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="false" aria-expanded="false">
+                        <i class="theme-toggle"></i>
+                    </button>
+                    <a class="menu-btn print" href="print.html" title="Print this book" aria-label="Print this book">
+                        <i id="print-button" class="fa fa-print"></i>
+                    </a>
+                    <a class="menu-btn" href="https://github.com/modular/max-llm-book" title="Git repository" aria-label="Git repository">
+                        <i id="git-repository-button" class="fa fa-github"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-wrapper" class="page-wrapper">
+            <div class="page">
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="31-your-first-custom-op"><a class="header" href="#31-your-first-custom-op">3.1 Your first custom op</a></h1>
+<p><a href="https://colab.research.google.com/github/modular/max-llm-book/blob/main/notebooks/03_01_custom_ops.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab" /></a>
+<a href="https://kaggle.com/kernels/welcome?src=https://github.com/modular/max-llm-book/blob/main/notebooks/03_01_custom_ops.ipynb"><img src="https://kaggle.com/static/images/open-in-kaggle.svg" alt="Open in Kaggle" /></a>
+<a href="https://github.com/modular/max-llm-book/blob/main/notebooks/03_01_custom_ops.ipynb"><img src="https://img.shields.io/badge/GitHub-notebook-black?logo=github" alt="View on GitHub" /></a></p>
+<p>MAX’s operations, from <code>F.silu</code> to flash attention, run kernels written in Mojo.
+You can write your own the same way, compile it from a notebook cell, and call
+it from Python like any other MAX operation. This section writes a fused SwiGLU
+kernel, the <code>silu(gate) * up</code> inside SmolLM2’s MLP from
+<a href="01_04_building_blocks.html">Section 1.4</a>, tests it,
+runs it inside your full model, and measures whether it helps.</p>
+<pre><code class="language-python">import logging
+import time
+import warnings
+from pathlib import Path
+
+import numpy as np
+import plotly.graph_objects as go
+from max import functional as F
+from max.driver import CPU
+from max.dtype import DType
+from max.pipelines import AutoTokenizer
+from max.tensor import Tensor, default_device, default_dtype
+from max.tensor.tensor import TensorType
+from plotly.subplots import make_subplots
+
+from minillm import viz
+from minillm.device import pick_device
+from minillm.config import MODEL_ID, LlamaConfig
+from minillm.layers import MLP
+from minillm.model import load_model
+from minillm.weights import load_checkpoint
+
+logging.getLogger("max").setLevel(logging.ERROR)
+warnings.filterwarnings("ignore", message="The eager interpreter failed")
+DEVICE = pick_device()  # a GPU if MAX finds one, otherwise the CPU
+</code></pre>
+<h2 id="write-the-kernel"><a class="header" href="#write-the-kernel">Write the kernel</a></h2>
+<p><code>import mojo.notebook</code> adds a <code>%%mojo</code> cell magic to Jupyter. A cell that
+starts with <code>%%mojo package -o kernels.mojoc</code> compiles its Mojo code into a
+package that MAX can load.</p>
+<pre><code class="language-python">import mojo.notebook
+</code></pre>
+<p>The simplest kind of custom op is <em>elementwise</em>: each output element depends
+only on the input elements at the same position. You write a struct with one
+static <code>elementwise</code> method that maps input vectors to an output vector, and
+MAX handles everything else: splitting the work across threads, loading and
+storing memory, and choosing CPU or GPU code.</p>
+<ul>
+<li><code>@extensibility.register("swiglu")</code> names the op; Python calls it by
+this name.</li>
+<li><code>ElementwiseBinaryOp</code> declares the shape of the method: two inputs, one
+output, all of one dtype.</li>
+<li><code>SIMD[dtype, width]</code> is a vector of <code>width</code> values. MAX picks the width that
+fills the hardware’s vector registers, so one call processes several
+elements at once.</li>
+<li><code>comptime assert</code> runs at compile time and rejects integer dtypes, for
+which <code>exp</code> is undefined.</li>
+</ul>
+<p>SiLU is \(x \cdot \sigma(x) = x / (1 + e^{-x})\):</p>
+<pre><code class="language-mojo">%%mojo package -o kernels.mojoc
+import extensibility
+from extensibility import ElementwiseBinaryOp
+from std.math import exp
+
+
+@extensibility.register("swiglu")
+struct SwiGLU(ElementwiseBinaryOp):
+    @staticmethod
+    def elementwise[
+        dtype: DType, width: SIMDLength
+    ](gate: SIMD[dtype, width], up: SIMD[dtype, width]) -&gt; SIMD[dtype, width]:
+        comptime assert dtype.is_floating_point(), "SwiGLU needs floats"
+        return gate / (1 + exp(-gate)) * up
+</code></pre>
+<h2 id="call-it-from-python"><a class="header" href="#call-it-from-python">Call it from Python</a></h2>
+<p><code>F.custom</code> calls a custom op by name on eager tensors. It needs the device to
+run on, the inputs, the type of each output (here, the same as <code>gate</code>’s), and
+the package to load the kernel from:</p>
+<pre><code class="language-python">KERNELS = Path("kernels.mojoc").resolve()
+
+
+def swiglu(gate: Tensor, up: Tensor) -&gt; Tensor:
+    return F.custom(
+        "swiglu",
+        device=gate.device,
+        values=[gate, up],
+        out_types=[gate.type],
+        custom_extensions=KERNELS,
+    )[0]
+
+
+rng = np.random.default_rng(0)
+g = rng.standard_normal((4, 8)).astype(np.float32)
+u = rng.standard_normal((4, 8)).astype(np.float32)
+result = swiglu(Tensor(g, device=DEVICE), Tensor(u, device=DEVICE))
+print(result.to_numpy()[0, :4])
+print(F.silu(Tensor(g, device=DEVICE)).to_numpy()[0, :4] * u[0, :4])
+</code></pre>
+<pre><code class="language-text">[-0.01063813 -0.03336792  0.09002377  0.01961606]
+[-0.01063813 -0.03336792  0.09002377  0.01961606]
+</code></pre>
+<h2 id="test-it"><a class="header" href="#test-it">Test it</a></h2>
+<p>A kernel needs the same tests as any other code, against a reference you
+trust. Check shapes that don’t divide evenly into vectors, a single element,
+and inputs extreme enough to overflow <code>exp</code>:</p>
+<pre><code class="language-python">def reference(g: np.ndarray, u: np.ndarray) -&gt; np.ndarray:
+    return g / (1 + np.exp(-g.astype(np.float64))) * u
+
+
+cases = {
+    "1 element": (1,),
+    "odd length": (1, 7, 1001),
+    "model size": (2, 32, 1536),
+}
+for name, shape in cases.items():
+    g = rng.standard_normal(shape).astype(np.float32) * 4
+    u = rng.standard_normal(shape).astype(np.float32)
+    out = swiglu(Tensor(g, device=DEVICE), Tensor(u, device=DEVICE)).to_numpy()
+    print(f"{name:12} max error {np.abs(out - reference(g, u)).max():.1e}")
+    assert np.allclose(out, reference(g, u), rtol=1e-4, atol=1e-5)
+
+extremes = np.array([-100.0, -20.0, 0.0, 20.0, 100.0], np.float32)
+out = swiglu(
+    Tensor(extremes, device=DEVICE),
+    Tensor(np.ones(5, np.float32), device=DEVICE),
+)
+print("extremes:", out.to_numpy())
+assert np.isfinite(out.to_numpy()).all()
+</code></pre>
+<pre><code class="language-text">1 element    max error 1.0e-08
+odd length   max error 1.8e-06
+model size   max error 3.0e-06
+extremes: [-0.0000000e+00 -4.1223068e-08  0.0000000e+00  2.0000000e+01
+  1.0000000e+02]
+</code></pre>
+<p>Sweep the input to see the whole function and its error. With <code>up</code> set to
+ones, the op is SiLU itself:</p>
+<pre><code class="language-python">sweep = np.linspace(-12, 12, 481, dtype=np.float32)
+ones = np.ones_like(sweep)
+ours = swiglu(
+    Tensor(sweep, device=DEVICE), Tensor(ones, device=DEVICE)
+).to_numpy()
+error = np.abs(ours - reference(sweep, ones))
+
+fig = make_subplots(
+    rows=2,
+    cols=1,
+    shared_xaxes=True,
+    vertical_spacing=0.08,
+    row_heights=[0.6, 0.4],
+)
+fig.add_trace(
+    go.Scatter(
+        x=sweep,
+        y=ours,
+        name="your kernel",
+        line_color=viz.BLUE,
+        hovertemplate="silu(%{x:.2f}) = %{y:.4f}&lt;extra&gt;&lt;/extra&gt;",
+    ),
+    row=1,
+    col=1,
+)
+fig.add_trace(
+    go.Scatter(
+        x=sweep,
+        y=np.maximum(error, 1e-12),
+        name="error against float64 NumPy",
+        line_color=viz.ORANGE,
+        hovertemplate="%{x:.2f}: error %{y:.1e}&lt;extra&gt;&lt;/extra&gt;",
+    ),
+    row=2,
+    col=1,
+)
+fig.update_yaxes(title_text="output", row=1, col=1)
+fig.update_yaxes(title_text="absolute error", type="log", dtick=1, row=2, col=1)
+fig.update_xaxes(title_text="gate", row=2, col=1)
+fig.update_layout(title="The swiglu op with up = 1", height=520)
+viz.show(fig)
+</code></pre>
+<div class="plotly-figure" data-src="generated/03_01_custom_ops_12_0.json"></div>
+<p>The error stays at the scale of <code>float32</code> rounding, about \(10^{-7}\) of the
+output or less, across the whole range.</p>
+<p>At \(-100\), \(e^{100}\) overflows <code>float32</code> to infinity, and \(-100 / \infty\) is
+\(-0\), the correct limit. A different but equivalent formula, such as
+<code>gate * exp(gate) / (1 + exp(gate))</code>, would compute \(\infty / \infty\) and
+return NaN at \(+100\). Tests with extreme inputs catch this kind of bug.</p>
+<h2 id="use-it-in-your-model"><a class="header" href="#use-it-in-your-model">Use it in your model</a></h2>
+<p><code>FusedMLP</code> is the MLP from
+<a href="01_04_building_blocks.html">Section 1.4</a> with the
+custom op in place of <code>F.silu(...) *</code>:</p>
+<pre><code class="language-python">class FusedMLP(MLP):
+    def forward(self, x: Tensor) -&gt; Tensor:
+        return self.down_proj(swiglu(self.gate_proj(x), self.up_proj(x)))
+
+
+config = LlamaConfig.from_pretrained()
+weights = load_checkpoint()
+model = load_model(config, weights, DEVICE)
+for layer in model.model.layers:
+    with F.lazy(), default_device(DEVICE), default_dtype(DType.float32):
+        fused = FusedMLP(config)
+    fused.load_state_dict(dict(layer.mlp.parameters))
+    layer.mlp = fused
+</code></pre>
+<p>Compile the model as before, with one addition: <code>custom_extensions</code> tells
+the compiler where to find the kernel. Then compare the logits with the
+model from <a href="01_06_full_model.html">Section 1.6</a>:</p>
+<pre><code class="language-python">token_type = TensorType(DType.int64, ("batch", "seq_len"), device=DEVICE)
+fused_model = model.compile(token_type, custom_extensions=[KERNELS])
+plain_model = load_model(config, weights, DEVICE).compile(token_type)
+
+tokenizer = AutoTokenizer(MODEL_ID)
+ids = Tensor(
+    np.array([tokenizer(["The capital of France is"])["input_ids"][0]]),
+    device=DEVICE,
+)
+fused_logits = fused_model(ids).to_numpy()
+plain_logits = plain_model(ids).to_numpy()
+print(f"max difference {np.abs(fused_logits - plain_logits).max():.1e}")
+print(
+    "next token:", repr(tokenizer.decode([int(fused_logits[0, -1].argmax())]))
+)
+assert (
+    np.abs(fused_logits - plain_logits).max() &lt; 1e-2
+    and fused_logits[0, -1].argmax() == plain_logits[0, -1].argmax()
+)
+</code></pre>
+<pre><code class="language-text">max difference 4.9e-05
+next token: ' Paris'
+</code></pre>
+<h2 id="is-it-faster"><a class="header" href="#is-it-faster">Is it faster?</a></h2>
+<p>Time a compiled MLP block with and without the custom op, on a batch of 512
+positions:</p>
+<pre><code class="language-python">with default_device(DEVICE), default_dtype(DType.float32):
+    plain_mlp = MLP(config)
+    fused_mlp = FusedMLP(config)
+fused_mlp.load_state_dict(dict(plain_mlp.parameters))
+
+block_type = TensorType(
+    DType.float32, ("batch", "seq_len", config.hidden_size), device=DEVICE
+)
+runs = {
+    "MAX ops": plain_mlp.compile(block_type),
+    "custom op": fused_mlp.compile(block_type, custom_extensions=[KERNELS]),
+}
+x = Tensor(
+    rng.standard_normal((1, 512, config.hidden_size)).astype(np.float32),
+    device=DEVICE,
+)
+times = {}
+for name, run in runs.items():
+    run(x).to_numpy()
+    times[name] = []
+    for _ in range(30):
+        start = time.perf_counter()
+        run(x).to_numpy()
+        times[name].append((time.perf_counter() - start) * 1000)
+    print(f"{name:12} median {np.median(times[name]):.2f} ms")
+
+fig = go.Figure(
+    [
+        go.Box(
+            y=ms,
+            name=name,
+            marker_color=color,
+            boxpoints="all",
+            jitter=0.4,
+            pointpos=0,
+            hovertemplate="%{y:.2f} ms&lt;extra&gt;" + name + "&lt;/extra&gt;",
+        )
+        for (name, ms), color in zip(times.items(), [viz.BLUE, viz.ORANGE])
+    ]
+)
+fig.update_layout(
+    title="A compiled MLP block on 512 positions, 30 runs each",
+    height=400,
+    yaxis=dict(title="ms", rangemode="tozero"),
+    showlegend=False,
+)
+viz.show(fig)
+</code></pre>
+<pre><code class="language-text">MAX ops      median 2.84 ms
+custom op    median 2.18 ms
+</code></pre>
+<div class="plotly-figure" data-src="generated/03_01_custom_ops_19_1.json"></div>
+<p>In the runs behind this page, on an Apple-silicon Mac with a Metal GPU, the two
+medians land within about 10 to 20% of each other, and which one is faster
+changes from run to run. Treat the output above as one example: your hardware
+will give different numbers, so measure on the hardware you serve on. There is
+little to gain because the graph compiler already fuses elementwise operations
+into their neighbors: the kernel trace in
+<a href="04_04_profiling.html">Section 4.4</a> shows <code>silu</code> and the
+multiply applied in the epilogue of a matmul, so the plain version never writes
+the activation to memory either. Most of the time goes to the three matrix
+multiplications.</p>
+<p>Write a custom op when MAX doesn’t have the operation you need, or when a better
+<em>algorithm</em> needs control that a chain of separate operations can’t express.
+Flash attention (<a href="01_05_attention.html">Section 1.5</a>) is
+the classic case: it never materializes the attention matrix, which no
+combination of separate operations can avoid. Elementwise ops written as above
+stay fusible, so the compiler can still merge them with their neighbors, and the
+same kernel runs on a GPU with no changes.</p>
+<p>Kernels that need control over threads and memory, such as a matmul or
+attention, implement an <code>execute</code> method instead, written with Mojo’s GPU
+programming model. MAX’s guide to
+<a href="https://max.modular.com/develop/build-custom-ops">building custom ops</a> shows
+the pattern, and the
+<a href="https://github.com/modular/mojo-gpu-puzzles">Mojo GPU puzzles</a> teach GPU
+programming in Mojo from first principles. The handbook’s
+<a href="https://handbook.modular.com/kernel-optimization/kernel-optimization-tools/">kernel optimization tools</a>
+page compares Mojo with CUDA and Triton, and
+<a href="https://handbook.modular.com/kernel-optimization/gpu-architecture-fundamentals/">GPU architecture fundamentals</a>
+explains what a kernel has to work with.</p>
+<h2 id="exercises"><a class="header" href="#exercises">Exercises</a></h2>
+<ol>
+<li>Write a <code>gelu_tanh</code> custom op as an <code>ElementwiseUnaryOp</code> (unary
+elementwise ops take one input) and test it against <code>F.gelu</code> with
+<code>approximate="tanh"</code>.</li>
+<li>Add a <code>float16</code> case to the tests. How large is the error, and why?</li>
+<li>Fuse more: write an op that takes <code>gate</code>, <code>up</code>, and a scale, and returns
+<code>silu(gate) * up * scale</code>. Does the timing change?</li>
+</ol>
+<h2 id="next"><a class="header" href="#next">Next</a></h2>
+<p><a href="03_02_graph_api.html">Section 3.2</a> looks underneath
+<code>compile</code>: the graph MAX builds from your module, and the graph API you can use
+to build one directly.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="ch03.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="03_02_graph_api.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="ch03.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="03_02_graph_api.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="theme/code-highlighting.js"></script>
+        <script src="theme/sidebar.js"></script>
+        <script src="theme/init-amplitude.js"></script>
+        <script src="theme/warning.js"></script>
+        <script src="theme/plotly-figures.js"></script>
+
+
+    </div>
+    </body>
+</html>

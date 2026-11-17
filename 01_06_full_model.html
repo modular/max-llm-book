@@ -1,0 +1,726 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>1.6 The full model - Build and serve an LLM with MAX</title>
+
+
+        <!-- Custom HTML head -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap"
+            rel="stylesheet">
+        
+        <link rel="stylesheet" href="theme/css/custom.css">
+        <link rel="stylesheet" href="theme/css/highlight.css">
+        <link rel="stylesheet" id="theme">
+        
+        <!-- Additional meta tags -->
+        <meta property="og:title" content="Build an LLM from scratch with MAX">
+        <meta property="og:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
+        <meta property="og:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
+        <meta property="og:url" content="https://llm.modular.com/">
+        <meta name="twitter:card" content="summary">
+        <meta name="twitter:image:alt" content="MAX Docs">
+        <meta name="twitter:title" content="Build an LLM from scratch with MAX">
+        <meta name="twitter:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
+        <meta name="twitter:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
+        <link rel="icon" type="image/png" href="https://llm.modular.com/assets/icons/m-dark.svg">
+        <script>
+          !function(){var i="cioanalytics", analytics=(window[i]=window[i]||[]);if(!analytics.initialize)if(analytics.invoked)window.console&&console.error&&console.error("Snippet included twice.");else{analytics.invoked=!0;analytics.methods=["trackSubmit","trackClick","trackLink","trackForm","pageview","identify","reset","group","track","ready","alias","debug","page","once","off","on","addSourceMiddleware","addIntegrationMiddleware","setAnonymousId","addDestinationMiddleware"];analytics.factory=function(e){return function(){var t=Array.prototype.slice.call(arguments);t.unshift(e);analytics.push(t);return analytics}};for(var e=0;e<analytics.methods.length;e++){var key=analytics.methods[e];analytics[key]=analytics.factory(key)}analytics.load=function(key,e){var t=document.createElement("script");t.type="text/javascript";t.async=!0;t.setAttribute('data-global-customerio-analytics-key', i);t.src="https://cdp.customer.io/v1/analytics-js/snippet/" + key + "/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(t,n);analytics._writeKey=key;analytics._loadOptions=e};analytics.SNIPPET_VERSION="4.15.3";
+            analytics.load(
+              "c5c8ad95a28930735be9",
+              {
+                "integrations": {
+                    "Customer.io In-App Plugin": {
+                        anonymousInApp: true
+                    }
+                }
+              }
+            );
+            analytics.page();
+          }}();
+        </script>
+
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+
+        <meta name="description" content="Go from zero to serving: run a small LLM with MAX, rebuild it from scratch with max.nn and max.functional, then add sampling, a KV cache, batching and your own server.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/css/custom.css">
+        <link rel="stylesheet" href="theme/css/highlight.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "ayu";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc.js"></script>
+    </head>
+    <body>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden" checked>
+        <button id="vertical-sidebar-toggle" class="vertical-sidebar-toggle" aria-label="Toggle sidebar"></button>
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <button class="collapse-sidebar" aria-label="Collapse sidebar"></button>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Toggle color mode and talk to us buttons -->
+        <script>
+            document.addEventListener('click', function (event) {
+                if (!event.target.matches('.theme-toggle')) return;
+                event.preventDefault();
+                const prevTheme = theme;
+                html.classList.remove(theme);
+                const newTheme = prevTheme === 'ayu' ? 'light' : 'ayu'
+                html.classList.add(newTheme);
+                theme = newTheme
+                localStorage.setItem('mdbook-theme', theme);
+            }, false);
+        </script>
+
+        <div class="page-header">
+            <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                <i class="fa fa-bars"></i>
+            </label>
+            <div id="menu-bar" class="menu-bar">
+                <div class="left-buttons">
+                    <div class="logo-section">
+                        <a class="desktop-logo-link" href="https://modular.com"></a>
+                        <a class="mobile-logo-link" href="https://builds.modular.com"></a>
+                        <div class="slash">/</div>
+                        <a class="internal-link" href="">MAX LLM</a>
+                    </div>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Dark</button></li>
+                        </ul>
+                    </div>
+                <div class="right-buttons">
+                    <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                        <i class="fa fa-search"></i>
+                    </button>
+                    <button id="theme-toggle" class="icon-button theme-toggle-btn" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="false" aria-expanded="false">
+                        <i class="theme-toggle"></i>
+                    </button>
+                    <a class="menu-btn print" href="print.html" title="Print this book" aria-label="Print this book">
+                        <i id="print-button" class="fa fa-print"></i>
+                    </a>
+                    <a class="menu-btn" href="https://github.com/modular/max-llm-book" title="Git repository" aria-label="Git repository">
+                        <i id="git-repository-button" class="fa fa-github"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-wrapper" class="page-wrapper">
+            <div class="page">
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="16-the-full-model"><a class="header" href="#16-the-full-model">1.6 The full model</a></h1>
+<p><a href="https://colab.research.google.com/github/modular/max-llm-book/blob/main/notebooks/01_06_full_model.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab" /></a>
+<a href="https://kaggle.com/kernels/welcome?src=https://github.com/modular/max-llm-book/blob/main/notebooks/01_06_full_model.ipynb"><img src="https://kaggle.com/static/images/open-in-kaggle.svg" alt="Open in Kaggle" /></a>
+<a href="https://github.com/modular/max-llm-book/blob/main/notebooks/01_06_full_model.ipynb"><img src="https://img.shields.io/badge/GitHub-notebook-black?logo=github" alt="View on GitHub" /></a></p>
+<p>You now have every part of SmolLM2. This section assembles them into a
+decoder layer, stacks 30 layers into the model, adds the output head, loads
+all 272 weights, and compiles the result. Then it checks that your model’s
+logits match MAX’s own implementation of SmolLM2, the one <code>AutoModel</code>
+loads.</p>
+<pre><code class="language-python">import logging
+import time
+import warnings
+
+import numpy as np
+import plotly.graph_objects as go
+from max import functional as F
+from max.driver import CPU
+from max.dtype import DType
+from max.nn import Embedding, Linear, Module, ModuleList, RMSNorm
+from max.pipelines import AutoModel, AutoTokenizer
+from max.tensor import Tensor, default_device, default_dtype
+from max.tensor.tensor import TensorType
+
+from minillm import viz
+from minillm.attention import Attention
+from minillm.device import pick_device
+from minillm.config import MODEL_ID, LlamaConfig
+from minillm.layers import MLP
+from minillm.weights import load_checkpoint, select
+
+logging.getLogger("max").setLevel(logging.ERROR)
+warnings.filterwarnings("ignore", message="The eager interpreter failed")
+DEVICE = pick_device()  # a GPU if MAX finds one, otherwise the CPU
+
+config = LlamaConfig.from_pretrained()
+weights = load_checkpoint()
+</code></pre>
+<h2 id="the-decoder-layer"><a class="header" href="#the-decoder-layer">The decoder layer</a></h2>
+<p>A layer normalizes its input, runs attention, and adds the result back to
+the input; then it does the same with the MLP:</p>
+<p>\[\begin{aligned}
+h &amp;= x + \mathrm{Attention}(\mathrm{RMSNorm}(x)) \\
+x’ &amp;= h + \mathrm{MLP}(\mathrm{RMSNorm}(h))
+\end{aligned}\]</p>
+<p>Adding back (the <em>residual connection</em>) means each layer only refines the
+hidden state instead of replacing it, which helps a stack of 30 layers
+train well.</p>
+<p>The attribute names match the checkpoint once more, so a layer loads
+<code>model.layers.N.*</code> directly.</p>
+<pre><code class="language-python">from __future__ import annotations
+
+from max import functional as F
+from max.driver import Device
+from max.dtype import DType
+from max.nn import Embedding, Linear, Module, ModuleList, RMSNorm
+from max.tensor import Tensor, default_device, default_dtype
+from numpy.typing import NDArray
+
+from minillm.attention import Attention
+from minillm.config import LlamaConfig
+from minillm.layers import MLP
+
+
+class DecoderLayer(Module):
+    """One transformer layer: attention and an MLP, each with a residual."""
+
+    def __init__(self, config: LlamaConfig) -&gt; None:
+        eps = config.rms_norm_eps
+        self.input_layernorm = RMSNorm(config.hidden_size, eps=eps)
+        self.self_attn = Attention(config)
+        self.post_attention_layernorm = RMSNorm(config.hidden_size, eps=eps)
+        self.mlp = MLP(config)
+
+    def forward(self, x: Tensor) -&gt; Tensor:
+        x = x + self.self_attn(self.input_layernorm(x))
+        return x + self.mlp(self.post_attention_layernorm(x))
+</code></pre>
+<p><small>Saved to <code>minillm/model.py</code>.</small></p>
+<p>Run layer 0 on real token embeddings and compare the size of each token’s
+input with the size of the update the layer adds to it:</p>
+<pre><code class="language-python">tokenizer = AutoTokenizer(MODEL_ID)
+ids = tokenizer(["The capital of France is"])["input_ids"][0]
+
+with F.lazy(), default_device(DEVICE), default_dtype(DType.float32):
+    layer = DecoderLayer(config)
+layer.load_state_dict(select(weights, "model.layers.0."))
+
+x = Tensor(weights["model.embed_tokens.weight"][ids][None], device=DEVICE)
+y = layer(x)
+x_np, y_np = x.to_numpy(), y.to_numpy()
+print("input norm per token: ", np.linalg.norm(x_np, axis=-1).round(2))
+print("update norm per token:", np.linalg.norm(y_np - x_np, axis=-1).round(2))
+</code></pre>
+<pre><code class="language-text">input norm per token:  [[2.   2.54 2.91 2.28 2.6 ]]
+update norm per token: [[47.39 51.99 31.03 68.12 35.3 ]]
+</code></pre>
+<p>The update is 10 to 30 times larger than the input, because embeddings
+start as small vectors. The residual sum still carries the original
+embedding forward. Later in this section, a plot follows this <em>residual
+stream</em> through all 30 layers.</p>
+<h2 id="the-model"><a class="header" href="#the-model">The model</a></h2>
+<p>The model embeds the tokens, runs the 30 layers in order, and normalizes the
+result. The causal LM wrapper adds <code>lm_head</code>, a <code>Linear</code> from 576 dimensions
+to one logit per vocabulary entry. The module tree mirrors Hugging Face’s
+<code>LlamaForCausalLM</code>, so every checkpoint name is also a parameter name.</p>
+<p><code>load_model</code> builds the model inside <code>F.lazy()</code>, so the random
+initialization never runs, and then loads the weights. SmolLM2 ties
+<code>lm_head</code> to the embedding table, so the loader uses the same array for
+both.</p>
+<pre><code class="language-python">class LlamaModel(Module):
+    """The embedding, the decoder layers, and the final norm."""
+
+    def __init__(self, config: LlamaConfig) -&gt; None:
+        self.embed_tokens = Embedding(config.vocab_size, dim=config.hidden_size)
+        self.layers = ModuleList(
+            [DecoderLayer(config) for _ in range(config.num_hidden_layers)]
+        )
+        self.norm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
+
+    def forward(self, input_ids: Tensor) -&gt; Tensor:
+        x = self.embed_tokens(input_ids)
+        for layer in self.layers:
+            x = layer(x)
+        return self.norm(x)
+
+
+class LlamaForCausalLM(Module):
+    """A Llama model with its language-model head: token IDs in, logits out."""
+
+    def __init__(self, config: LlamaConfig) -&gt; None:
+        self.model = LlamaModel(config)
+        self.lm_head = Linear(config.hidden_size, config.vocab_size, bias=False)
+
+    def forward(self, input_ids: Tensor) -&gt; Tensor:
+        return self.lm_head(self.model(input_ids))
+
+
+def load_model(
+    config: LlamaConfig,
+    weights: dict[str, NDArray],
+    device: Device,
+    model_class: type[Module] = LlamaForCausalLM,
+) -&gt; Module:
+    """Builds ``model_class`` on ``device`` and loads ``weights`` into it."""
+    with F.lazy(), default_device(device), default_dtype(DType.float32):
+        model = model_class(config)
+    if config.tie_word_embeddings:
+        weights = {
+            **weights,
+            "lm_head.weight": weights["model.embed_tokens.weight"],
+        }
+    model.load_state_dict(weights)
+    return model
+</code></pre>
+<p><small>Saved to <code>minillm/model.py</code>.</small></p>
+<p>Here is the whole model as a diagram, built from the config. The shaded
+block repeats 30 times, and the curved lines are the residual connections.
+Hover over a box for the shape of the tensor it produces:</p>
+<pre><code class="language-python">H, V, I = config.hidden_size, config.vocab_size, config.intermediate_size
+stages = [  # (label, kind, output shape)
+    ("token IDs", "io", "[batch, seq]"),
+    (f"Embedding: {V:,} × {H}", "embedding", f"[batch, seq, {H}]"),
+    ("RMSNorm", "norm", f"[batch, seq, {H}]"),
+    (
+        f"Attention: {config.num_attention_heads} query heads, {config.num_key_value_heads} key/value heads, RoPE",
+        "attention",
+        f"[batch, seq, {H}]",
+    ),
+    ("+", "add", f"[batch, seq, {H}]"),
+    ("RMSNorm", "norm", f"[batch, seq, {H}]"),
+    (f"SwiGLU MLP: {H} → {I} → {H}", "mlp", f"[batch, seq, {H}]"),
+    ("+", "add", f"[batch, seq, {H}]"),
+    ("final RMSNorm", "norm", f"[batch, seq, {H}]"),
+    (
+        f"LM head: {H} → {V:,} (shares the embedding)",
+        "embedding",
+        f"[batch, seq, {V}]",
+    ),
+    ("logits", "io", f"[batch, seq, {V}]"),
+]
+colors = {
+    "io": viz.NEUTRAL,
+    "embedding": viz.ORANGE,
+    "norm": viz.VIOLET,
+    "attention": viz.BLUE,
+    "mlp": viz.AQUA,
+    "add": viz.SURFACE,
+}
+ys = [-i for i in range(len(stages))]
+
+fig = go.Figure()
+fig.add_shape(
+    type="rect",
+    x0=-2.6,
+    x1=2.6,
+    y0=ys[7] - 0.45,
+    y1=ys[2] + 0.75,
+    line=dict(color=viz.GRID),
+    fillcolor=viz.NEUTRAL,
+    layer="below",
+)
+fig.add_annotation(
+    x=2.5,
+    y=ys[2] + 0.55,
+    text=f"× {config.num_hidden_layers} layers",
+    showarrow=False,
+    xanchor="right",
+    font=dict(color=viz.INK_SECONDARY),
+)
+for (label, kind, _), y in zip(stages, ys):
+    width = 0.25 if kind == "add" else 2.1
+    fig.add_shape(
+        type="rect",
+        x0=-width,
+        x1=width,
+        y0=y - 0.3,
+        y1=y + 0.3,
+        fillcolor=colors[kind],
+        line=dict(
+            color=viz.INK_SECONDARY if kind in ("add", "io") else colors[kind]
+        ),
+        layer="above" if kind == "add" else "below",
+    )
+    fig.add_annotation(
+        x=0,
+        y=y,
+        text=label,
+        showarrow=False,
+        font=dict(
+            color=viz.INK if kind in ("io", "add") else viz.SURFACE, size=13
+        ),
+    )
+for upper, lower in zip(ys, ys[1:]):  # the main path
+    fig.add_annotation(
+        x=0,
+        y=lower + 0.3,
+        ax=0,
+        ay=upper - 0.3,
+        xref="x",
+        yref="y",
+        axref="x",
+        ayref="y",
+        showarrow=True,
+        arrowhead=2,
+        arrowcolor=viz.INK_SECONDARY,
+        text="",
+    )
+for start, add in [
+    (1, 4),
+    (4, 7),
+]:  # residual connections skip the norm and the sublayer
+    y0, y1 = ys[start] - 0.5, ys[add]
+    fig.add_trace(
+        go.Scatter(
+            x=[0, -2.35, -2.35, -0.25],
+            y=[y0, y0, y1, y1],
+            mode="lines",
+            hoverinfo="skip",
+            line=dict(color=viz.INK_SECONDARY, dash="dot"),
+            showlegend=False,
+        )
+    )
+fig.add_trace(
+    go.Scatter(
+        x=[0] * len(stages),
+        y=ys,
+        mode="markers",
+        marker=dict(size=40, opacity=0),
+        customdata=[[label, shape] for label, _, shape in stages],
+        showlegend=False,
+        hovertemplate="%{customdata[0]}&lt;br&gt;output: %{customdata[1]}&lt;extra&gt;&lt;/extra&gt;",
+    )
+)
+fig.update_layout(
+    title="SmolLM2-135M, from token IDs to logits",
+    height=640,
+    xaxis=dict(visible=False, range=[-2.8, 2.8]),
+    yaxis=dict(visible=False, range=[ys[-1] - 0.6, 0.6]),
+    margin=dict(l=8, r=8),
+)
+viz.show(fig)
+</code></pre>
+<div class="plotly-figure" data-src="generated/01_06_full_model_11_0.json"></div>
+<pre><code class="language-python">model = load_model(config, weights, DEVICE)
+n_params = sum(p.num_elements() for _, p in model.parameters)
+print(
+    f"{len(list(model.parameters))} parameter tensors, {n_params / 1e6:.1f}M values"
+)
+</code></pre>
+<pre><code class="language-text">273 parameter tensors, 162.8M values
+</code></pre>
+<p>Before compiling, run the layers one at a time and keep each one’s output.
+The size of each token’s hidden state grows as layers add their updates:</p>
+<pre><code class="language-python">x = model.model.embed_tokens(Tensor(np.array([ids]), device=DEVICE))
+states = [x.to_numpy()[0]]
+for layer in model.model.layers:
+    x = layer(x)
+    states.append(x.to_numpy()[0])
+states = np.array(states)  # [layer + 1, token, hidden]
+labels = [repr(tokenizer.decode([i])) for i in ids]
+
+fig = go.Figure(
+    [
+        go.Scatter(
+            x=np.arange(31),
+            y=np.linalg.norm(states[:, t], axis=-1),
+            name=label,
+            line_color=viz.SERIES[t],
+            mode="lines",
+            hovertemplate=label + " after layer %{x}: %{y:.1f}&lt;extra&gt;&lt;/extra&gt;",
+        )
+        for t, label in enumerate(labels)
+    ]
+)
+fig.update_layout(
+    title="Hidden-state norm through the layers (0 is the embedding)",
+    height=420,
+    xaxis_title="layer",
+    yaxis=dict(title="norm (log scale)", type="log", dtick=1),
+)
+viz.show(fig)
+</code></pre>
+<div class="plotly-figure" data-src="generated/01_06_full_model_14_0.json"></div>
+<p>The first token behaves differently. Its state jumps to about 24,000 at layer
+12, over a hundred times the other tokens’ (about 120 to 165), and stays there
+until it drops in the last two layers. Models use the first position as a
+resting place for attention
+(<a href="01_05_attention.html">Section 1.5</a>), and this large
+state is part of how they do it.</p>
+<p>Every layer writes into the same stream, so you can ask what the model would
+predict if it stopped early: apply the final norm and <code>lm_head</code> to each
+layer’s output. For the hidden state \(h_\ell\) after layer \(\ell\), the
+<em>logit lens</em> reads</p>
+<p>\[p_\ell = \mathrm{softmax}\big(E \, \mathrm{RMSNorm}(h_\ell)\big)\]</p>
+<p>where \(E\) is the embedding table that <code>lm_head</code> shares. Applied to the
+last position, it shows the prediction forming. Hover to see each layer’s top
+token:</p>
+<pre><code class="language-python">final_norm = weights["model.norm.weight"]
+table = weights["model.embed_tokens.weight"]  # lm_head shares it
+paris = tokenizer([" Paris"])["input_ids"][0][0]
+last = states[:, -1]
+normed = (
+    last
+    / np.sqrt((last**2).mean(-1, keepdims=True) + config.rms_norm_eps)
+    * final_norm
+)
+lens = normed @ table.T
+lens_probs = np.exp(lens - lens.max(-1, keepdims=True))
+lens_probs /= lens_probs.sum(-1, keepdims=True)
+top_tokens = [repr(tokenizer.decode([int(i)])) for i in lens.argmax(-1)]
+
+fig = go.Figure(
+    go.Scatter(
+        x=np.arange(31),
+        y=lens_probs[:, paris],
+        mode="lines+markers",
+        line_color=viz.BLUE,
+        customdata=top_tokens,
+        name="P(' Paris')",
+        hovertemplate="layer %{x}: P(' Paris') = %{y:.2f}&lt;br&gt;top token %{customdata}&lt;extra&gt;&lt;/extra&gt;",
+    )
+)
+fig.update_layout(
+    title="Logit lens: the probability of ' Paris' after each layer",
+    height=400,
+    xaxis_title="layer",
+    yaxis=dict(title="probability", range=[0, 1]),
+)
+viz.show(fig)
+</code></pre>
+<div class="plotly-figure" data-src="generated/01_06_full_model_16_0.json"></div>
+<p>Through most of the stack the top token is filler: a period or a space,
+then “ the“ from layer 23. “ Paris“ becomes the top token only after layer
+30, the last. Its probability stays near zero through layer 28, reaches
+about 0.06 after layer 29 and about 0.47 after layer 30, so for this prompt
+the answer forms in the last two layers.</p>
+<p>Before these plots, the model printed 273 parameter tensors and 162.8M
+values. That is 28M more than the checkpoint’s 134.5M because <code>lm_head</code>
+counts as its own 49152 × 576 parameter, loaded from the same array as the
+embedding table. <code>load_state_dict</code> is strict: a
+missing or misnamed weight raises an error instead of silently keeping a
+random value, so a successful load already proves the names line up.</p>
+<h2 id="compile"><a class="header" href="#compile">Compile</a></h2>
+<p>Running 30 layers eagerly works but executes hundreds of operations one at
+a time. Compiling turns the whole forward pass into one optimized graph.
+The input is a batch of token-ID sequences of any length:</p>
+<pre><code class="language-python">start = time.perf_counter()
+compiled = model.compile(
+    TensorType(DType.int64, ("batch", "seq_len"), device=DEVICE)
+)
+print(f"compiled in {time.perf_counter() - start:.0f} s")
+
+start = time.perf_counter()
+logits = compiled(Tensor(np.array([ids]), device=DEVICE)).to_numpy()
+print(
+    f"forward pass: {(time.perf_counter() - start) * 1000:.0f} ms, logits {logits.shape}"
+)
+</code></pre>
+<pre><code class="language-text">compiled in 10 s
+forward pass: 30 ms, logits (1, 5, 49152)
+</code></pre>
+<h2 id="check-against-maxs-smollm2"><a class="header" href="#check-against-maxs-smollm2">Check against MAX’s SmolLM2</a></h2>
+<p><code>AutoModel</code> loads SmolLM2 with MAX’s own implementation of the architecture
+that <code>config.json</code> names <code>LlamaForCausalLM</code>, and can return the logits for
+each token it generates.
+The first generated token’s logits must match your model’s logits at the
+last prompt position:</p>
+<pre><code class="language-python">reference_model = AutoModel(MODEL_ID, quantization_encoding="float32")
+reference = reference_model.generate(
+    input_ids=[ids], max_new_tokens=1, output_logits=True
+)
+expected = reference.logits[0][0]
+reference_model.close()
+
+ours = logits[0, -1]
+print(
+    f"max difference {np.abs(ours - expected).max():.1e} (logits range up to {np.abs(expected).max():.0f})"
+)
+print("top token, yours:", repr(tokenizer.decode([int(ours.argmax())])))
+print("top token, MAX's:", repr(tokenizer.decode([int(expected.argmax())])))
+assert (
+    ours.argmax() == expected.argmax() and np.abs(ours - expected).max() &lt; 1e-2
+)
+</code></pre>
+<pre><code class="language-text">max difference 4.0e-05 (logits range up to 21)
+top token, yours: ' Paris'
+top token, MAX's: ' Paris'
+</code></pre>
+<p>Plot your logits against MAX’s for the 2,000 likeliest tokens. The points sit
+on the diagonal:</p>
+<pre><code class="language-python">likeliest = np.argsort(expected)[::-1][:2000]
+words = [repr(tokenizer.decode([int(i)])) for i in likeliest]
+fig = go.Figure(
+    go.Scatter(
+        x=expected[likeliest],
+        y=ours[likeliest],
+        mode="markers",
+        text=words,
+        marker=dict(color=viz.BLUE, size=6, opacity=0.6),
+        hovertemplate="%{text}&lt;br&gt;MAX %{x:.4f}&lt;br&gt;yours %{y:.4f}&lt;extra&gt;&lt;/extra&gt;",
+    )
+)
+fig.update_layout(
+    title="Next-token logits: your model against MAX's",
+    height=480,
+    xaxis_title="MAX's logit",
+    yaxis=dict(title="your logit", scaleanchor="x"),
+)
+viz.show(fig)
+</code></pre>
+<div class="plotly-figure" data-src="generated/01_06_full_model_23_0.json"></div>
+<p>In the run shown here, on an Apple-silicon Mac with a Metal GPU, the largest
+difference between your logits and MAX’s was about <code>4e-5</code>, and both models
+predict the same next token. Treat these numbers as an example: yours depend on
+your hardware and vary from run to run. An error in any layer, such as a wrong
+RoPE layout or a missing scale, would change the logits by whole units, so the
+match shows that every layer you wrote is correct.</p>
+<p>The same code runs the larger SmolLM2 models by changing <code>MODEL_ID</code>. Other
+Llama-family models need small additions: Llama 3.1, for example, rescales
+RoPE’s frequencies (<code>rope_scaling</code> in its config), and Qwen2 adds biases to the
+query, key, and value projections. The handbook’s
+<a href="https://handbook.modular.com/getting-started/choosing-the-right-model/">Choosing the right model</a>
+discusses how size, architecture, and license trade off when you pick one.</p>
+<h2 id="exercises"><a class="header" href="#exercises">Exercises</a></h2>
+<ol>
+<li>The logit lens above reads only the last position. Plot it for every
+position: at which layer does each one settle on its final prediction?</li>
+<li>Load <code>HuggingFaceTB/SmolLM2-360M-Instruct</code> with the same code. What
+changes in <code>config</code>, and how do compile and forward times scale?</li>
+<li>Break something on purpose, such as dropping <code>rotate_half</code> from
+<code>apply_rope</code>, and see how far the logits move.</li>
+</ol>
+<h2 id="next"><a class="header" href="#next">Next</a></h2>
+<p><a href="01_07_sampling.html">Section 1.7</a> turns logits into
+text: the generation loop, and the sampling strategies behind <code>temperature</code>,
+<code>top_k</code>, and <code>top_p</code>.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="01_05_attention.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="01_07_sampling.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="01_05_attention.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="01_07_sampling.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="theme/code-highlighting.js"></script>
+        <script src="theme/sidebar.js"></script>
+        <script src="theme/init-amplitude.js"></script>
+        <script src="theme/warning.js"></script>
+        <script src="theme/plotly-figures.js"></script>
+
+
+    </div>
+    </body>
+</html>

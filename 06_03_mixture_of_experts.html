@@ -1,0 +1,608 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>6.3 Mixture of experts - Build and serve an LLM with MAX</title>
+
+
+        <!-- Custom HTML head -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap"
+            rel="stylesheet">
+        
+        <link rel="stylesheet" href="theme/css/custom.css">
+        <link rel="stylesheet" href="theme/css/highlight.css">
+        <link rel="stylesheet" id="theme">
+        
+        <!-- Additional meta tags -->
+        <meta property="og:title" content="Build an LLM from scratch with MAX">
+        <meta property="og:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
+        <meta property="og:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
+        <meta property="og:url" content="https://llm.modular.com/">
+        <meta name="twitter:card" content="summary">
+        <meta name="twitter:image:alt" content="MAX Docs">
+        <meta name="twitter:title" content="Build an LLM from scratch with MAX">
+        <meta name="twitter:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
+        <meta name="twitter:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
+        <link rel="icon" type="image/png" href="https://llm.modular.com/assets/icons/m-dark.svg">
+        <script>
+          !function(){var i="cioanalytics", analytics=(window[i]=window[i]||[]);if(!analytics.initialize)if(analytics.invoked)window.console&&console.error&&console.error("Snippet included twice.");else{analytics.invoked=!0;analytics.methods=["trackSubmit","trackClick","trackLink","trackForm","pageview","identify","reset","group","track","ready","alias","debug","page","once","off","on","addSourceMiddleware","addIntegrationMiddleware","setAnonymousId","addDestinationMiddleware"];analytics.factory=function(e){return function(){var t=Array.prototype.slice.call(arguments);t.unshift(e);analytics.push(t);return analytics}};for(var e=0;e<analytics.methods.length;e++){var key=analytics.methods[e];analytics[key]=analytics.factory(key)}analytics.load=function(key,e){var t=document.createElement("script");t.type="text/javascript";t.async=!0;t.setAttribute('data-global-customerio-analytics-key', i);t.src="https://cdp.customer.io/v1/analytics-js/snippet/" + key + "/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(t,n);analytics._writeKey=key;analytics._loadOptions=e};analytics.SNIPPET_VERSION="4.15.3";
+            analytics.load(
+              "c5c8ad95a28930735be9",
+              {
+                "integrations": {
+                    "Customer.io In-App Plugin": {
+                        anonymousInApp: true
+                    }
+                }
+              }
+            );
+            analytics.page();
+          }}();
+        </script>
+
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+
+        <meta name="description" content="Go from zero to serving: run a small LLM with MAX, rebuild it from scratch with max.nn and max.functional, then add sampling, a KV cache, batching and your own server.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/css/custom.css">
+        <link rel="stylesheet" href="theme/css/highlight.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "ayu";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc.js"></script>
+    </head>
+    <body>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden" checked>
+        <button id="vertical-sidebar-toggle" class="vertical-sidebar-toggle" aria-label="Toggle sidebar"></button>
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <button class="collapse-sidebar" aria-label="Collapse sidebar"></button>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Toggle color mode and talk to us buttons -->
+        <script>
+            document.addEventListener('click', function (event) {
+                if (!event.target.matches('.theme-toggle')) return;
+                event.preventDefault();
+                const prevTheme = theme;
+                html.classList.remove(theme);
+                const newTheme = prevTheme === 'ayu' ? 'light' : 'ayu'
+                html.classList.add(newTheme);
+                theme = newTheme
+                localStorage.setItem('mdbook-theme', theme);
+            }, false);
+        </script>
+
+        <div class="page-header">
+            <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                <i class="fa fa-bars"></i>
+            </label>
+            <div id="menu-bar" class="menu-bar">
+                <div class="left-buttons">
+                    <div class="logo-section">
+                        <a class="desktop-logo-link" href="https://modular.com"></a>
+                        <a class="mobile-logo-link" href="https://builds.modular.com"></a>
+                        <div class="slash">/</div>
+                        <a class="internal-link" href="">MAX LLM</a>
+                    </div>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Dark</button></li>
+                        </ul>
+                    </div>
+                <div class="right-buttons">
+                    <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                        <i class="fa fa-search"></i>
+                    </button>
+                    <button id="theme-toggle" class="icon-button theme-toggle-btn" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="false" aria-expanded="false">
+                        <i class="theme-toggle"></i>
+                    </button>
+                    <a class="menu-btn print" href="print.html" title="Print this book" aria-label="Print this book">
+                        <i id="print-button" class="fa fa-print"></i>
+                    </a>
+                    <a class="menu-btn" href="https://github.com/modular/max-llm-book" title="Git repository" aria-label="Git repository">
+                        <i id="git-repository-button" class="fa fa-github"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-wrapper" class="page-wrapper">
+            <div class="page">
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="63-mixture-of-experts"><a class="header" href="#63-mixture-of-experts">6.3 Mixture of experts</a></h1>
+<p><a href="https://colab.research.google.com/github/modular/max-llm-book/blob/main/notebooks/06_03_mixture_of_experts.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab" /></a>
+<a href="https://kaggle.com/kernels/welcome?src=https://github.com/modular/max-llm-book/blob/main/notebooks/06_03_mixture_of_experts.ipynb"><img src="https://kaggle.com/static/images/open-in-kaggle.svg" alt="Open in Kaggle" /></a>
+<a href="https://github.com/modular/max-llm-book/blob/main/notebooks/06_03_mixture_of_experts.ipynb"><img src="https://img.shields.io/badge/GitHub-notebook-black?logo=github" alt="View on GitHub" /></a></p>
+<p>The largest open models are <em>mixtures of experts</em> (MoE). An MoE layer has
+many MLPs, the <em>experts</em>, instead of one, and a small <em>router</em> sends each
+token to only a few of them. The model holds the parameters of all its
+experts, while each token pays for only a fraction of them. This section
+builds an MoE layer, checks it against Hugging Face’s Qwen3-MoE
+implementation, and then spreads the experts across devices.</p>
+<p>No real MoE checkpoint fits on a laptop, so this section uses Qwen3-MoE’s
+architecture at a small size with random weights, a common way to test
+large-model code. As in
+<a href="04_01_layer_tests.html">Section 4.1</a>, the test compares
+one layer with a reference implementation.</p>
+<pre><code class="language-python">import json
+import logging
+import warnings
+from pathlib import Path
+
+import numpy as np
+import plotly.graph_objects as go
+import torch
+from huggingface_hub import hf_hub_download
+from max import functional as F
+from max.driver import CPU
+from max.dtype import DType
+from max.tensor import Tensor, default_device, default_dtype
+from max.tensor.sharding import (
+    DeviceMapping,
+    DeviceMesh,
+    Replicated,
+    Sharded,
+    auto_reshard,
+)
+from plotly.subplots import make_subplots
+from transformers import AutoConfig
+from transformers.models.qwen3_moe.modeling_qwen3_moe import (
+    Qwen3MoeSparseMoeBlock,
+)
+
+from minillm import viz
+from minillm.device import pick_device
+
+logging.getLogger("max").setLevel(logging.ERROR)
+warnings.filterwarnings("ignore", message="The eager interpreter failed")
+DEVICE = pick_device()  # a GPU if MAX finds one, otherwise the CPU
+</code></pre>
+<h2 id="how-big-and-how-sparse"><a class="header" href="#how-big-and-how-sparse">How big, and how sparse</a></h2>
+<p>Qwen3-30B-A3B is a typical MoE model. Its name gives its total parameters,
+30 billion, and its active ones, about 3 billion:</p>
+<pre><code class="language-python">real = json.loads(
+    Path(hf_hub_download("Qwen/Qwen3-30B-A3B", "config.json")).read_text()
+)
+E, K, H, I = (
+    real["num_experts"],
+    real["num_experts_per_tok"],
+    real["hidden_size"],
+    real["moe_intermediate_size"],
+)
+per_expert = 3 * H * I
+print(f"{E} experts per layer, {K} chosen per token")
+print(
+    f"expert weights per layer: {E * per_expert / 1e6:.0f}M, used per token: {K * per_expert / 1e6:.0f}M"
+)
+</code></pre>
+<pre><code class="language-text">128 experts per layer, 8 chosen per token
+expert weights per layer: 604M, used per token: 38M
+</code></pre>
+<p>Every token uses 8 of the 128 experts, so it touches only a sixteenth of each
+layer’s expert weights. Adding experts adds parameters without adding work per
+token. The cost moves to memory, since every expert must be loaded somewhere,
+which is why MoE models are usually served across several GPUs. The handbook’s
+<a href="https://handbook.modular.com/inference-optimization/data-tensor-pipeline-expert-hybrid-parallelism/">parallelism strategies</a>
+page covers expert parallelism, which the end of this section implements.</p>
+<h2 id="the-layer"><a class="header" href="#the-layer">The layer</a></h2>
+<p>An MoE layer replaces the MLP. For each token:</p>
+<ol>
+<li>The router, a <code>Linear</code> from the hidden size to the number of experts, scores
+every expert. Softmax turns the scores into probabilities.</li>
+<li>The <code>K</code> most probable experts are chosen, and their probabilities are
+renormalized to sum to 1.</li>
+<li>Each chosen expert, a SwiGLU MLP like the one in
+<a href="01_04_building_blocks.html">Section 1.4</a>, processes
+the token, and the outputs are summed, weighted by those probabilities.</li>
+</ol>
+<p>In symbols, with router weights \(W_r\), the set \(\mathcal{T}\) of the \(K\)
+most probable experts, and expert \(e\)’s MLP \(E_e\):</p>
+<p>\[p = \mathrm{softmax}(W_r x), \qquad
+y = \sum_{e \in \mathcal{T}} \frac{p_e}{\sum_{j \in \mathcal{T}} p_j} \, E_e(x)\]</p>
+<p>The experts’ weights are stored stacked, with the expert as the first axis:
+one tensor for the fused gate and up projections, and one for the down
+projection. That is the layout of Hugging Face’s Qwen3-MoE module; the
+checkpoint files store each expert’s projections separately. This version
+computes <em>every</em> expert on every token and multiplies the unselected ones by
+zero. That wastes work, but it is simple and exact, and the last part of
+this section shows that it is easy to distribute.</p>
+<pre><code class="language-python">from __future__ import annotations
+
+from max import functional as F
+from max.dtype import DType
+from max.nn import Linear, Module
+from max.tensor import Tensor
+
+
+class Experts(Module):
+    """The stacked weights of every expert: gate and up projections fused."""
+
+    def __init__(
+        self, num_experts: int, hidden: int, intermediate: int
+    ) -&gt; None:
+        self.gate_up_proj = Tensor.zeros(
+            [num_experts, 2 * intermediate, hidden]
+        )
+        self.down_proj = Tensor.zeros([num_experts, hidden, intermediate])
+
+
+class MoE(Module):
+    """A mixture-of-experts layer with top-k routing, as in Qwen3-MoE."""
+
+    def __init__(
+        self, num_experts: int, top_k: int, hidden: int, intermediate: int
+    ) -&gt; None:
+        self.num_experts, self.top_k, self.intermediate = (
+            num_experts,
+            top_k,
+            intermediate,
+        )
+        self.gate = Linear(hidden, num_experts, bias=False)  # the router
+        self.experts = Experts(num_experts, hidden, intermediate)
+
+    def routing(self, x: Tensor) -&gt; Tensor:
+        """Returns each token's weight for each expert, ``[tokens, experts]``,
+        zero for experts the token wasn't routed to."""
+        tokens = x.shape[0]
+        weights, chosen = F.top_k(F.softmax(self.gate(x)), self.top_k)
+        weights = weights / weights.sum(axis=-1)
+        ids = Tensor.arange(self.num_experts, dtype=DType.int64, device=x.mesh)
+        one_hot = (
+            chosen.reshape([tokens, self.top_k, 1])
+            == ids.reshape([1, 1, self.num_experts])
+        ).cast(x.dtype)
+        return (
+            (one_hot * weights.reshape([tokens, self.top_k, 1]))
+            .sum(axis=1)
+            .reshape([tokens, self.num_experts])
+        )
+
+    def forward(self, x: Tensor) -&gt; Tensor:
+        """``x`` is ``[tokens, hidden]``."""
+        tokens, hidden = x.shape
+        gate_up = x.reshape(
+            [1, tokens, hidden]
+        ) @ self.experts.gate_up_proj.transpose(1, 2)
+        gate, up = (
+            gate_up[:, :, : self.intermediate],
+            gate_up[:, :, self.intermediate :],
+        )
+        outputs = (F.silu(gate) * up) @ self.experts.down_proj.transpose(
+            1, 2
+        )  # [E, T, H]
+        weights = self.routing(x).T.reshape([self.num_experts, tokens, 1])
+        return (weights * outputs).sum(axis=0).reshape([tokens, hidden])
+</code></pre>
+<p><small>Saved to <code>minillm/moe.py</code>.</small></p>
+<h2 id="check-it-against-qwen3-moe"><a class="header" href="#check-it-against-qwen3-moe">Check it against Qwen3-MoE</a></h2>
+<p>Build Hugging Face’s Qwen3-MoE block at a small size, 8 experts with 2 per
+token, fill it with random weights, and load the same weights into yours.
+The parameter names match, so <code>load_state_dict</code> takes the PyTorch state
+directly:</p>
+<pre><code class="language-python">torch.manual_seed(0)
+small = AutoConfig.from_pretrained("Qwen/Qwen3-30B-A3B")
+(
+    small.hidden_size,
+    small.moe_intermediate_size,
+    small.num_experts,
+    small.num_experts_per_tok,
+) = 64, 32, 8, 2
+reference = Qwen3MoeSparseMoeBlock(small).float().eval()
+for p in reference.parameters():
+    torch.nn.init.normal_(p, std=0.2)
+state = {name: p.detach().numpy() for name, p in reference.state_dict().items()}
+print({name: w.shape for name, w in state.items()})
+
+with default_device(DEVICE), default_dtype(DType.float32):
+    moe = MoE(num_experts=8, top_k=2, hidden=64, intermediate=32)
+moe.load_state_dict(state)
+
+x = np.random.default_rng(0).standard_normal((10, 64)).astype(np.float32)
+with torch.no_grad():
+    expected = reference(torch.from_numpy(x)[None])[0].numpy()
+ours = moe(Tensor(x, device=DEVICE)).to_numpy()
+print(f"max difference {np.abs(ours - expected).max():.1e}")
+assert np.abs(ours - expected).max() &lt; 1e-4
+</code></pre>
+<pre><code class="language-text">{'experts.gate_up_proj': (8, 64, 64), 'experts.down_proj': (8, 64, 32), 'gate.weight': (8, 64)}
+max difference 3.8e-06
+</code></pre>
+<h2 id="where-the-tokens-go"><a class="header" href="#where-the-tokens-go">Where the tokens go</a></h2>
+<p>The routing matrix shows which experts each token uses. Count the tokens per
+expert for a larger batch:</p>
+<pre><code class="language-python">batch = Tensor(
+    np.random.default_rng(1).standard_normal((512, 64)).astype(np.float32),
+    device=DEVICE,
+)
+load = (moe.routing(batch).to_numpy() &gt; 0).sum(axis=0)
+print("tokens per expert:", load, " ideal:", 512 * 2 // 8)
+assert load.sum() == 512 * 2
+
+weights_np = moe.routing(batch).to_numpy()
+fig = make_subplots(
+    rows=1,
+    cols=2,
+    column_widths=[0.6, 0.4],
+    horizontal_spacing=0.2,
+    subplot_titles=[
+        "Routing weights of the first 32 tokens",
+        "Tokens per expert, all 512",
+    ],
+)
+fig.add_trace(
+    go.Heatmap(
+        z=np.where(weights_np[:32] &gt; 0, weights_np[:32], np.nan),
+        colorscale=viz.SEQUENTIAL,
+        zmin=0,
+        zmax=1,
+        xgap=2,
+        ygap=2,
+        colorbar=dict(title="weight", thickness=12, x=0.5),
+        hovertemplate="token %{y} -&gt; expert %{x}: weight %{z:.2f}&lt;extra&gt;&lt;/extra&gt;",
+    ),
+    row=1,
+    col=1,
+)
+fig.add_trace(
+    go.Bar(
+        x=np.arange(len(load)),
+        y=load,
+        marker_color=viz.BLUE,
+        showlegend=False,
+        hovertemplate="expert %{x}: %{y} tokens&lt;extra&gt;&lt;/extra&gt;",
+    ),
+    row=1,
+    col=2,
+)
+fig.add_hline(
+    y=512 * 2 / len(load),
+    line=dict(color=viz.INK_SECONDARY, dash="dash"),
+    row=1,
+    col=2,
+    annotation_text="even split",
+    annotation_position="top right",
+)
+fig.update_xaxes(title_text="expert", dtick=1, showgrid=False)
+fig.update_yaxes(
+    title_text="token", autorange="reversed", showgrid=False, row=1, col=1
+)
+fig.update_yaxes(title_text="tokens routed", row=1, col=2)
+fig.update_layout(title="Top-2 routing over 8 experts", height=480)
+viz.show(fig)
+</code></pre>
+<pre><code class="language-text">tokens per expert: [122 116 157 121 117 134 122 135]  ideal: 128
+</code></pre>
+<div class="plotly-figure" data-src="generated/06_03_mixture_of_experts_10_1.json"></div>
+<p>Every token went to exactly two experts. How evenly a batch spreads across
+experts matters in practice: an expert that gets far more tokens than the
+others becomes the slowest part of the layer. MoE models are usually trained
+with a <em>load-balancing</em> term in the loss that pushes the router to spread
+tokens evenly, and serving systems monitor the load on each expert.</p>
+<p>This dense version computes all 8 experts for every token, 4 times the work
+that the 2 chosen experts need. Production kernels instead group the tokens
+by expert and run one matrix multiplication per expert over only its tokens
+(a <em>grouped GEMM</em>), which removes the waste:</p>
+<pre><code class="language-python">per_expert_small = 3 * 64 * 32  # gate, up, and down projections
+dense = 2 * 512 * 8 * per_expert_small
+sparse = 2 * 512 * 2 * per_expert_small
+print(
+    f"dense: {dense / 1e6:.1f} MFLOP, routed: {sparse / 1e6:.1f} MFLOP, {dense / sparse:.0f}x less"
+)
+</code></pre>
+<pre><code class="language-text">dense: 50.3 MFLOP, routed: 12.6 MFLOP, 4x less
+</code></pre>
+<h2 id="expert-parallelism"><a class="header" href="#expert-parallelism">Expert parallelism</a></h2>
+<p>The experts are independent, so they can live on different devices. With 8
+experts on 4 devices, each device holds 2. Every device receives every token,
+runs its own experts, and weights their outputs; the final sum over experts
+spans devices, which takes one all-reduce. On the simulated mesh from
+<a href="02_01_distributed_tensors.html">Section 2.1</a>, the only
+change is to shard the stacked expert weights along the expert axis:</p>
+<pre><code class="language-python">mesh = DeviceMesh((CPU(),) * 4, (4,), ("ep",))
+with default_device(mesh), default_dtype(DType.float32):
+    ep_moe = MoE(num_experts=8, top_k=2, hidden=64, intermediate=32)
+by_expert = DeviceMapping(mesh, (Sharded(0),))
+ep_moe.experts.gate_up_proj = ep_moe.experts.gate_up_proj.to(by_expert)
+ep_moe.experts.down_proj = ep_moe.experts.down_proj.to(by_expert)
+ep_moe.load_state_dict(state)
+print(ep_moe.experts.down_proj.mapping)
+
+with warnings.catch_warnings(record=True) as caught:
+    warnings.simplefilter("always")
+    with auto_reshard(mode="warn"):
+        ep_out = ep_moe(Tensor(x, device=DeviceMapping(mesh, (Replicated(),))))
+for w in caught:
+    if "reshards" in str(w.message):
+        print(w.message)
+print(
+    f"max difference from the reference: {np.abs(ep_out.to_numpy() - expected).max():.1e}"
+)
+assert np.abs(ep_out.to_numpy() - expected).max() &lt; 1e-4
+</code></pre>
+<pre><code class="language-text">DeviceMapping(DeviceMesh(ep=4), [Sharded(axis=0)])
+
+mul(lhs, rhs) reshards lhs
+  lhs    : float32[8, 10, 1]@mesh(ep=4){"ep":R}
+  rhs    : float32[8, 10, 64]@mesh(ep=4){"ep":S0}
+  region : auto_reshard(DEFAULT_TRANSITIONS, mode="warn")
+
+  decided per mesh axis
+  axis    lhs           rhs           -&gt; out        collective                          bytes    status
+  "ep"    lhs{R-&gt;S0}    rhs{S0}       -&gt; S0         local_slice(lhs)                      1.25   chosen, reshards lhs
+          lhs{R}        rhs{S0-&gt;R}    -&gt; R          allgather(rhs)                       15360
+          lhs{R}        rhs{S0-&gt;S2}   -&gt; S2         all_to_all(rhs)                      15360
+          lhs{R-&gt;S1}    rhs{S0-&gt;S1}   -&gt; S1         local_slice(lhs), all_to_all(rhs)   15361.2
+          lhs{R-&gt;P}     rhs{S0-&gt;R}    -&gt; P          keep_one_copy(lhs), allgather(rhs)  15361.2  not allowed
+  result  lhs{"ep":S0}  rhs{"ep":S0}  -&gt; {"ep":S0}
+
+  lhs = transfer_to(lhs, DeviceMapping(mesh, (Sharded(0),)))
+  with auto_reshard(mode="silent"):
+  at /var/folders/gg/plf_qcqs5556rt10q1s96gl40000gn/T/ipykernel_89305/3728650120.py:45 in forward()
+max difference from the reference: 2.9e-06
+</code></pre>
+<p>The output matches. MAX resharded the routing weights to match the
+experts’ layout, so each device multiplies only its own experts’ slice, and
+the weighted outputs come out as partial sums that <code>to_numpy()</code> all-reduces.</p>
+<p>This dense form sends every token to every device. Expert-parallel serving
+sends each token only to the devices that hold its chosen experts, an
+<em>all-to-all</em> exchange, and returns the results with a second one. With many
+experts this moves far less data, but the communication is uneven and
+depends on the routing. MAX serves MoE models such as GPT-OSS and DeepSeek,
+and supports expert parallelism across GPUs with all-to-all dispatch and
+combine steps.</p>
+<h2 id="exercises"><a class="header" href="#exercises">Exercises</a></h2>
+<ol>
+<li>Increase <code>top_k</code> to 8 (every expert). Does the output equal a weighted sum
+of 8 dense MLPs? What would the model lose?</li>
+<li>Implement the routed version for one device: for each expert, gather its
+tokens, run the MLP on them only, and scatter the results back. Check it
+against <code>MoE</code>.</li>
+<li>Make the router unfair by scaling one row of <code>gate.weight</code> by 5. How does
+the load per expert change, and what would that do to expert-parallel
+serving?</li>
+</ol>
+<h2 id="what-you-built"><a class="header" href="#what-you-built">What you built</a></h2>
+<p><a href="ch06.html">Chapter 6</a> extended your model with three
+features of current open models: normalized queries and keys, sliding-window
+attention, and mixtures of experts.
+<a href="ch07.html">Chapter 7</a> serves your own architecture with
+<code>max serve</code>, benchmarks it, and constrains its output.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="06_02_gemma3.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="ch07.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="06_02_gemma3.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="ch07.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="theme/code-highlighting.js"></script>
+        <script src="theme/sidebar.js"></script>
+        <script src="theme/init-amplitude.js"></script>
+        <script src="theme/warning.js"></script>
+        <script src="theme/plotly-figures.js"></script>
+
+
+    </div>
+    </body>
+</html>

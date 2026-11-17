@@ -1,0 +1,600 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>7.1 Serve your architecture - Build and serve an LLM with MAX</title>
+
+
+        <!-- Custom HTML head -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap"
+            rel="stylesheet">
+        
+        <link rel="stylesheet" href="theme/css/custom.css">
+        <link rel="stylesheet" href="theme/css/highlight.css">
+        <link rel="stylesheet" id="theme">
+        
+        <!-- Additional meta tags -->
+        <meta property="og:title" content="Build an LLM from scratch with MAX">
+        <meta property="og:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
+        <meta property="og:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
+        <meta property="og:url" content="https://llm.modular.com/">
+        <meta name="twitter:card" content="summary">
+        <meta name="twitter:image:alt" content="MAX Docs">
+        <meta name="twitter:title" content="Build an LLM from scratch with MAX">
+        <meta name="twitter:description" content="Learn by building LLMs from scratch with Modular's MAX framework">
+        <meta name="twitter:image" content="https://llm.modular.com/assets/social/modular-gpt-tutorial-metadata.png">
+        <link rel="icon" type="image/png" href="https://llm.modular.com/assets/icons/m-dark.svg">
+        <script>
+          !function(){var i="cioanalytics", analytics=(window[i]=window[i]||[]);if(!analytics.initialize)if(analytics.invoked)window.console&&console.error&&console.error("Snippet included twice.");else{analytics.invoked=!0;analytics.methods=["trackSubmit","trackClick","trackLink","trackForm","pageview","identify","reset","group","track","ready","alias","debug","page","once","off","on","addSourceMiddleware","addIntegrationMiddleware","setAnonymousId","addDestinationMiddleware"];analytics.factory=function(e){return function(){var t=Array.prototype.slice.call(arguments);t.unshift(e);analytics.push(t);return analytics}};for(var e=0;e<analytics.methods.length;e++){var key=analytics.methods[e];analytics[key]=analytics.factory(key)}analytics.load=function(key,e){var t=document.createElement("script");t.type="text/javascript";t.async=!0;t.setAttribute('data-global-customerio-analytics-key', i);t.src="https://cdp.customer.io/v1/analytics-js/snippet/" + key + "/analytics.min.js";var n=document.getElementsByTagName("script")[0];n.parentNode.insertBefore(t,n);analytics._writeKey=key;analytics._loadOptions=e};analytics.SNIPPET_VERSION="4.15.3";
+            analytics.load(
+              "c5c8ad95a28930735be9",
+              {
+                "integrations": {
+                    "Customer.io In-App Plugin": {
+                        anonymousInApp: true
+                    }
+                }
+              }
+            );
+            analytics.page();
+          }}();
+        </script>
+
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+
+        <meta name="description" content="Go from zero to serving: run a small LLM with MAX, rebuild it from scratch with max.nn and max.functional, then add sampling, a KV cache, batching and your own server.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="highlight-css" href="highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/css/custom.css">
+        <link rel="stylesheet" href="theme/css/highlight.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "ayu";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc.js"></script>
+    </head>
+    <body>
+    <div id="body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden" checked>
+        <button id="vertical-sidebar-toggle" class="vertical-sidebar-toggle" aria-label="Toggle sidebar"></button>
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <button class="collapse-sidebar" aria-label="Collapse sidebar"></button>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Toggle color mode and talk to us buttons -->
+        <script>
+            document.addEventListener('click', function (event) {
+                if (!event.target.matches('.theme-toggle')) return;
+                event.preventDefault();
+                const prevTheme = theme;
+                html.classList.remove(theme);
+                const newTheme = prevTheme === 'ayu' ? 'light' : 'ayu'
+                html.classList.add(newTheme);
+                theme = newTheme
+                localStorage.setItem('mdbook-theme', theme);
+            }, false);
+        </script>
+
+        <div class="page-header">
+            <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                <i class="fa fa-bars"></i>
+            </label>
+            <div id="menu-bar" class="menu-bar">
+                <div class="left-buttons">
+                    <div class="logo-section">
+                        <a class="desktop-logo-link" href="https://modular.com"></a>
+                        <a class="mobile-logo-link" href="https://builds.modular.com"></a>
+                        <div class="slash">/</div>
+                        <a class="internal-link" href="">MAX LLM</a>
+                    </div>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Dark</button></li>
+                        </ul>
+                    </div>
+                <div class="right-buttons">
+                    <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                        <i class="fa fa-search"></i>
+                    </button>
+                    <button id="theme-toggle" class="icon-button theme-toggle-btn" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="false" aria-expanded="false">
+                        <i class="theme-toggle"></i>
+                    </button>
+                    <a class="menu-btn print" href="print.html" title="Print this book" aria-label="Print this book">
+                        <i id="print-button" class="fa fa-print"></i>
+                    </a>
+                    <a class="menu-btn" href="https://github.com/modular/max-llm-book" title="Git repository" aria-label="Git repository">
+                        <i id="git-repository-button" class="fa fa-github"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-wrapper" class="page-wrapper">
+            <div class="page">
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="71-serve-your-architecture"><a class="header" href="#71-serve-your-architecture">7.1 Serve your architecture</a></h1>
+<p><a href="https://colab.research.google.com/github/modular/max-llm-book/blob/main/notebooks/07_01_serve_your_model.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab" /></a>
+<a href="https://kaggle.com/kernels/welcome?src=https://github.com/modular/max-llm-book/blob/main/notebooks/07_01_serve_your_model.ipynb"><img src="https://kaggle.com/static/images/open-in-kaggle.svg" alt="Open in Kaggle" /></a>
+<a href="https://github.com/modular/max-llm-book/blob/main/notebooks/07_01_serve_your_model.ipynb"><img src="https://img.shields.io/badge/GitHub-notebook-black?logo=github" alt="View on GitHub" /></a></p>
+<p>In <a href="01_01_run_and_serve.html">Section 1.1</a> you served
+SmolLM2 with MAX’s own implementation. This section serves <em>yours</em>: the
+<code>LlamaForCausalLM</code> you wrote in
+<a href="01_06_full_model.html">Section 1.6</a>, behind the same
+<code>AutoPipeline</code> API and the same OpenAI-compatible server. MAX loads model code
+from outside its own package through <em>custom architectures</em>: a Python package
+that describes the model, which <code>max serve</code> imports with
+<code>--custom-architectures</code>.</p>
+<pre><code class="language-python">import logging
+import subprocess
+import time
+import urllib.request
+import warnings
+
+from max.pipelines import AutoPipeline
+from max.pipelines.lib.arch_lookup import import_custom_architectures
+from openai import OpenAI
+
+from minillm.config import MODEL_ID
+
+logging.getLogger("max").setLevel(logging.ERROR)
+warnings.filterwarnings("ignore", message="The eager interpreter failed")
+PROMPT = ["The capital of France is"]
+</code></pre>
+<p>First, the reference: SmolLM2 as MAX implements it, loaded with
+<code>AutoPipeline</code>.</p>
+<pre><code class="language-python">reference = AutoPipeline(MODEL_ID, quantization_encoding="float32")
+expected = reference(PROMPT, max_new_tokens=16, top_k=1)
+reference.close()
+expected
+</code></pre>
+<pre><code class="language-text">['The capital of France is Paris. Paris is the largest city in France and the capital of the French department']
+</code></pre>
+<h2 id="a-custom-architecture-package"><a class="header" href="#a-custom-architecture-package">A custom architecture package</a></h2>
+<p>A MAX architecture has three parts, all in the package below:</p>
+<ul>
+<li>A config class tells MAX the sizes it needs to plan memory before it loads
+anything: the number of layers, key/value heads, and head size. It also
+declares the supported encodings; this model computes in <code>float32</code>.</li>
+<li>A pipeline model loads the weights and runs the model. MAX gives it the
+checkpoint’s weights and, at each step, the request’s tokens, and it returns
+the next-token logits. Here it builds your <code>LlamaForCausalLM</code> with
+<code>load_model</code> from
+<a href="01_06_full_model.html">Section 1.6</a>, casts the
+checkpoint’s <code>bfloat16</code> weights to <code>float32</code>, and compiles it.</li>
+<li>A <code>SupportedArchitecture</code> ties them together under the name in the
+checkpoint’s <code>config.json</code>, here <code>LlamaForCausalLM</code>, along with the tokenizer
+and the weight format. <code>ARCHITECTURES</code> lists it for <code>--custom-architectures</code>
+to find.</li>
+</ul>
+<p>To keep the package short, this pipeline model reruns the whole sequence at each
+step and serves one request at a time (<code>max_batch_size</code> is 1), like the
+generation loop in <a href="01_07_sampling.html">Section 1.7</a>.
+MAX’s own architectures use its paged KV cache and continuous batching instead:
+they implement a decoder module that reads keys and values from the cache. MAX’s
+OLMo 3 architecture is a compact example.</p>
+<pre><code class="language-python">from __future__ import annotations
+
+from collections.abc import Sequence
+from dataclasses import dataclass
+from typing import Any, ClassVar
+
+import numpy as np
+from max.driver import Buffer, Device
+from max.dtype import DType
+from max.engine import InferenceSession
+from max.graph import DeviceRef
+from max.graph.weights import Weights, WeightsAdapter, WeightsFormat
+from max.nn.kv_cache import KVCacheInputs, KVCacheParams
+from max.nn.outputs import ReturnHiddenStates, ReturnLogits
+from max.pipelines.context import TextContext
+from max.pipelines.lib import (
+    KVCacheConfig,
+    MAXModelConfig,
+    MemoryPlan,
+    ModelInputs,
+    ModelOutputs,
+    PipelineConfig,
+    PipelineModelWithKVCache,
+    SupportedArchitecture,
+    SupportedEncoding,
+    TextTokenizer,
+)
+from max.pipelines.lib.interfaces.arch_config import (
+    ArchConfigWithAttentionKVCache,
+)
+from max.pipelines.lib.utils import (
+    parse_state_dict_from_weights,
+    upper_bounded_default,
+)
+from max.pipelines.modeling.types import PipelineTask
+from max.tensor import Tensor
+from max.tensor.tensor import TensorType
+from transformers import AutoConfig
+
+from minillm.config import LlamaConfig
+from minillm.model import load_model
+
+
+@dataclass
+class MinillmArchConfig(ArchConfigWithAttentionKVCache):
+    DEFAULT_ENCODING: ClassVar[SupportedEncoding] = "float32"
+    SUPPORTED_ENCODINGS: ClassVar[set[SupportedEncoding]] = {"float32"}
+
+    @property
+    def num_key_value_heads(self) -&gt; int:
+        return self.huggingface_config.num_key_value_heads
+
+    @property
+    def head_dim(self) -&gt; int:
+        hf = self.huggingface_config
+        return (
+            getattr(hf, "head_dim", None)
+            or hf.hidden_size // hf.num_attention_heads
+        )
+
+    @property
+    def num_layers(self) -&gt; int:
+        return self.huggingface_config.num_hidden_layers
+
+    @classmethod
+    def calculate_max_seq_len(
+        cls, huggingface_config: AutoConfig, model_config: MAXModelConfig
+    ) -&gt; int:
+        return upper_bounded_default(
+            upper_bound=huggingface_config.max_position_embeddings,
+            default=model_config.max_length,
+        )
+
+
+@dataclass
+class TokenInputs(ModelInputs):
+    tokens: Buffer
+
+    @property
+    def buffers(self) -&gt; tuple[Buffer, ...]:
+        return (self.tokens,)
+
+
+class MinillmPipelineModel(PipelineModelWithKVCache[TextContext]):
+    def __init__(
+        self,
+        pipeline_config: PipelineConfig,
+        session: InferenceSession,
+        devices: list[Device],
+        kv_cache_config: KVCacheConfig,
+        weights: Weights,
+        adapter: WeightsAdapter | None,
+        return_logits: ReturnLogits,
+        *,
+        memory_plan: MemoryPlan,
+        return_hidden_states: ReturnHiddenStates = ReturnHiddenStates.NONE,
+        max_batch_size: int = 1,
+    ) -&gt; None:
+        super().__init__(
+            pipeline_config=pipeline_config,
+            session=session,
+            devices=devices,
+            kv_cache_config=kv_cache_config,
+            weights=weights,
+            adapter=adapter,
+            return_logits=return_logits,
+            return_hidden_states=return_hidden_states,
+            max_batch_size=max_batch_size,
+            memory_plan=memory_plan,
+        )
+        hf = self.huggingface_config
+        config = LlamaConfig(
+            **{
+                k: getattr(hf, k)
+                for k in LlamaConfig.__dataclass_fields__
+                if hasattr(hf, k)
+            }
+        )
+        state = parse_state_dict_from_weights(
+            self.pipeline_config, weights, adapter
+        )
+        state = {name: w.astype(DType.float32) for name, w in state.items()}
+        model = load_model(config, state, self.devices[0])
+        self.model = model.compile(
+            TensorType(
+                DType.int64, ("batch", "seq_len"), device=self.devices[0]
+            )
+        )
+
+    @classmethod
+    def get_kv_params(
+        cls,
+        huggingface_config: Any,
+        pipeline_config: PipelineConfig,
+        devices: list[DeviceRef],
+        kv_cache_config: KVCacheConfig,
+        cache_dtype: DType,
+    ) -&gt; KVCacheParams:
+        hf = huggingface_config
+        return kv_cache_config.to_params(
+            dtype=cache_dtype,
+            n_kv_heads=hf.num_key_value_heads,
+            head_dim=getattr(hf, "head_dim", None)
+            or hf.hidden_size // hf.num_attention_heads,
+            num_layers=hf.num_hidden_layers,
+            devices=devices,
+            data_parallel_degree=pipeline_config.model.data_parallel_degree,
+        )
+
+    def execute(self, model_inputs: ModelInputs) -&gt; ModelOutputs:
+        assert isinstance(model_inputs, TokenInputs)
+        logits = self.model(Tensor.from_dlpack(model_inputs.tokens))
+        last = Buffer.from_numpy(
+            np.ascontiguousarray(logits.to_numpy()[0, -1:, :])
+        ).to(self.devices[0])
+        return ModelOutputs(logits=last, next_token_logits=last)
+
+    def prepare_initial_token_inputs(
+        self,
+        replica_batches: Sequence[Sequence[TextContext]],
+        kv_cache_inputs: KVCacheInputs[Buffer, Buffer] | None = None,
+        return_n_logits: int = 1,
+    ) -&gt; TokenInputs:
+        ids = replica_batches[0][0].tokens.all
+        inputs = TokenInputs(
+            tokens=Buffer.from_numpy(np.array([ids], dtype=np.int64)).to(
+                self.devices[0]
+            )
+        )
+        inputs.kv_cache_inputs = kv_cache_inputs
+        return inputs
+
+
+def _identity_adapter(state_dict: dict[str, Weights], **_: object) -&gt; dict:
+    return {name: w.data() for name, w in state_dict.items()}
+
+
+minillm_arch = SupportedArchitecture(
+    name="LlamaForCausalLM",
+    task=PipelineTask.TEXT_GENERATION,
+    example_repo_ids=["HuggingFaceTB/SmolLM2-135M-Instruct"],
+    default_weights_format=WeightsFormat.safetensors,
+    default_encoding=MinillmArchConfig.DEFAULT_ENCODING,
+    supported_encodings=MinillmArchConfig.SUPPORTED_ENCODINGS,
+    pipeline_model=MinillmPipelineModel,
+    tokenizer=TextTokenizer,
+    context_type=TextContext,
+    multi_gpu_supported=False,
+    weight_adapters={WeightsFormat.safetensors: _identity_adapter},
+    config=MinillmArchConfig,
+    required_arguments={"enable_prefix_caching": False, "max_batch_size": 1},
+    supports_overlap_scheduler=False,
+    supports_device_graph_capture=False,
+)
+ARCHITECTURES = [minillm_arch]
+</code></pre>
+<p><small>Saved to <code>minillm/serve/__init__.py</code>.</small></p>
+<h2 id="use-it-in-python"><a class="header" href="#use-it-in-python">Use it in Python</a></h2>
+<p><code>import_custom_architectures</code> registers the package’s architectures, as
+<code>--custom-architectures</code> does for the CLI. A registered architecture with
+the same name as one of MAX’s replaces it in this process. When an
+architecture has a newer module-based implementation, MAX prefers that one,
+so <code>prefer_module_v3=False</code> selects the registered <code>LlamaForCausalLM</code>:</p>
+<pre><code class="language-python">import_custom_architectures(["minillm.serve"])
+ours = AutoPipeline(
+    MODEL_ID, quantization_encoding="float32", prefer_module_v3=False
+)
+print("pipeline model:", type(ours.model.pipeline._pipeline_model).__name__)
+result = ours(PROMPT, max_new_tokens=16, top_k=1)
+ours.close()
+print(result)
+print("same as MAX's implementation:", result == expected)
+assert result == expected
+</code></pre>
+<pre><code class="language-text">pipeline model: MinillmPipelineModel
+['The capital of France is Paris. Paris is the largest city in France and the capital of the French department']
+same as MAX's implementation: True
+</code></pre>
+<p>The pipeline model is yours, and its greedy output matches MAX’s
+implementation token for token.</p>
+<h2 id="serve-it"><a class="header" href="#serve-it">Serve it</a></h2>
+<p>The same package serves over HTTP. <code>--custom-architectures minillm.serve</code>
+imports it, and <code>--no-prefer-module-v3</code> selects it over MAX’s own
+implementation:</p>
+<pre><code class="language-python">server = subprocess.Popen(
+    [
+        "max",
+        "serve",
+        "--model",
+        MODEL_ID,
+        "--port",
+        "8000",
+        "--quantization-encoding",
+        "float32",
+        "--custom-architectures",
+        "minillm.serve",
+        "--no-prefer-module-v3",
+    ],
+    stdout=subprocess.DEVNULL,
+    stderr=subprocess.DEVNULL,
+)
+start = time.perf_counter()
+while True:
+    try:
+        urllib.request.urlopen("http://localhost:8000/health")
+        break
+    except OSError:
+        if server.poll() is not None:
+            raise RuntimeError(
+                "max serve exited; run it in a terminal to see why"
+            )
+        time.sleep(1)
+print(f"server ready in {time.perf_counter() - start:.0f} s")
+
+client = OpenAI(base_url="http://localhost:8000/v1", api_key="unused")
+completion = client.completions.create(
+    model=MODEL_ID, prompt=PROMPT[0], max_tokens=16, temperature=0
+)
+print(PROMPT[0] + completion.choices[0].text)
+assert PROMPT[0] + completion.choices[0].text == expected[0]
+server.terminate()
+_ = server.wait()
+</code></pre>
+<pre><code class="language-text">server ready in 14 s
+The capital of France is Paris. Paris is the largest city in France and the capital of the French department
+</code></pre>
+<p>Your model now answers an OpenAI client exactly as MAX’s implementation does.
+The handbook’s
+<a href="https://handbook.modular.com/model-interaction/openai-compatible-api/">OpenAI-compatible API</a>
+page covers the request format. MAX’s guide to
+<a href="https://max.modular.com/develop/serve-custom-model-architectures">serving custom model architectures</a>
+covers the production version: a decoder module on MAX’s paged KV cache, with
+batching and GPU kernels.</p>
+<h2 id="exercises"><a class="header" href="#exercises">Exercises</a></h2>
+<ol>
+<li>Register <code>Qwen3ForCausalLM</code> from
+<a href="06_01_qwen3.html">Section 6.1</a> the same way, and
+serve <code>Qwen/Qwen3-0.6B</code> through it. Which parts of the package depend on the
+model class, and which work unchanged?</li>
+<li>Make the pipeline model serve more than one request per step: read every
+context in <code>replica_batches[0]</code>, pad them as <code>run_step</code> from
+<a href="05_01_request_lifecycle.html">Section 5.1</a> does, and
+return one row of logits per request.</li>
+<li>Replace the full recompute with <code>KVCacheDecoder</code> from
+<a href="01_08_kv_cache.html">Section 1.8</a>, keeping one cache
+per request ID. What happens when a request finishes?</li>
+</ol>
+<h2 id="next"><a class="header" href="#next">Next</a></h2>
+<p><a href="07_02_benchmark_serving.html">Section 7.2</a> measures the
+server under load with <code>max benchmark</code>.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="ch07.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="07_02_benchmark_serving.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="ch07.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="07_02_benchmark_serving.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="theme/code-highlighting.js"></script>
+        <script src="theme/sidebar.js"></script>
+        <script src="theme/init-amplitude.js"></script>
+        <script src="theme/warning.js"></script>
+        <script src="theme/plotly-figures.js"></script>
+
+
+    </div>
+    </body>
+</html>

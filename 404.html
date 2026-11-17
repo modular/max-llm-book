@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Page not found - Build an LLM from scratch with MAX</title>
+        <title>Page not found - Build and serve an LLM with MAX</title>
         <base href="/">
 
 
@@ -48,7 +48,7 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
 
-        <meta name="description" content="This guide walks you through implementing GPT-2 using Modular’s MAX framework.">
+        <meta name="description" content="Go from zero to serving: run a small LLM with MAX, rebuild it from scratch with max.nn and max.functional, then add sampling, a KV cache, batching and your own server.">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
@@ -140,12 +140,6 @@
                 theme = newTheme
                 localStorage.setItem('mdbook-theme', theme);
             }, false);
-            document.addEventListener('click', function() {
-                if (!event.target.matches('.log-in')) return;
-                event.preventDefault();
-                window.amplitude.logEvent('LoginClickedFromGPT2Tutorial');
-                window.open('https://developer.modular.com', '_blank');
-            });
         </script>
 
         <div class="page-header">
@@ -239,6 +233,7 @@
         <script src="theme/sidebar.js"></script>
         <script src="theme/init-amplitude.js"></script>
         <script src="theme/warning.js"></script>
+        <script src="theme/plotly-figures.js"></script>
 
 
     </div>

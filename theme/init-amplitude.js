@@ -31,22 +31,39 @@ waitUntil(() => window.amplitude).then(() => {
   });
 });
 
+// Sends an event once Amplitude has loaded; does nothing when it is blocked.
+window.trackEvent = (name, properties) => {
+  window.amplitude?.track?.(name, properties);
+};
+
 let timeStartedOnPage = new Date();
 function trackTimeOnPage(pathname) {
-  if (!timeStartedOnPage) {
-    return;
-  }
   const durationInSeconds =
     Math.round(new Date().getTime() - timeStartedOnPage.getTime()) / 1000;
-  window.amplitude.track("TimeOnPage", {
+  window.trackEvent("TimeOnPage", {
     duration: `${Math.round(durationInSeconds)}`,
     minutes: `${Math.round(durationInSeconds / 60)}`,
     pathname,
   });
 }
+
+let maxScroll = 0;
+window.addEventListener(
+  "scroll",
+  () => {
+    const scrollable =
+      document.documentElement.scrollHeight - window.innerHeight;
+    if (scrollable > 0) {
+      const percent = Math.round((100 * window.scrollY) / scrollable);
+      maxScroll = Math.max(maxScroll, Math.min(percent, 100));
+    }
+  },
+  { passive: true }
+);
+
 window.addEventListener("beforeunload", () => {
   const { pathname } = window.location;
   trackTimeOnPage(pathname);
-  amplitude.track("MaxScrollPercentage", { maxScroll, pathname });
+  window.trackEvent("MaxScrollPercentage", { maxScroll, pathname });
   return undefined;
 });

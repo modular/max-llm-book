@@ -9,8 +9,8 @@ model on Hugging Face is two things: a configuration that gives its sizes,
 and a checkpoint that holds its trained weights. This section loads both,
 then builds the model's first layer, the token embedding.
 
-Code cells that start with `# export:` become part of the `minillm` package,
-so later sections can import them instead of repeating them.
+As in [Section 1.2](01_02_tensors_and_eager.md), code
+cells that start with `# export:` go into the `minillm` package.
 
 ```python
 import json
@@ -81,6 +81,9 @@ counts differ. `LlamaForCausalLM` is the architecture the code must implement.
 A small dataclass keeps these fields typed. The field names match Hugging
 Face's, so you can compare against any Llama-family `config.json`.
 
+<details class="code-fold">
+<summary>Show <code>LlamaConfig</code> <span class="code-fold-lines">44 lines</span></summary>
+
 ```python
 from __future__ import annotations
 
@@ -111,9 +114,8 @@ class LlamaConfig:
     head_dim: int = 0  # 0 means hidden_size // num_attention_heads
 
     def __post_init__(self) -> None:
-        if (
-            not self.head_dim
-        ):  # newer configs, such as Qwen3's, give it explicitly
+        # Newer configs, such as Qwen3's, give head_dim explicitly.
+        if not self.head_dim:
             object.__setattr__(
                 self, "head_dim", self.hidden_size // self.num_attention_heads
             )
@@ -128,6 +130,8 @@ class LlamaConfig:
             **{f.name: raw[f.name] for f in fields(cls) if f.name in raw}
         )
 ```
+
+</details>
 
 <small>Saved to `minillm/config.py`.</small>
 
@@ -156,20 +160,22 @@ with open(path, "rb") as f:
     header = json.loads(f.read(header_len))
 header.pop("__metadata__", None)
 print(len(header), "tensors")
-for name in list(header)[:8]:
-    print(f"{name:45} {header[name]}")
+first = list(header)[:8]
+width = max(len(name) for name in first)
+for name in first:
+    print(f"{name:{width}} {header[name]}")
 ```
 
 ```text
 272 tensors
-model.embed_tokens.weight                     {'dtype': 'BF16', 'shape': [49152, 576], 'data_offsets': [0, 56623104]}
-model.layers.0.input_layernorm.weight         {'dtype': 'BF16', 'shape': [576], 'data_offsets': [56623104, 56624256]}
-model.layers.0.mlp.down_proj.weight           {'dtype': 'BF16', 'shape': [576, 1536], 'data_offsets': [56624256, 58393728]}
-model.layers.0.mlp.gate_proj.weight           {'dtype': 'BF16', 'shape': [1536, 576], 'data_offsets': [58393728, 60163200]}
-model.layers.0.mlp.up_proj.weight             {'dtype': 'BF16', 'shape': [1536, 576], 'data_offsets': [60163200, 61932672]}
+model.embed_tokens.weight                      {'dtype': 'BF16', 'shape': [49152, 576], 'data_offsets': [0, 56623104]}
+model.layers.0.input_layernorm.weight          {'dtype': 'BF16', 'shape': [576], 'data_offsets': [56623104, 56624256]}
+model.layers.0.mlp.down_proj.weight            {'dtype': 'BF16', 'shape': [576, 1536], 'data_offsets': [56624256, 58393728]}
+model.layers.0.mlp.gate_proj.weight            {'dtype': 'BF16', 'shape': [1536, 576], 'data_offsets': [58393728, 60163200]}
+model.layers.0.mlp.up_proj.weight              {'dtype': 'BF16', 'shape': [1536, 576], 'data_offsets': [60163200, 61932672]}
 model.layers.0.post_attention_layernorm.weight {'dtype': 'BF16', 'shape': [576], 'data_offsets': [61932672, 61933824]}
-model.layers.0.self_attn.k_proj.weight        {'dtype': 'BF16', 'shape': [192, 576], 'data_offsets': [61933824, 62155008]}
-model.layers.0.self_attn.o_proj.weight        {'dtype': 'BF16', 'shape': [576, 576], 'data_offsets': [62155008, 62818560]}
+model.layers.0.self_attn.k_proj.weight         {'dtype': 'BF16', 'shape': [192, 576], 'data_offsets': [61933824, 62155008]}
+model.layers.0.self_attn.o_proj.weight         {'dtype': 'BF16', 'shape': [576, 576], 'data_offsets': [62155008, 62818560]}
 ```
 
 The names follow the module tree of Hugging Face's `LlamaForCausalLM`: an
@@ -195,6 +201,9 @@ lm_head.weight in checkpoint: False
 Where do the parameters live? Click a box to zoom in, and click the bar at
 the top to zoom back out:
 
+<details class="code-fold">
+<summary>Show <code>part</code>, <code>layer_number</code>, <code>order</code> <span class="code-fold-lines">71 lines</span></summary>
+
 ```python
 def part(name: str) -> str:
     if "embed_tokens" in name:
@@ -212,25 +221,19 @@ color_of = {
     "MLP": viz.AQUA,
     "norms": viz.VIOLET,
 }
-nodes = {
-    "SmolLM2-135M": ["", "SmolLM2-135M", 0, viz.NEUTRAL]
-}  # id -> [parent, label, total, color]
+# id -> [parent, label, total, color]
+nodes = {"SmolLM2-135M": ["", "SmolLM2-135M", 0, viz.NEUTRAL]}
 
 
 def layer_number(name: str) -> int:
     return int(name.split(".")[2]) if ".layers." in name else -1
 
 
-def order(
-    name: str,
-) -> int:  # the embedding, the layers in order, then the final norm
-    return (
-        -1
-        if "embed_tokens" in name
-        else layer_number(name)
-        if ".layers." in name
-        else 99
-    )
+def order(name: str) -> int:
+    """Sorts the embedding first, then the layers in order, then the norm."""
+    if "embed_tokens" in name:
+        return -1
+    return layer_number(name) if ".layers." in name else 99
 
 
 for name in sorted(header, key=order):
@@ -275,6 +278,8 @@ fig.update_layout(
 viz.show(fig)
 ```
 
+</details>
+
 <div class="plotly-figure" data-src="generated/01_03_tokens_and_weights_13_0.json"></div>
 
 - Memory is parameters times bytes per parameter. The checkpoint stores
@@ -292,6 +297,9 @@ has no `bfloat16` type, but the conversion is exact and cheap: a `bfloat16`
 value is the upper 16 bits of a `float32`, so shifting the bits left by 16
 gives the same number as a `float32`. MAX modules accept NumPy arrays
 directly, so this is all the loading code the model needs.
+
+<details class="code-fold">
+<summary>Show <code>read_safetensors</code>, <code>load_checkpoint</code> <span class="code-fold-lines">44 lines</span></summary>
 
 ```python
 from __future__ import annotations
@@ -339,6 +347,8 @@ def load_checkpoint(model_id: str = MODEL_ID) -> dict[str, np.ndarray]:
     """Downloads a model's safetensors checkpoint and returns its tensors."""
     return read_safetensors(hf_hub_download(model_id, "model.safetensors"))
 ```
+
+</details>
 
 <small>Saved to `minillm/weights.py`.</small>
 
@@ -420,46 +430,13 @@ point for its word:
 
 ```python
 groups = {
-    "countries": [
-        "France",
-        "Italy",
-        "Germany",
-        "Spain",
-        "Japan",
-        "China",
-        "Brazil",
-        "Canada",
-        "Egypt",
-        "India",
-    ],
-    "fruits": [
-        "apple",
-        "banana",
-        "orange",
-        "grape",
-        "mango",
-        "lemon",
-        "cherry",
-        "peach",
-        "pear",
-        "melon",
-    ],
-    "numbers": [
-        "one",
-        "two",
-        "three",
-        "four",
-        "five",
-        "six",
-        "seven",
-        "eight",
-        "nine",
-        "ten",
-    ],
+    "countries": "France Italy Germany Spain Japan China Brazil Canada Egypt India",
+    "fruits": "apple banana orange grape mango lemon cherry peach pear melon",
+    "numbers": "one two three four five six seven eight nine ten",
 }
 words, group_of, rows = [], [], []
 for group, members in groups.items():
-    for word in members:
+    for word in members.split():
         token = tokenizer([" " + word])["input_ids"][0]
         if len(token) == 1:  # keep words that are a single token
             words.append(word)
@@ -468,7 +445,12 @@ for group, members in groups.items():
 points = np.array(rows) - np.mean(rows, axis=0)
 _, _, axes = np.linalg.svd(points, full_matrices=False)
 xy = points @ axes[:2].T
+```
 
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">30 lines</span></summary>
+
+```python
 fig = go.Figure()
 for (group, color), symbol in zip(
     zip(groups, viz.SERIES), ["circle", "square", "diamond"]
@@ -501,14 +483,16 @@ fig.update_layout(
 viz.show(fig)
 ```
 
-<div class="plotly-figure" data-src="generated/01_03_tokens_and_weights_24_0.json"></div>
+</details>
+
+<div class="plotly-figure" data-src="generated/01_03_tokens_and_weights_25_0.json"></div>
 
 The groups separate without the model ever being told what a country or a
 fruit is: words used in similar contexts during training end up with
 similar vectors.
 
-The 30 layers you build next refine these vectors using context: what
-`Paris` means depends on the tokens around it.
+The layers refine these vectors using context: what `Paris` means depends
+on the tokens around it.
 
 ## Exercises
 

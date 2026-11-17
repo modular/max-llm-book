@@ -10,6 +10,9 @@ position to look back at "capital" and "France". This section builds causal
 grouped-query attention, the variant SmolLM2 and most current models use,
 first from basic operations and then with MAX's flash attention kernel.
 
+<details class="code-fold">
+<summary>Show the setup <span class="code-fold-lines">28 lines</span></summary>
+
 ```python
 import logging
 import math
@@ -41,6 +44,8 @@ config = LlamaConfig.from_pretrained()
 weights = load_checkpoint()
 ```
 
+</details>
+
 ## The computation
 
 Each position projects its hidden vector into three vectors: a *query*
@@ -69,6 +74,9 @@ The mask takes separate query and key lengths, so it also works when new queries
 attend to cached keys, as with the KV cache in
 [Section 1.8](01_08_kv_cache.md). Here the lengths are
 equal.
+
+<details class="code-fold">
+<summary>Show <code>causal_mask</code> <span class="code-fold-lines">30 lines</span></summary>
 
 ```python
 from __future__ import annotations
@@ -103,6 +111,8 @@ def causal_mask(
     )
 ```
 
+</details>
+
 <small>Saved to `minillm/attention.py`.</small>
 
 ```python
@@ -123,6 +133,8 @@ shared by a group of 3 query heads. This is *grouped-query attention* (GQA).
 It costs little quality, and it makes the keys and values the model must
 store per token 3 times smaller, which matters once you cache them
 ([Section 1.8](01_08_kv_cache.md)).
+
+<img class="diagram diagram-light" src="assets/diagrams/grouped-query-attention.svg" alt="Grouped-query attention in SmolLM2: 9 query heads in three colored groups of three, and each group points at the one key/value head it shares, so 3 key/value heads serve all 9 query heads."><img class="diagram diagram-dark" src="assets/diagrams/grouped-query-attention-dark.svg" alt="Grouped-query attention in SmolLM2: 9 query heads in three colored groups of three, and each group points at the one key/value head it shares, so 3 key/value heads serve all 9 query heads.">
 
 To compute it with plain matrix products, repeat each key/value head 3
 times with `broadcast_to`:
@@ -186,10 +198,14 @@ scores = (q.permute([0, 2, 1, 3]) @ k_full.transpose(-1, -2)) / math.sqrt(
     config.head_dim
 ) + mask
 probs = F.softmax(scores).to_numpy()[0]  # [heads, seq, seq]
+```
 
-labels = [
-    f"{i}: {t!r}" for i, t in enumerate(tokens)
-]  # unique even when tokens repeat
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">47 lines</span></summary>
+
+```python
+# Number the labels so that they stay unique when a token repeats.
+labels = [f"{i}: {t!r}" for i, t in enumerate(tokens)]
 pairs = [[[labels[i], labels[j]] for j in range(seq)] for i in range(seq)]
 visible = np.tri(seq, dtype=bool)  # masked cells are left blank, not drawn as 0
 heads = [
@@ -237,7 +253,9 @@ viz.show(
 )
 ```
 
-<div class="plotly-figure" data-src="generated/01_05_attention_10_0.json"></div>
+</details>
+
+<div class="plotly-figure" data-src="generated/01_05_attention_11_0.json"></div>
 
 Each row is a query position; each column is a key it attends to. Hover
 over a cell to read its weight, and move the slider to change heads. The
@@ -261,9 +279,13 @@ devices at once.
 For the attention itself it uses `flash_attention` from
 `max.nn.kernels.attention`, which takes grouped heads directly. Flash
 attention computes the same result as `naive_attention` but never builds the
-full `[seq, seq]` score matrix: it processes keys in blocks and keeps a
-running softmax, so memory stays proportional to the sequence length
-instead of its square.
+per-head `[seq, seq]` score matrices: it processes keys in blocks and keeps
+a running softmax. This module still passes a dense `[seq, seq]` mask, one for
+the whole batch rather than one per head; production kernels take a causal flag
+instead, so their memory grows with the sequence length rather than its square.
+
+<details class="code-fold">
+<summary>Show <code>Attention</code> <span class="code-fold-lines">51 lines</span></summary>
 
 ```python
 class Attention(Module):
@@ -319,6 +341,8 @@ class Attention(Module):
         return self.attend(*self.project(x, 0))
 ```
 
+</details>
+
 <small>Saved to `minillm/attention.py`.</small>
 
 Load layer 0's attention and check the module against `naive_attention`
@@ -369,12 +393,12 @@ print(f"flash: {timed(lambda: attn.attend(q, k, v)):.0f} ms  (includes o_proj)")
 ```
 
 ```text
-naive: 83 ms
-flash: 36 ms  (includes o_proj)
+naive: 81 ms
+flash: 55 ms  (includes o_proj)
 ```
 
 In the run shown here, on an Apple-silicon Mac with a Metal GPU, flash attention
-took about 35 ms including `o_proj`, against about 85 ms for the naive version.
+took about 55 ms including `o_proj`, against about 80 ms for the naive version.
 Treat these numbers as an example: yours depend on your hardware and vary from
 run to run. The handbook's
 [FlashAttention](https://handbook.modular.com/kernel-optimization/flashattention/)

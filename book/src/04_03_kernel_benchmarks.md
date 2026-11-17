@@ -10,6 +10,9 @@ time to *finish* it, or report one noisy sample. This section writes a small
 benchmark harness that avoids those mistakes, then uses it to show why
 decoding one token is limited by memory traffic and prefill by arithmetic.
 
+<details class="code-fold">
+<summary>Show the setup <span class="code-fold-lines">23 lines</span></summary>
+
 ```python
 import logging
 import time
@@ -36,9 +39,12 @@ DEVICE = pick_device()  # a GPU if MAX finds one, otherwise the CPU
 config = LlamaConfig.from_pretrained()
 ```
 
+</details>
+
 ## A harness
 
-The harness follows four rules, as MAX's layer benchmarks do:
+The harness follows four rules, in the spirit of MAX's layer benchmarks, which
+time on the device with events and report the median and p95:
 
 1. Warm up. The first calls compile kernels and fill caches, so don't time
    them.
@@ -47,6 +53,9 @@ The harness follows four rules, as MAX's layer benchmarks do:
 3. Repeat. One sample is mostly noise, so take many.
 4. Report the median and a tail percentile. Outliers pull the mean; the
    median shows the typical run and p90 shows how slow an unlucky one gets.
+
+<details class="code-fold">
+<summary>Show <code>Timing</code>, <code>benchmark</code> <span class="code-fold-lines">38 lines</span></summary>
 
 ```python
 from __future__ import annotations
@@ -89,6 +98,8 @@ def benchmark(
     )
 ```
 
+</details>
+
 <small>Saved to `minillm/bench.py`.</small>
 
 ## Memory-bound or compute-bound?
@@ -111,6 +122,9 @@ faster than its memory bandwidth \\(B\\) can feed it, which gives the
 With few tokens, \\(I\\) is small and memory sets the limit; with many, \\(I\\)
 grows until compute does. Measure SmolLM2's `gate_proj`
 (\\(K = 576\\), \\(N = 1536\\)) for 1 to 2048 tokens:
+
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">29 lines</span></summary>
 
 ```python
 with default_device(DEVICE), default_dtype(DType.float32):
@@ -144,18 +158,23 @@ for tokens in [1, 4, 16, 64, 256, 1024, 2048]:
     )
 ```
 
+</details>
+
 ```text
-    1 tokens  median    0.42 ms  p90    0.74 ms      4.2 GFLOP/s     8.4 GB/s
-    4 tokens  median    0.33 ms  p90    0.42 ms     21.2 GFLOP/s    10.7 GB/s
-   16 tokens  median    0.31 ms  p90    0.40 ms     91.4 GFLOP/s    11.9 GB/s
-   64 tokens  median    0.72 ms  p90    0.79 ms    156.8 GFLOP/s     5.6 GB/s
-  256 tokens  median    2.23 ms  p90    3.10 ms    203.1 GFLOP/s     2.6 GB/s
- 1024 tokens  median    8.72 ms  p90   10.43 ms    207.9 GFLOP/s     1.4 GB/s
- 2048 tokens  median   13.43 ms  p90   15.57 ms    269.7 GFLOP/s     1.6 GB/s
+    1 tokens  median    0.61 ms  p90    1.05 ms      2.9 GFLOP/s     5.8 GB/s
+    4 tokens  median    0.59 ms  p90    0.96 ms     12.0 GFLOP/s     6.1 GB/s
+   16 tokens  median    0.55 ms  p90    0.89 ms     51.4 GFLOP/s     6.7 GB/s
+   64 tokens  median    0.87 ms  p90    1.52 ms    130.3 GFLOP/s     4.7 GB/s
+  256 tokens  median    3.50 ms  p90    7.99 ms    129.6 GFLOP/s     1.6 GB/s
+ 1024 tokens  median    8.10 ms  p90   11.07 ms    223.6 GFLOP/s     1.5 GB/s
+ 2048 tokens  median   15.34 ms  p90   21.45 ms    236.3 GFLOP/s     1.4 GB/s
 ```
 
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">82 lines</span></summary>
+
 ```python
-tokens, ms, gflops, _ = zip(*rows)
+tokens, ms, gflops, gbps = zip(*rows)
 intensity = [
     2 * t * K * N / (4 * (K * N + t * (K + N))) for t in tokens
 ]  # FLOP per byte moved
@@ -193,6 +212,32 @@ fig.add_trace(
     row=1,
     col=2,
 )
+# The roof uses the best bandwidth and throughput this sweep reached, not the
+# device's datasheet numbers, so every point sits on or under it.
+peak, bandwidth = max(gflops), max(gbps)
+roof_x = np.geomspace(min(intensity) / 2, max(intensity) * 2, 200)
+fig.add_trace(
+    go.Scatter(
+        x=roof_x,
+        y=np.minimum(peak, bandwidth * roof_x),
+        mode="lines",
+        line=dict(color=viz.INK_SECONDARY, dash="dash", width=1.5),
+        name="measured roofline",
+        hovertemplate="roof at %{x:.1f} FLOP/byte: %{y:.0f} GFLOP/s<extra></extra>",
+    ),
+    row=1,
+    col=2,
+)
+fig.add_annotation(
+    x=np.log10(peak / bandwidth),
+    y=np.log10(peak),
+    text=f"ridge: {peak / bandwidth:.0f} FLOP/byte",
+    showarrow=True,
+    arrowhead=0,
+    ay=-30,
+    row=1,
+    col=2,
+)
 fig.update_xaxes(title_text="tokens", type="log", dtick=1, row=1, col=1)
 fig.update_yaxes(title_text="ms (log scale)", type="log", dtick=1, row=1, col=1)
 fig.update_xaxes(
@@ -203,27 +248,35 @@ fig.update_xaxes(
     col=2,
 )
 fig.update_yaxes(
-    title_text="GFLOP/s achieved", rangemode="tozero", row=1, col=2
+    title_text="GFLOP/s (log scale)", type="log", dtick=1, row=1, col=2
 )
 fig.update_layout(
     title="gate_proj (576 to 1536) from 1 to 2048 tokens; labels are token counts",
     height=420,
+    legend=dict(x=0.58, y=1.12),
 )
 viz.show(fig)
 ```
 
+</details>
+
 <div class="plotly-figure" data-src="generated/04_03_kernel_benchmarks_7_0.json"></div>
 
-Read the two plots together, and hover over the points.
+Read the two plots together, and hover over the points. The dashed line on the
+right is the roofline drawn from this sweep: its slope is the best bandwidth any
+point reached, its flat top the best throughput. Points left of the ridge sit
+under the slanted, memory-bound part of the roof; points to the right sit under
+the flat, compute-bound part. A device's datasheet ceilings are higher than
+these measured ones.
 
-With few tokens, the time barely grows: 1 to 16 tokens all take about 0.3 to 0.4
-ms on this page's machine, an Apple-silicon Mac with a Metal GPU. Treat these
+With few tokens, the time barely grows: 1 to 16 tokens all take about half a
+millisecond on this page's machine, an Apple-silicon Mac with a Metal GPU. Treat these
 numbers as an example: yours depend on your hardware and vary from run to run.
 Each weight is used for only a few multiply-adds after it is loaded, so
 arithmetic throughput is low and the operation is *memory-bound*. At a matrix
 this small, though, most of that time is a fixed cost per call, for launching
 the work and reading the result back: the single-token call moves `W`'s 3.5 MB
-at only about 10 GB/s, far below the GPU's memory bandwidth. In a large model,
+at under 10 GB/s, far below the GPU's memory bandwidth. In a large model,
 reading the weights dominates instead.
 
 With many tokens, each weight, once loaded, is reused for every token, so
@@ -271,7 +324,22 @@ for batch, seq in [(1, 1), (8, 1), (32, 1), (1, 128), (1, 512)]:
 print(
     f"a decode step for 32 sequences costs {medians[32, 1] / medians[1, 1]:.1f}x one sequence's"
 )
+```
 
+```text
+shape (batch x seq)       time per call       tokens/s
+    1 x 1      median    1.02 ms  p90    1.14 ms        977
+    8 x 1      median    1.26 ms  p90    1.39 ms       6339
+   32 x 1      median    1.57 ms  p90    1.77 ms      20389
+    1 x 128    median    4.57 ms  p90    5.53 ms      28021
+    1 x 512    median   11.02 ms  p90   16.52 ms      46458
+a decode step for 32 sequences costs 1.5x one sequence's
+```
+
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">32 lines</span></summary>
+
+```python
 labels = [f"{b} x {s}" for b, s in medians]
 fig = make_subplots(
     rows=1,
@@ -306,24 +374,17 @@ fig.update_layout(title="One decoder layer at serving shapes", height=400)
 viz.show(fig)
 ```
 
-```text
-shape (batch x seq)       time per call       tokens/s
-    1 x 1      median    0.67 ms  p90    0.86 ms       1490
-    8 x 1      median    0.80 ms  p90    1.07 ms       9971
-   32 x 1      median    0.88 ms  p90    1.16 ms      36358
-    1 x 128    median    2.57 ms  p90    3.25 ms      49748
-    1 x 512    median    7.92 ms  p90    9.58 ms      64663
-a decode step for 32 sequences costs 1.3x one sequence's
-```
+</details>
 
-<div class="plotly-figure" data-src="generated/04_03_kernel_benchmarks_9_3.json"></div>
+<div class="plotly-figure" data-src="generated/04_03_kernel_benchmarks_10_0.json"></div>
 
-On this machine, a decode step for 32 sequences costs about 1.2 to 1.3 times a
-single sequence's step, so throughput in tokens per second rises sharply
-with batch size. Timings on a laptop are noisy, which is why the harness
+On this machine, a decode step for 32 sequences costs well under twice a single
+sequence's step, so throughput in tokens per second rises sharply with batch
+size. Timings on a laptop are noisy, which is why the harness
 reports a percentile alongside the median. A 512-token prefill runs through
-one layer at about 60,000 tokens per second; the model has 30 layers, so a
-whole-model prefill would run at roughly 2,000 tokens per second.
+one layer at tens of thousands of tokens per second; the model has 30 layers,
+so a whole-model prefill would run at a thirtieth of that, under 2,000 tokens
+per second.
 
 These numbers describe this machine's GPU. On another CPU or GPU the curves have
 the same shape at different scales, although the time isn't always monotonic in

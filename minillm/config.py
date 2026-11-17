@@ -44,9 +44,8 @@ class LlamaConfig:
     head_dim: int = 0  # 0 means hidden_size // num_attention_heads
 
     def __post_init__(self) -> None:
-        if (
-            not self.head_dim
-        ):  # newer configs, such as Qwen3's, give it explicitly
+        # Newer configs, such as Qwen3's, give head_dim explicitly.
+        if not self.head_dim:
             object.__setattr__(
                 self, "head_dim", self.hidden_size // self.num_attention_heads
             )

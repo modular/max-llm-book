@@ -117,6 +117,7 @@ class PagedEngine(Engine):
             spare -= self.blocks_needed(request)
             admitted += 1
         held = [self.waiting.pop() for _ in range(len(self.waiting) - admitted)]
+        held.reverse()  # pop() took them from the back
         prefill = (
             self.waiting
             and len(self.running) < self.max_batch
@@ -126,10 +127,11 @@ class PagedEngine(Engine):
             raise MemoryError(
                 "a waiting request needs more blocks than the pool has"
             )
-        if not prefill:
-            held = self.preempt_until_decode_fits() + held
+        preempted = [] if prefill else self.preempt_until_decode_fits()
         super().step()
+        # Preempted requests go to the front of the queue, as in MAX.
         self.waiting.extend(held)
+        self.waiting.extendleft(reversed(preempted))
 
     def preempt_until_decode_fits(self) -> list[Request]:
         """Frees the newest requests' blocks until every running request can

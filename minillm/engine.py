@@ -39,12 +39,12 @@ class Engine:
         continuous: bool = True,
         new_cache: Callable[[LlamaConfig], object] = ContiguousCache,
     ) -> None:
-        self.step_fn, self.config, self.device = step, config, device
-        self.max_batch, self.continuous, self.new_cache = (
-            max_batch,
-            continuous,
-            new_cache,
-        )
+        self.step_fn = step
+        self.config = config
+        self.device = device
+        self.max_batch = max_batch
+        self.continuous = continuous
+        self.new_cache = new_cache
         self.waiting: deque[Request] = deque()
         self.running: list[tuple[Request, object]] = []
         self.steps = 0

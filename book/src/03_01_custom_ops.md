@@ -11,6 +11,9 @@ kernel, the `silu(gate) * up` inside SmolLM2's MLP from
 [Section 1.4](01_04_building_blocks.md), tests it,
 runs it inside your full model, and measures whether it helps.
 
+<details class="code-fold">
+<summary>Show the setup <span class="code-fold-lines">25 lines</span></summary>
+
 ```python
 import logging
 import time
@@ -38,6 +41,8 @@ logging.getLogger("max").setLevel(logging.ERROR)
 warnings.filterwarnings("ignore", message="The eager interpreter failed")
 DEVICE = pick_device()  # a GPU if MAX finds one, otherwise the CPU
 ```
+
+</details>
 
 ## Write the kernel
 
@@ -167,7 +172,12 @@ ours = swiglu(
     Tensor(sweep, device=DEVICE), Tensor(ones, device=DEVICE)
 ).to_numpy()
 error = np.abs(ours - reference(sweep, ones))
+```
 
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">34 lines</span></summary>
+
+```python
 fig = make_subplots(
     rows=2,
     cols=1,
@@ -204,7 +214,9 @@ fig.update_layout(title="The swiglu op with up = 1", height=520)
 viz.show(fig)
 ```
 
-<div class="plotly-figure" data-src="generated/03_01_custom_ops_12_0.json"></div>
+</details>
+
+<div class="plotly-figure" data-src="generated/03_01_custom_ops_13_0.json"></div>
 
 The error stays at the scale of `float32` rounding, about \\(10^{-7}\\) of the
 output or less, across the whole range.
@@ -272,6 +284,9 @@ next token: ' Paris'
 Time a compiled MLP block with and without the custom op, on a batch of 512
 positions:
 
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">28 lines</span></summary>
+
 ```python
 with default_device(DEVICE), default_dtype(DType.float32):
     plain_mlp = MLP(config)
@@ -289,16 +304,31 @@ x = Tensor(
     rng.standard_normal((1, 512, config.hidden_size)).astype(np.float32),
     device=DEVICE,
 )
-times = {}
-for name, run in runs.items():
-    run(x).to_numpy()
-    times[name] = []
-    for _ in range(30):
+for run in runs.values():
+    for _ in range(3):
+        run(x).to_numpy()
+times = {name: [] for name in runs}
+# Alternate the two, so a change in clock speed or load hits both alike.
+for _ in range(30):
+    for name, run in runs.items():
         start = time.perf_counter()
         run(x).to_numpy()
         times[name].append((time.perf_counter() - start) * 1000)
-    print(f"{name:12} median {np.median(times[name]):.2f} ms")
+for name, ms in times.items():
+    print(f"{name:12} median {np.median(ms):.2f} ms")
+```
 
+</details>
+
+```text
+MAX ops      median 2.34 ms
+custom op    median 2.48 ms
+```
+
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">21 lines</span></summary>
+
+```python
 fig = go.Figure(
     [
         go.Box(
@@ -322,17 +352,15 @@ fig.update_layout(
 viz.show(fig)
 ```
 
-```text
-MAX ops      median 2.84 ms
-custom op    median 2.18 ms
-```
+</details>
 
-<div class="plotly-figure" data-src="generated/03_01_custom_ops_19_1.json"></div>
+<div class="plotly-figure" data-src="generated/03_01_custom_ops_21_0.json"></div>
 
 In the runs behind this page, on an Apple-silicon Mac with a Metal GPU, the two
-medians land within about 10 to 20% of each other, and which one is faster
-changes from run to run. Treat the output above as one example: your hardware
-will give different numbers, so measure on the hardware you serve on. There is
+boxes overlap almost completely, the medians land within about 10% of each
+other, and which one is faster changes from run to run. Treat the output above
+as one example: your hardware will give different numbers, so measure on the
+hardware you serve on. There is
 little to gain because the graph compiler already fuses elementwise operations
 into their neighbors: the kernel trace in
 [Section 4.4](04_04_profiling.md) shows `silu` and the

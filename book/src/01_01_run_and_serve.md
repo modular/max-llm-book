@@ -33,14 +33,13 @@ both caches.
 
 ```python
 import logging
-import subprocess
 import time
-import urllib.request
 
 import numpy as np
 import plotly.graph_objects as go
 from max.pipelines import AutoPipeline
 from openai import OpenAI
+from transformers import AutoTokenizer as HFTokenizer
 
 from minillm import viz
 
@@ -115,6 +114,26 @@ viz.tokens([tokenizer.decode([i]) for i in pieces], pieces)
 
 <div style="line-height:2"><span title="token ID 20855" style="background:rgba(42,120,214,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">Token</span><span title="token ID 7927" style="background:rgba(235,104,52,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">izers</span><span title="token ID 7074" style="background:rgba(27,175,122,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;split</span><span title="token ID 33282" style="background:rgba(237,161,0,0.25);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;unbelie</span><span title="token ID 102" style="background:rgba(232,123,164,0.25);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">v</span><span title="token ID 1756" style="background:rgba(98,80,214,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">ably</span><span title="token ID 3861" style="background:rgba(42,120,214,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;rare</span><span title="token ID 1924" style="background:rgba(235,104,52,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;words</span><span title="token ID 28" style="background:rgba(27,175,122,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">,</span><span title="token ID 216" style="background:rgba(237,161,0,0.25);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;</span><span title="token ID 35" style="background:rgba(232,123,164,0.25);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">3</span><span title="token ID 30" style="background:rgba(98,80,214,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">.</span><span title="token ID 33" style="background:rgba(42,120,214,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">1</span><span title="token ID 36" style="background:rgba(235,104,52,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">4</span><span title="token ID 33" style="background:rgba(27,175,122,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">1</span><span title="token ID 37" style="background:rgba(237,161,0,0.25);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">5</span><span title="token ID 41" style="background:rgba(232,123,164,0.25);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">9</span><span title="token ID 28" style="background:rgba(98,80,214,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">,</span><span title="token ID 284" style="background:rgba(42,120,214,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;and</span><span title="token ID 14321" style="background:rgba(235,104,52,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;snake</span><span title="token ID 79" style="background:rgba(27,175,122,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">_</span><span title="token ID 7544" style="background:rgba(237,161,0,0.25);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">case</span><span title="token ID 79" style="background:rgba(232,123,164,0.25);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">_</span><span title="token ID 6464" style="background:rgba(98,80,214,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">names</span><span title="token ID 30" style="background:rgba(42,120,214,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">.</span></div>
 
+A chat message is text and tokens too. The chat template wraps each message
+in special tokens and adds a default system prompt. MAX loads the model's
+Hugging Face tokenizer, so the `transformers` library can show what the
+question from earlier becomes before the model sees it:
+
+```python
+template = HFTokenizer.from_pretrained(MODEL).apply_chat_template(
+    messages, add_generation_prompt=True, tokenize=False
+)
+chat_ids = tokenizer([template])["input_ids"][0]
+print(len(chat_ids), "tokens")
+viz.tokens([tokenizer.decode([i]) for i in chat_ids], chat_ids)
+```
+
+<div style="line-height:2"><span title="token ID 1" style="background:rgba(42,120,214,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&lt;|im_start|&gt;</span><span title="token ID 9690" style="background:rgba(235,104,52,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">system</span><span title="token ID 198" style="background:rgba(27,175,122,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&crarr;</span><span title="token ID 2683" style="background:rgba(237,161,0,0.25);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">You</span><span title="token ID 359" style="background:rgba(232,123,164,0.25);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;are</span><span title="token ID 253" style="background:rgba(98,80,214,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;a</span><span title="token ID 5356" style="background:rgba(42,120,214,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;helpful</span><span title="token ID 5646" style="background:rgba(235,104,52,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;AI</span><span title="token ID 11173" style="background:rgba(27,175,122,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;assistant</span><span title="token ID 3365" style="background:rgba(237,161,0,0.25);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;named</span><span title="token ID 3511" style="background:rgba(232,123,164,0.25);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;Sm</span><span title="token ID 308" style="background:rgba(98,80,214,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">ol</span><span title="token ID 34519" style="background:rgba(42,120,214,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">LM</span><span title="token ID 28" style="background:rgba(235,104,52,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">,</span><span title="token ID 7018" style="background:rgba(27,175,122,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;trained</span><span title="token ID 411" style="background:rgba(237,161,0,0.25);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;by</span><span title="token ID 407" style="background:rgba(232,123,164,0.25);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;H</span><span title="token ID 19712" style="background:rgba(98,80,214,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">ugging</span><span title="token ID 8182" style="background:rgba(42,120,214,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;Face</span><span title="token ID 2" style="background:rgba(235,104,52,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&lt;|im_end|&gt;</span><span title="token ID 198" style="background:rgba(27,175,122,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&crarr;</span><span title="token ID 1" style="background:rgba(237,161,0,0.25);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&lt;|im_start|&gt;</span><span title="token ID 4093" style="background:rgba(232,123,164,0.25);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">user</span><span title="token ID 198" style="background:rgba(98,80,214,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&crarr;</span><span title="token ID 1780" style="background:rgba(42,120,214,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">What</span><span title="token ID 314" style="background:rgba(235,104,52,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;is</span><span title="token ID 260" style="background:rgba(27,175,122,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;the</span><span title="token ID 3575" style="background:rgba(237,161,0,0.25);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;capital</span><span title="token ID 282" style="background:rgba(232,123,164,0.25);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;of</span><span title="token ID 4649" style="background:rgba(98,80,214,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;France</span><span title="token ID 47" style="background:rgba(42,120,214,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">?</span><span title="token ID 2" style="background:rgba(235,104,52,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&lt;|im_end|&gt;</span><span title="token ID 198" style="background:rgba(27,175,122,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&crarr;</span><span title="token ID 1" style="background:rgba(237,161,0,0.25);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&lt;|im_start|&gt;</span><span title="token ID 520" style="background:rgba(232,123,164,0.25);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">ass</span><span title="token ID 9531" style="background:rgba(98,80,214,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">istant</span><span title="token ID 198" style="background:rgba(42,120,214,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&crarr;</span></div>
+
+```text
+37 tokens
+```
+
 Given the IDs, the model produces one score (a *logit*) for every token in
 the vocabulary: its prediction of what comes next. `AutoModel.generate` can
 return those scores. Softmax turns them into probabilities: it
@@ -131,7 +150,12 @@ logits = out.logits[0][0]  # first prompt, first new token: [vocab_size]
 probs = np.exp(logits - logits.max())
 probs /= probs.sum()
 assert tokenizer.decode([int(probs.argmax())]) == " Paris"
+```
 
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">20 lines</span></summary>
+
+```python
 top = np.argsort(probs)[::-1][:10]
 fig = go.Figure(
     go.Bar(
@@ -154,7 +178,9 @@ fig.update_layout(
 viz.show(fig)
 ```
 
-<div class="plotly-figure" data-src="generated/01_01_run_and_serve_13_0.json"></div>
+</details>
+
+<div class="plotly-figure" data-src="generated/01_01_run_and_serve_16_0.json"></div>
 
 Generation repeats this step: pick a token from the distribution, append it, and
 run the model again. Picking the top token is greedy decoding; sampling from the
@@ -170,61 +196,99 @@ Two numbers describe how fast a model feels:
 - Time per output token (TPOT) is how long each later token takes. Each
   one is a *decode* step that processes a single new token.
 
-Generating one token measures prefill; generating more adds decode steps.
+Generating one token measures prefill; generating 65 adds 64 decode steps.
+Each timing below is the median of three runs:
 
 ```python
-def seconds(n_tokens: int) -> float:
+def seconds(prompt: list[int], n_tokens: int) -> float:
     start = time.perf_counter()
     model.generate(
-        input_ids=[ids], max_new_tokens=n_tokens, top_k=1, ignore_eos=True
+        input_ids=[prompt], max_new_tokens=n_tokens, top_k=1, ignore_eos=True
     )
     return time.perf_counter() - start
 
 
-ttft = seconds(1)
-tpot = (seconds(65) - ttft) / 64
+def ttft_tpot(prompt: list[int], repeats: int = 3) -> tuple[float, float]:
+    """Returns the median TTFT and TPOT of ``prompt``, in seconds."""
+    ttft = float(np.median([seconds(prompt, 1) for _ in range(repeats)]))
+    total = float(np.median([seconds(prompt, 65) for _ in range(repeats)]))
+    return ttft, (total - ttft) / 64
+
+
+ttft, tpot = ttft_tpot(ids)
 print(
     f"TTFT {ttft * 1000:.0f} ms, TPOT {tpot * 1000:.1f} ms ({1 / tpot:.0f} tokens/s)"
 )
 ```
 
 ```text
-TTFT 16 ms, TPOT 9.1 ms (110 tokens/s)
+TTFT 11 ms, TPOT 9.2 ms (108 tokens/s)
 ```
 
-On a timeline, one request is a prefill followed by a run of decode steps.
-The user waits through the prefill, then watches tokens arrive one decode
-step apart:
+Prefill processes every prompt token, so TTFT should grow with the prompt.
+A decode step processes one token, so TPOT should barely change. Check both
+with prompts of random token IDs from 8 to 2,048 tokens long:
 
 ```python
-starts = [0.0] + [ttft + i * tpot for i in range(64)]
-widths = [ttft] + [tpot] * 64
-fig = go.Figure(
-    go.Bar(
-        x=np.array(widths) * 1000,
-        base=np.array(starts) * 1000,
-        y=["request"] * 65,
-        orientation="h",
-        marker=dict(
-            color=[viz.ORANGE] + [viz.BLUE] * 64,
-            line=dict(color=viz.SURFACE, width=1),
-        ),
-        customdata=["prefill (time to first token)"]
-        + [f"decode step {i}" for i in range(1, 65)],
-        hovertemplate="%{customdata}<br>starts at %{base:.0f} ms, takes %{x:.1f} ms<extra></extra>",
+rng = np.random.default_rng(0)
+prompt_lengths = [8, 64, 256, 1024, 2048]
+ttfts, tpots = [], []
+for length in prompt_lengths:
+    prompt = rng.integers(0, len(probs), length).tolist()
+    seconds(prompt, 2)  # warm up this length
+    ttft_s, tpot_s = ttft_tpot(prompt)
+    ttfts.append(ttft_s * 1000)
+    tpots.append(tpot_s * 1000)
+    print(
+        f"{length:5} prompt tokens: TTFT {ttfts[-1]:6.1f} ms, "
+        f"TPOT {tpots[-1]:5.1f} ms"
     )
+```
+
+```text
+    8 prompt tokens: TTFT   11.0 ms, TPOT   9.3 ms
+   64 prompt tokens: TTFT   14.8 ms, TPOT   9.2 ms
+  256 prompt tokens: TTFT   73.6 ms, TPOT   9.4 ms
+ 1024 prompt tokens: TTFT  670.0 ms, TPOT   9.4 ms
+ 2048 prompt tokens: TTFT 2470.4 ms, TPOT   9.1 ms
+```
+
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">23 lines</span></summary>
+
+```python
+fig = go.Figure(
+    [
+        go.Scatter(
+            x=prompt_lengths,
+            y=ms,
+            name=name,
+            mode="lines+markers",
+            line_color=color,
+            hovertemplate=name + ", %{x} tokens: %{y:.1f} ms<extra></extra>",
+        )
+        for name, ms, color in [
+            ("time to first token", ttfts, viz.ORANGE),
+            ("time per output token", tpots, viz.BLUE),
+        ]
+    ]
 )
 fig.update_layout(
-    title="One request: prefill (orange), then 64 decode steps (blue)",
-    xaxis_title="milliseconds",
-    height=220,
-    margin=dict(t=56, b=48),
-    yaxis=dict(showticklabels=False, showgrid=False),
+    title="Prefill grows with the prompt; a decode step barely does",
+    height=420,
+    xaxis=dict(title="prompt length (tokens, log scale)", type="log", dtick=1),
+    yaxis=dict(title="ms (log scale)", type="log", dtick=1),
 )
 viz.show(fig)
 ```
 
-<div class="plotly-figure" data-src="generated/01_01_run_and_serve_17_0.json"></div>
+</details>
+
+<div class="plotly-figure" data-src="generated/01_01_run_and_serve_21_0.json"></div>
+
+TTFT grows with the prompt, steeply past a few hundred tokens, while TPOT
+stays nearly flat. A decode step still attends over the whole sequence, but
+that work is small next to reading every weight once per step.
 
 `ignore_eos=True` keeps generating past the end-of-sequence token, so every run
 does the same amount of work.
@@ -254,17 +318,21 @@ statistics after the text.
 The capital of France is Paris.
 Prompt size: 37
 Output size: 8
-Startup time: 0.3349781036376953 ms
-Time to first token: 32.834768295288086 ms
-Prompt eval throughput (context-encoding): 1126.854304780023 tokens per second
-Time per Output Token: 11.296612875802177 ms
-Eval throughput (token-generation): 88.52210932553442 tokens per second
-Total Latency: 111.91105842590332 ms
-Total Throughput: 8.935667431490725 req/s
+Startup time: 0.32830238342285156 ms
+Time to first token: 29.28781509399414 ms
+Prompt eval throughput (context-encoding): 1263.3240097035216 tokens per second
+Time per Output Token: 9.826013020106725 ms
+Eval throughput (token-generation): 101.77067727813153 tokens per second
+Total Latency: 98.06990623474121 ms
+Total Throughput: 10.196807954586895 req/s
 ```
 
-`2>/dev/null` hides the startup log. Run `max generate --help` to see every
-option.
+The lines to read are time to first token and time per output token: TTFT
+and TPOT again. Expect different values from the ones above, since this is
+one timed run of a different prompt. The prompt size is 37 tokens, not the 7
+words typed, because the chat template adds the special tokens and system
+prompt shown earlier. `2>/dev/null` hides the startup log. Run `max generate --help`
+to see every option.
 
 ## Serve the model
 
@@ -279,37 +347,53 @@ max serve --model HuggingFaceTB/SmolLM2-135M-Instruct \
 From a notebook, start it in the background and wait until its `/health`
 endpoint answers:
 
+<details class="code-fold">
+<summary>Show <code>start_max_serve</code> <span class="code-fold-lines">29 lines</span></summary>
+
 ```python
-server = subprocess.Popen(
-    [
-        "max",
-        "serve",
-        "--model",
-        MODEL,
-        "--port",
-        "8000",
-        "--quantization-encoding",
-        "float32",
-    ],
-    stdout=subprocess.DEVNULL,
-    stderr=subprocess.DEVNULL,
-)
+from __future__ import annotations
+
+import subprocess
+import time
+import urllib.request
+
+
+def start_max_serve(
+    model: str, *flags: str, port: int = 8000
+) -> subprocess.Popen:
+    """Starts ``max serve`` and returns once its health check answers.
+
+    Call ``terminate()`` on the returned process to stop the server.
+    """
+    process = subprocess.Popen(
+        ["max", "serve", "--model", model, "--port", str(port), *flags],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    while True:
+        try:
+            urllib.request.urlopen(f"http://localhost:{port}/health")
+            return process
+        except OSError:
+            if process.poll() is not None:
+                raise RuntimeError(
+                    "max serve exited; run it in a terminal to see why"
+                ) from None
+            time.sleep(1)
+```
+
+</details>
+
+<small>Saved to `minillm/server.py`.</small>
+
+```python
 start = time.perf_counter()
-while True:
-    try:
-        urllib.request.urlopen("http://localhost:8000/health")
-        break
-    except OSError:
-        if server.poll() is not None:
-            raise RuntimeError(
-                "max serve exited; run it in a terminal to see why"
-            )
-        time.sleep(1)
+server = start_max_serve(MODEL, "--quantization-encoding", "float32")
 print(f"server ready in {time.perf_counter() - start:.0f} s")
 ```
 
 ```text
-server ready in 16 s
+server ready in 17 s
 ```
 
 Now call it with the official `openai` package. The API key is unused but
@@ -320,7 +404,7 @@ client = OpenAI(base_url="http://localhost:8000/v1", api_key="unused")
 reply = client.chat.completions.create(
     model=MODEL,
     messages=[{"role": "user", "content": "Name three primary colors."}],
-    max_tokens=48,
+    max_tokens=128,
     temperature=0,
 )
 print(reply.choices[0].message.content)
@@ -337,8 +421,11 @@ assert reply.choices[0].message.content.strip()
 The primary colors are:
 
 1. Red: A warm, reddish-brown color that is often associated with fire, blood, and fire.
-2. Blue: A cool, deep, and deep blue color that is often associated with
-35 prompt tokens, 48 completion tokens
+2. Blue: A cool, deep, and deep blue color that is often associated with water, sky, and sky.
+3. Yellow: A bright, golden yellow color that is often associated with earth, light, and light.
+
+These colors are often used to represent the primary elements of a painting or artwork, and they can be used to create a sense of depth and dimensionality.
+35 prompt tokens, 112 completion tokens
 ```
 
 Chat apps show the reply as it is generated. With `stream=True` the server
@@ -383,11 +470,7 @@ explains `temperature`, `top_p`, and the other sampling options.
 
 Each call above ran the same pipeline:
 
-```text
-text ─► tokenizer ─► token IDs ─► model ─► logits ─► sampler ─► next token
-                                    ▲                                 │
-                                    └──────── append and repeat ──────┘
-```
+<img class="diagram diagram-light" src="assets/diagrams/generation-loop.svg" alt="The generation loop: text goes through the tokenizer to token IDs, the model turns them into logits, the sampler picks the next token, and the token is appended to the sequence before the next step."><img class="diagram diagram-dark" src="assets/diagrams/generation-loop-dark.svg" alt="The generation loop: text goes through the tokenizer to token IDs, the model turns them into logits, the sampler picks the next token, and the token is appended to the sequence before the next step.">
 
 Inside, MAX also compiled the model into optimized kernels, kept a *KV
 cache* so each decode step processes one token instead of the whole
@@ -413,8 +496,9 @@ of the book you build each of these parts yourself:
    go wrong?
 2. Pass `temperature=0.8` instead of `top_k=1` and run the same prompt
    several times. What changes?
-3. Rerun the measurement with a prompt ten times longer. Which number
-   grows, TTFT or TPOT, and why?
+3. Load the model with `AutoModel(MODEL, max_batch_size=4, **FLOAT32)` and
+   time four prompts at once (`input_ids=[ids] * 4`). How do TTFT and TPOT
+   change compared with one prompt?
 
 ## Next
 

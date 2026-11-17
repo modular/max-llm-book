@@ -10,47 +10,31 @@ arguments. Instructions in the prompt don't get that reliably, least of all
 from a small model. This section makes the server *guarantee* the format
 with structured output, then builds function calling on top of it.
 
+<details class="code-fold">
+<summary>Show the imports <span class="code-fold-lines">7 lines</span></summary>
+
 ```python
 import json
-import subprocess
-import time
-import urllib.request
 
 from openai import OpenAI
 from pydantic import BaseModel, ConfigDict, Field
 
 from minillm.config import MODEL_ID
+from minillm.server import start_max_serve
 ```
+
+</details>
 
 Structured output is off by default, and `--enable-structured-output`
 turns it on:
 
 ```python
-server = subprocess.Popen(
-    [
-        "max",
-        "serve",
-        "--model",
-        MODEL_ID,
-        "--port",
-        "8000",
-        "--quantization-encoding",
-        "float32",
-        "--enable-structured-output",
-    ],
-    stdout=subprocess.DEVNULL,
-    stderr=subprocess.DEVNULL,
+server = start_max_serve(
+    MODEL_ID,
+    "--quantization-encoding",
+    "float32",
+    "--enable-structured-output",
 )
-while True:
-    try:
-        urllib.request.urlopen("http://localhost:8000/health")
-        break
-    except OSError:
-        if server.poll() is not None:
-            raise RuntimeError(
-                "max serve exited; run it in a terminal to see why"
-            )
-        time.sleep(1)
 client = OpenAI(base_url="http://localhost:8000/v1", api_key="unused")
 
 
@@ -144,6 +128,9 @@ valid arguments for it".
 Here are two tools, each a Python function plus a schema for its
 arguments:
 
+<details class="code-fold">
+<summary>Show <code>get_weather</code>, <code>convert_currency</code>, <code>arguments</code> <span class="code-fold-lines">45 lines</span></summary>
+
 ```python
 RATES = {"USD": 1.0, "EUR": 0.92, "JPY": 151.0}
 
@@ -192,10 +179,15 @@ TOOLS = {
 }
 ```
 
+</details>
+
 The schema for a call allows any one of the tools: `anyOf` lists one object
 per tool, each with its fixed `name` and its own arguments. `enum` limits
 the currencies to the ones `RATES` knows, so the model can't ask for one the
 function would fail on. The system prompt tells the model what the tools do:
+
+<details class="code-fold">
+<summary>Show <code>call_tool</code> <span class="code-fold-lines">44 lines</span></summary>
 
 ```python
 call_schema = {
@@ -243,6 +235,8 @@ for question in [
     call, result = call_tool(question)
     print(f"{question}\n  call:   {call}\n  result: {result}")
 ```
+
+</details>
 
 ```text
 What's the weather in Tokyo?
@@ -299,7 +293,8 @@ Their chat templates describe the tools to the model in the format it was
 trained on, and the model writes calls in its own format. MAX parses those calls
 with a *tool parser* for each model family, such as Llama, Qwen, and DeepSeek,
 and returns them as `message.tool_calls`; `tool_choice="required"` forces a
-call. SmolLM2's chat template has no place for tools, which is why this section
+call. `max serve --tool-parser <name>` picks a different parser than the
+architecture's default, and `--tool-parser none` turns parsing off. SmolLM2's chat template has no place for tools, which is why this section
 built the protocol by hand. The mechanism is the same in both cases: the model
 writes a structured call, and your code runs it. The handbook's
 [function calling](https://handbook.modular.com/model-interaction/function-calling/)
@@ -311,10 +306,12 @@ page covers the API and the agent loops built on it.
    return now?
 2. Add a third tool, `get_time(city)`, and a question that needs it. Does the
    model choose it?
-3. `max benchmark` takes `--response-format` with a JSON schema. Benchmark the
-   server with and without one, as in
+3. `max benchmark` takes `--response-format` with a JSON schema. Start the
+   server with `--enable-structured-output`, then benchmark it with and without
+   one, as in
    [Section 7.2](07_02_benchmark_serving.md). How much
-   does constrained decoding cost per token?
+   does constrained decoding cost per token? Compare TPOT: constrained requests
+   stop at the end of the JSON, so their output lengths differ.
 
 ## Next
 

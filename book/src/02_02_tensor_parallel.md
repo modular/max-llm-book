@@ -11,6 +11,9 @@ GPU. The model code doesn't change. You change where its weights live, and MAX
 runs every layer on all three devices and adds the communication. Then you check
 that the logits match the single-device model's.
 
+<details class="code-fold">
+<summary>Show the setup <span class="code-fold-lines">31 lines</span></summary>
+
 ```python
 import logging
 import time
@@ -45,6 +48,8 @@ config = LlamaConfig.from_pretrained()
 weights = load_checkpoint()
 ```
 
+</details>
+
 ## The plan
 
 [Section 2.1](02_01_distributed_tensors.md) showed the
@@ -55,6 +60,8 @@ all-reduce. Each SmolLM2 layer has two such pairs:
 |---|---|---|
 | Attention | `q_proj`, `k_proj`, `v_proj` | `o_proj` |
 | MLP | `gate_proj`, `up_proj` | `down_proj` |
+
+<img class="diagram diagram-light" src="assets/diagrams/tensor-parallel-mlp.svg" alt="Tensor-parallel MLP: the input x is replicated on every device; gate and up projections are split by column, so each device holds a slice of the intermediate activation; the down projection is split by row, so each device holds a partial sum; an all-reduce adds the partial sums into the output y."><img class="diagram diagram-dark" src="assets/diagrams/tensor-parallel-mlp-dark.svg" alt="Tensor-parallel MLP: the input x is replicated on every device; gate and up projections are split by column, so each device holds a slice of the intermediate activation; the down projection is split by row, so each device holds a partial sum; an all-reduce adds the partial sums into the output y.">
 
 Splitting `q_proj`'s outputs three ways gives each device 3 of the 9 query
 heads, and splitting `k_proj` and `v_proj` gives each device 1 of the 3
@@ -137,6 +144,9 @@ Read the head assignment straight from the shards: each device's slice of
 `q_proj` holds whole query heads, and its slice of `k_proj` holds the
 key/value head those queries share. Hover over a box to see its device:
 
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">43 lines</span></summary>
+
 ```python
 attn = tp_model.model.layers[0].self_attn
 rows = {
@@ -183,6 +193,8 @@ fig.update_layout(
 viz.show(fig)
 ```
 
+</details>
+
 <div class="plotly-figure" data-src="generated/02_02_tensor_parallel_8_0.json"></div>
 
 `Linear` stores its weight as `[out, in]`, so column parallel splits axis 0
@@ -208,8 +220,13 @@ print(
 whole model: 163M values, device 0 holds 92M
 ```
 
-Broken down by part, for the single-device model and for each device of
-the mesh:
+The whole-model count is above SmolLM2's 135M because the model ties its LM
+head to the embedding, and the count includes that 28M-value weight twice.
+Broken down by part, for the single-device model and for each device of the
+mesh:
+
+<details class="code-fold">
+<summary>Show <code>part</code> <span class="code-fold-lines">43 lines</span></summary>
 
 ```python
 def part(name: str) -> str:
@@ -257,6 +274,8 @@ fig.update_layout(
 viz.show(fig)
 ```
 
+</details>
+
 <div class="plotly-figure" data-src="generated/02_02_tensor_parallel_12_0.json"></div>
 
 The replicated embedding and LM head (28M values each) keep device 0 well
@@ -287,7 +306,7 @@ print(reshards[0])
 ```
 
 ```text
-forward pass in 79 s, 60 collectives inserted
+forward pass in 215 s, 60 collectives inserted
 
 add(lhs, rhs) reshards rhs
   lhs    : float32[1, 5, 576]@mesh(tp=3){"tp":R}
@@ -305,14 +324,16 @@ add(lhs, rhs) reshards rhs
   rhs = transfer_to(rhs, DeviceMapping(mesh, (R,)))
   with auto_reshard(mode="silent"):
   with auto_reshard(ALL_TRANSITIONS, mode="silent"):   # also allows the cheaper rows above
-  at /Users/ehsan/workspace/modular/oss/max-llm-book/minillm/model.py:43 in forward()
+  at minillm/model.py:43 in forward()
 ```
 
 That makes 60 collectives for 30 layers, two all-reduces per layer: one where
 the output of attention's row-parallel `o_proj` meets the residual addition,
-and one where the MLP's `down_proj` output does. This layout can't do with
-fewer. Everything else, including attention itself, ran on each device
-without communication.
+and one where the MLP's `down_proj` output does. Each residual addition needs
+the full value, so a column-then-row layout needs both. Everything else,
+including attention itself, ran on each device without communication. The
+forward pass is slow because the simulated mesh runs eagerly, one operation at
+a time, on one CPU; its time says nothing about real hardware.
 
 ## Check it
 

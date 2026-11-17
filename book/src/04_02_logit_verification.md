@@ -13,6 +13,9 @@ trusted reference, and compare the logits at every position.
 This section verifies your SmolLM2 against Hugging Face's PyTorch
 implementation, with the metrics MAX's own verification tools use.
 
+<details class="code-fold">
+<summary>Show the setup <span class="code-fold-lines">36 lines</span></summary>
+
 ```python
 import logging
 import warnings
@@ -51,6 +54,8 @@ reference = AutoModelForCausalLM.from_pretrained(
     MODEL_ID, torch_dtype=torch.float32
 ).eval()
 ```
+
+</details>
 
 ## Prompts
 
@@ -96,6 +101,9 @@ It is 0 only when the two distributions are identical.
 *Top-1 agreement* is the fraction of positions at which both models predict
 the same most likely token. It is all that greedy decoding sees.
 
+<details class="code-fold">
+<summary>Show <code>softmax</code>, <code>kl_divergence</code> <span class="code-fold-lines">26 lines</span></summary>
+
 ```python
 def softmax(z: np.ndarray) -> np.ndarray:
     z = z.astype(np.float64) - z.max(-1, keepdims=True)
@@ -125,6 +133,8 @@ for name, text in prompts.items():
     assert top1 >= 0.99 and kl_divergence(theirs, mine) < 1e-6
 ```
 
+</details>
+
 ```text
 prompt   positions  max err  cos dist        KL  top-1
 prose           13  8.2e-05   2.4e-12   3.2e-11   100%
@@ -138,16 +148,21 @@ A summary number can hide a trend. Plot the largest logit error at each
 position: if a bug in RoPE or the mask grew with position, the long prompt
 would show it as a rising line.
 
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">22 lines</span></summary>
+
 ```python
 fig = go.Figure(
     [
         go.Scatter(
-            x=np.arange(len(err)),
+            x=np.arange(1, len(err) + 1),
             y=err,
+            customdata=np.arange(len(err)),
             name=name,
             mode="lines",
             line_color=color,
-            hovertemplate=name + ", position %{x}: %{y:.1e}<extra></extra>",
+            hovertemplate=name
+            + ", position %{customdata}: %{y:.1e}<extra></extra>",
         )
         for (name, err), color in zip(errors.items(), viz.SERIES)
     ]
@@ -155,11 +170,13 @@ fig = go.Figure(
 fig.update_layout(
     title="Largest logit error at each position, against Hugging Face",
     height=400,
-    xaxis=dict(title="position", type="log", dtick=1),
+    xaxis=dict(title="position + 1 (log scale)", type="log", dtick=1),
     yaxis=dict(title="max |logit difference|", type="log", dtick=1),
 )
 viz.show(fig)
 ```
+
+</details>
 
 <div class="plotly-figure" data-src="generated/04_02_logit_verification_8_0.json"></div>
 
@@ -178,6 +195,9 @@ the model its own outputs, through your KV cache from
 [Section 1.8](01_08_kv_cache.md). Compare 48 greedy
 tokens from your cached decoder with Hugging Face's `generate`:
 
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">27 lines</span></summary>
+
 ```python
 cached = KVCacheDecoder(
     load_model(config, weights, DEVICE, CachedLlamaForCausalLM), config, DEVICE
@@ -192,12 +212,12 @@ for name in ["prose", "code", "numbers"]:
             torch.tensor([ids]),
             max_new_tokens=48,
             do_sample=False,
-            output_scores=True,
+            output_logits=True,
             return_dict_in_generate=True,
         )
     theirs = out.sequences[0, len(ids) :].tolist()
     gaps[name] = [
-        float(np.diff(np.sort(step[0].numpy())[-2:])[0]) for step in out.scores
+        float(np.diff(np.sort(step[0].numpy())[-2:])[0]) for step in out.logits
     ]
     same = next(
         (i for i, (a, b) in enumerate(zip(mine, theirs)) if a != b), len(mine)
@@ -208,14 +228,20 @@ for name in ["prose", "code", "numbers"]:
     )
 ```
 
+</details>
+
 ```text
 prose    identical for 48 of 48 tokens
 code     identical for 48 of 48 tokens
 numbers  identical for 48 of 48 tokens
 ```
 
-At each greedy step, how far ahead was the winning token? Plot the gap
-between the reference's top two logits:
+At each greedy step, how far ahead was the winning token? `output_logits=True`
+returns the reference's raw logits at every step; plot the gap between the top
+two, with the largest logit error from the first chart as a dotted line:
+
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">32 lines</span></summary>
 
 ```python
 fig = go.Figure(
@@ -238,14 +264,26 @@ fig.update_layout(
     xaxis_title="generated token",
     yaxis=dict(title="logit gap (log scale)", type="log", dtick=1),
 )
+largest_error = max(err.max() for err in errors.values())
+fig.add_trace(
+    go.Scatter(
+        x=[0, max(len(gap) for gap in gaps.values()) - 1],
+        y=[largest_error] * 2,
+        name=f"largest logit error ({largest_error:.0e})",
+        mode="lines",
+        line=dict(color=viz.INK_SECONDARY, dash="dot", width=1),
+        hoverinfo="skip",
+    )
+)
 viz.show(fig)
 ```
 
+</details>
+
 <div class="plotly-figure" data-src="generated/04_02_logit_verification_12_0.json"></div>
 
-Compare the gaps with the logit errors in the previous chart. A rounding
-difference can change the winner only at a step where the gap is smaller
-than the error. Here the smallest gap is above `0.1` and the largest error
+A rounding difference can change the winner only at a step where the gap is
+smaller than the error, that is, where a line dips below the dotted one. Here the smallest gap is above `0.1` and the largest error
 about `1e-4`, so no step comes close.
 
 If a run does diverge after many tokens, the cause is usually a *near tie*:

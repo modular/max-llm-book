@@ -13,22 +13,24 @@ the paged cache from
 [Section 5.3](05_03_paged_kv_cache.md), it takes
 little code.
 
+<details class="code-fold">
+<summary>Show the setup <span class="code-fold-lines">26 lines</span></summary>
+
 ```python
 import logging
 import time
 import warnings
-from collections import OrderedDict
 
 import numpy as np
 import plotly.graph_objects as go
-from max.driver import CPU
 from max.pipelines import AutoTokenizer
 
 from minillm import viz
-from minillm.device import pick_device
 from minillm.config import MODEL_ID, LlamaConfig
+from minillm.device import pick_device
 from minillm.model import load_model
-from minillm.paged import BlockPool, PagedCache, PagedEngine
+from minillm.paged import BlockPool, PagedEngine
+from minillm.prefix import PrefixCachingEngine, PrefixCachingPool
 from minillm.step import Request, StepModel, compile_step
 from minillm.weights import load_checkpoint
 
@@ -42,6 +44,8 @@ step = compile_step(
     load_model(config, load_checkpoint(), DEVICE, StepModel), config, DEVICE
 )
 ```
+
+</details>
 
 ## Naming blocks by their content
 
@@ -59,6 +63,9 @@ blocks are evicted only when the pool runs out of free blocks.
 
 Only *full* blocks are shared, and new tokens always go into a sequence's
 own next block, so a shared block is never written to.
+
+<details class="code-fold">
+<summary>Show <code>PrefixCachingPool</code>, <code>PrefixCachingEngine</code> <span class="code-fold-lines">100 lines</span></summary>
 
 ```python
 from __future__ import annotations
@@ -98,7 +105,9 @@ class PrefixCachingPool(BlockPool):
         return len(self.free) + len(self.unused)
 
     def release(self, blocks: list[int]) -> None:
-        for block in blocks:
+        # Tail first: eviction then takes a prefix's last block before its
+        # first, and lookup can still reuse the rest.
+        for block in reversed(blocks):
             self.refs[block] -= 1
             if self.refs[block] == 0:
                 if block in self.hash_of:
@@ -161,6 +170,8 @@ class PrefixCachingEngine(PagedEngine):
         self.pool.register(request.prompt, cache.blocks)
 ```
 
+</details>
+
 <small>Saved to `minillm/prefix.py`.</small>
 
 `prefill_tokens` and `prefilled` are the two hooks the engine from
@@ -173,6 +184,9 @@ with a non-empty past is a step with several new tokens.
 
 Eight users ask different questions of the same assistant. Its system
 prompt is about 150 tokens long; real ones are often much longer:
+
+<details class="code-fold">
+<summary>Show <code>workload</code> <span class="code-fold-lines">26 lines</span></summary>
 
 ```python
 SYSTEM = (
@@ -201,8 +215,23 @@ def workload() -> list[Request]:
 
 
 print("prompt tokens per request:", len(workload()[0].prompt))
+```
 
+</details>
 
+```text
+prompt tokens per request: 163
+```
+
+Serve the workload twice, without and with prefix caching. The cached engine is
+a recording subclass that notes, for each request's prefill, how many prompt
+tokens it computed and which blocks its block table holds, with their user
+counts:
+
+<details class="code-fold">
+<summary>Show <code>serve</code>, <code>RecordingPrefixEngine</code> <span class="code-fold-lines">33 lines</span></summary>
+
+```python
 def serve(engine) -> list[Request]:
     requests = workload()
     for r in requests:
@@ -211,36 +240,49 @@ def serve(engine) -> list[Request]:
     engine.run()
     ttft = [(r.first_token - r.arrived) * 1000 for r in requests]
     print(
-        f"{type(engine).__name__:20} {time.perf_counter() - start:5.1f} s   "
+        f"{type(engine).__name__:24} {time.perf_counter() - start:5.1f} s   "
         f"TTFT median {np.median(ttft):5.0f} ms, worst {max(ttft):5.0f} ms"
     )
     return requests
 
 
-class CountingPrefixEngine(PrefixCachingEngine):
-    """Records how many prompt tokens each request computes."""
+class RecordingPrefixEngine(PrefixCachingEngine):
+    """Records each request's computed tokens and its blocks' user counts."""
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.computed, self.tables = {}, {}
 
     def prefill_tokens(self, request: Request, cache: object) -> list[int]:
         tokens = super().prefill_tokens(request, cache)
-        self.computed_per_request[id(request)] = len(tokens)
+        self.computed[id(request)] = len(tokens)
         return tokens
 
+    def step(self) -> None:
+        super().step()
+        for request, cache in self.running:
+            if id(request) not in self.tables:  # just prefilled
+                self.tables[id(request)] = [
+                    (b, self.pool.refs[b]) for b in cache.blocks
+                ]
+```
 
+</details>
+
+```python
 plain = serve(
     PagedEngine(step, config, DEVICE, max_batch=4, pool=BlockPool(config, 128))
 )
 prefix_pool = PrefixCachingPool(config, 128)
-cached_engine = CountingPrefixEngine(
+cached_engine = RecordingPrefixEngine(
     step, config, DEVICE, max_batch=4, pool=prefix_pool
 )
-cached_engine.computed_per_request = {}
 cached = serve(cached_engine)
 ```
 
 ```text
-prompt tokens per request: 163
-PagedEngine            6.4 s   TTFT median  2143 ms, worst  3812 ms
-CountingPrefixEngine   5.6 s   TTFT median  1774 ms, worst  3106 ms
+PagedEngine                5.1 s   TTFT median  2192 ms, worst  3499 ms
+RecordingPrefixEngine      4.3 s   TTFT median  1617 ms, worst  2961 ms
 ```
 
 ```python
@@ -252,8 +294,18 @@ print(
 print("same tokens:", [r.output for r in cached] == [r.output for r in plain])
 assert [r.output for r in cached] == [r.output for r in plain]
 assert cached_engine.computed_prompt_tokens < total_prompt
+```
 
-computed = [cached_engine.computed_per_request[id(r)] for r in cached]
+```text
+prompt tokens computed: 715 of 1291 (55%)
+same tokens: True
+```
+
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">31 lines</span></summary>
+
+```python
+computed = [cached_engine.computed[id(r)] for r in cached]
 reused = [len(r.prompt) - c for r, c in zip(cached, computed)]
 names = [f"request {i}: {q}" for i, q in enumerate(QUESTIONS)]
 fig = go.Figure(
@@ -286,22 +338,80 @@ fig.update_layout(
 viz.show(fig)
 ```
 
-```text
-prompt tokens computed: 715 of 1291 (55%)
-same tokens: True
+</details>
+
+<div class="plotly-figure" data-src="generated/05_04_prefix_caching_11_0.json"></div>
+
+The block tables show where the reuse comes from. Each row is one request's
+block table right after its prefill, each cell one block, labeled with its
+physical block number. Blue blocks are shared, and ×4 means four requests use
+the block:
+
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">44 lines</span></summary>
+
+```python
+tables = [cached_engine.tables[id(r)] for r in cached]
+size = prefix_pool.block_size
+width = max(len(t) for t in tables)
+users = np.full((len(tables), width), np.nan)
+text = [[""] * width for _ in tables]
+hover = [[""] * width for _ in tables]
+for i, (request, table) in enumerate(zip(cached, tables)):
+    for j, (block, refs) in enumerate(table):
+        users[i, j] = min(refs, 2)
+        text[i][j] = f"{block}<br>×{refs}" if refs > 1 else str(block)
+        piece = tokenizer.decode(request.prompt[j * size : (j + 1) * size])
+        hover[i][j] = (
+            f"request {i}, logical block {j}: physical block {block}, "
+            f"{refs} user{'s' * (refs != 1)}<br>{piece!r}"
+        )
+fig = go.Figure(
+    go.Heatmap(
+        z=users,
+        zmin=0.5,
+        zmax=2.5,
+        colorscale=[
+            [0, viz.ORANGE],
+            [0.5, viz.ORANGE],
+            [0.5, viz.BLUE],
+            [1, viz.BLUE],
+        ],
+        showscale=False,
+        xgap=3,
+        ygap=3,
+        text=text,
+        texttemplate="%{text}",
+        customdata=hover,
+        hovertemplate="%{customdata}<extra></extra>",
+        x=[f"block {j}" for j in range(width)],
+        y=[f"request {i}" for i in range(len(tables))],
+    )
+)
+fig.update_layout(
+    title="Block tables after prefill: blue blocks are shared",
+    height=400,
+    xaxis=dict(showgrid=False, side="top"),
+    yaxis=dict(autorange="reversed", showgrid=False),
+)
+viz.show(fig)
 ```
 
-<div class="plotly-figure" data-src="generated/05_04_prefix_caching_7_1.json"></div>
+</details>
+
+<div class="plotly-figure" data-src="generated/05_04_prefix_caching_13_0.json"></div>
 
 The first batch computes the system prompt once per request, because nothing is
-cached yet. From the second batch on, each request finds the system prompt's
-full blocks in the table and computes only the rest: the system prompt's last,
-partly filled block plus its own question. That brings the prompt tokens
+cached yet: requests 0 to 3 are prefilled in the same step, so each holds its
+own copy of the same blocks, and only request 0's copy enters the table. From
+the second batch on, each request finds the system prompt's full blocks in the
+table, the blue blocks four requests share, and computes only the rest: the
+system prompt's last, partly filled block plus its own question. That brings the prompt tokens
 computed down to 715 of 1,291, or 55%. The outputs are identical, because the
 reused keys and values are exactly the ones the request would have computed.
 
-The wall-clock gain is modest here: the whole workload took about 5.6 s with
-prefix caching against 6.4 s without, on this page's machine (an Apple-silicon
+The wall-clock gain is modest here: the whole workload took about 4.3 s with
+prefix caching against 5.1 s without, on this page's machine (an Apple-silicon
 Mac with a Metal GPU), because prefilling about 160 prompt tokens on a 135M
 model is only part of the workload's time. Treat these numbers as an example:
 yours depend on your hardware and vary from run to run. The saving grows with

@@ -15,22 +15,23 @@ arrays on every append, which costs time instead.) This section replaces the
 contiguous cache with a *paged* one, the idea behind vLLM's PagedAttention and
 MAX Serve's paged KV cache.
 
+<details class="code-fold">
+<summary>Show the setup <span class="code-fold-lines">24 lines</span></summary>
+
 ```python
 import logging
-import time
 import warnings
 
 import numpy as np
 import plotly.graph_objects as go
-from max.driver import CPU
 from max.pipelines import AutoTokenizer
 
 from minillm import viz
-from minillm.device import pick_device
 from minillm.config import MODEL_ID, LlamaConfig
+from minillm.device import pick_device
 from minillm.engine import Engine
 from minillm.model import load_model
-from minillm.step import Request, StepModel, compile_step
+from minillm.step import Request, StepModel, compile_step, make_workload
 from minillm.weights import load_checkpoint
 
 logging.getLogger("max").setLevel(logging.ERROR)
@@ -44,6 +45,8 @@ step = compile_step(
 )
 ```
 
+</details>
+
 ## Blocks and block tables
 
 Paging works like virtual memory. The cache memory is one *pool* of
@@ -54,6 +57,9 @@ sequence's blocks needn't be next to each other, so free memory never breaks
 into gaps too small to use; the only waste is the unfilled part of each
 sequence's last block. A finished sequence returns its blocks to the pool at
 once.
+
+<details class="code-fold">
+<summary>Show <code>BlockPool</code>, <code>PagedCache</code> <span class="code-fold-lines">79 lines</span></summary>
 
 ```python
 from __future__ import annotations
@@ -137,6 +143,8 @@ class PagedCache:
         self.blocks = []
 ```
 
+</details>
+
 <small>Saved to `minillm/paged.py`.</small>
 
 `read` gathers a sequence's blocks into one array for the step model. That copy
@@ -149,6 +157,9 @@ blocks and the pool is empty, it *preempts* the newest running request: it frees
 that request's blocks and puts it back at the front of the queue, to recompute
 its prompt and the tokens it has generated so far when it runs again. And it
 returns a finished request's blocks to the pool.
+
+<details class="code-fold">
+<summary>Show <code>PagedEngine</code> <span class="code-fold-lines">68 lines</span></summary>
 
 ```python
 from minillm.engine import Engine
@@ -172,6 +183,7 @@ class PagedEngine(Engine):
             spare -= self.blocks_needed(request)
             admitted += 1
         held = [self.waiting.pop() for _ in range(len(self.waiting) - admitted)]
+        held.reverse()  # pop() took them from the back
         prefill = (
             self.waiting
             and len(self.running) < self.max_batch
@@ -181,10 +193,11 @@ class PagedEngine(Engine):
             raise MemoryError(
                 "a waiting request needs more blocks than the pool has"
             )
-        if not prefill:
-            held = self.preempt_until_decode_fits() + held
+        preempted = [] if prefill else self.preempt_until_decode_fits()
         super().step()
+        # Preempted requests go to the front of the queue, as in MAX.
         self.waiting.extend(held)
+        self.waiting.extendleft(reversed(preempted))
 
     def preempt_until_decode_fits(self) -> list[Request]:
         """Frees the newest requests' blocks until every running request can
@@ -219,6 +232,8 @@ class PagedEngine(Engine):
                 cache.release()
 ```
 
+</details>
+
 <small>Saved to `minillm/paged.py`.</small>
 
 ## Check it
@@ -228,50 +243,25 @@ from [Section 5.2](05_02_continuous_batching.md) with
 a paged cache and compare the tokens:
 
 ```python
-TEXTS = [
-    "Tell me about Paris.",
-    "Write a haiku about the sea.",
-    "What is 2 + 2?",
-    "List three colors.",
-    "Explain gravity in one sentence.",
-    "Name a fruit.",
-    "Describe a cat.",
-    "Say hello in French.",
-]
-LENGTHS = [32, 24, 8, 16, 32, 8, 24, 16]
-
-
-def workload() -> list[Request]:
-    now = time.perf_counter()
-    return [
-        Request(tokenizer([t])["input_ids"][0], n, arrived=now)
-        for t, n in zip(TEXTS, LENGTHS)
-    ]
-
-
-contiguous_requests = workload()
+contiguous_requests = make_workload(tokenizer)
 engine = Engine(step, config, DEVICE, max_batch=4)
 for r in contiguous_requests:
     engine.add(r)
 engine.run()
 
 pool = BlockPool(config, num_blocks=32, block_size=16)
-paged_requests = workload()
+paged_requests = make_workload(tokenizer)
 paged = PagedEngine(step, config, DEVICE, max_batch=4, pool=pool)
 for r in paged_requests:
     paged.add(r)
 paged.run()
 
-print(
-    "same tokens:",
-    [r.output for r in paged_requests]
-    == [r.output for r in contiguous_requests],
-)
-print("blocks free after the run:", len(pool.free), "of", pool.num_blocks)
-assert [r.output for r in paged_requests] == [
+same = [r.output for r in paged_requests] == [
     r.output for r in contiguous_requests
 ]
-assert len(pool.free) == pool.num_blocks
+print("same tokens:", same)
+print("blocks free after the run:", len(pool.free), "of", pool.num_blocks)
+assert same and len(pool.free) == pool.num_blocks
 ```
 
 ```text
@@ -280,21 +270,23 @@ blocks free after the run: 32 of 32
 ```
 
 The tokens match, and every block is back in the pool after the run. To
-watch the blocks move, run the workload again on a smaller pool of 24
-blocks of 8 tokens, and record after every engine step which request owns
-each block. Slide through the steps:
+watch the block tables, run the workload again on a smaller pool of 24
+blocks of 8 tokens, and record every running request's block table after
+each engine step:
 
 ```python
 class RecordingEngine(PagedEngine):
     def step(self) -> None:
         super().step()
-        owner = np.full(self.pool.num_blocks, -1)
-        for request, cache in self.running:
-            owner[cache.blocks] = requests.index(request)
-        self.snapshots.append(owner)
+        self.snapshots.append(
+            [
+                (requests.index(r), list(c.blocks), c.length)
+                for r, c in self.running
+            ]
+        )
 
 
-requests = workload()
+requests = make_workload(tokenizer)
 recorder = RecordingEngine(
     step, config, DEVICE, max_batch=4, pool=BlockPool(config, 24, 8)
 )
@@ -303,48 +295,110 @@ for r in requests:
     recorder.add(r)
 recorder.run()
 print("preemptions:", recorder.preemptions)
+```
 
-colors = [viz.GRID] + viz.SERIES  # free, then one color per request
-scale = [
-    [edge, c] for i, c in enumerate(colors) for edge in (i / 9, (i + 1) / 9)
-]
+```text
+preemptions: 0
+```
+
+On the left, each running request's block table lists its logical blocks in
+order, with the fill of its last block. On the right is the pool, and each line
+links a logical block to the physical block that holds it. Slide through the
+steps:
+
+<details class="code-fold">
+<summary>Show <code>pool_xy</code> <span class="code-fold-lines">94 lines</span></summary>
+
+```python
+size, pool_x = recorder.pool.block_size, 9.0
+
+
+def pool_xy(block: int) -> tuple[float, float]:
+    return pool_x + block % 8, (block // 8) * 1.5
+
+
 frames = []
-for owner in recorder.snapshots:
-    grid = owner.reshape(3, 8)
-    text = [["" if o < 0 else f"r{o}" for o in row] for row in grid]
-    hover = [
-        [
-            f"block {r * 8 + c}: " + ("free" if o < 0 else f"request {o}")
-            for c, o in enumerate(row)
-        ]
-        for r, row in enumerate(grid)
+for snapshot in recorder.snapshots:
+    owner = {b: i for i, blocks, _ in snapshot for b in blocks}
+    xs, ys = zip(*(pool_xy(b) for b in range(recorder.pool.num_blocks)))
+    traces = [
+        go.Scatter(
+            x=xs,
+            y=ys,
+            mode="markers+text",
+            marker=dict(
+                symbol="square",
+                size=26,
+                color=[
+                    viz.SERIES[owner[b]] if b in owner else viz.GRID
+                    for b in range(recorder.pool.num_blocks)
+                ],
+            ),
+            text=[str(b) for b in range(recorder.pool.num_blocks)],
+            textfont=dict(color=viz.INK),
+            hovertext=[
+                f"physical block {b}: "
+                + (f"request {owner[b]}" if b in owner else "free")
+                for b in range(recorder.pool.num_blocks)
+            ],
+            hoverinfo="text",
+        )
     ]
-    frames.append(
-        [
-            go.Heatmap(
-                z=grid,
-                zmin=-1.5,
-                zmax=7.5,
-                colorscale=scale,
-                showscale=False,
-                xgap=3,
-                ygap=3,
-                text=text,
-                texttemplate="%{text}",
-                customdata=hover,
-                hovertemplate="%{customdata}<extra></extra>",
-            )
+    for row, (i, blocks, length) in enumerate(snapshot):
+        fills = [min(size, length - j * size) for j in range(len(blocks))]
+        traces += [
+            go.Scatter(
+                x=[
+                    x
+                    for j, b in enumerate(blocks)
+                    for x in (j, pool_xy(b)[0], None)
+                ],
+                y=[y for b in blocks for y in (row, pool_xy(b)[1], None)],
+                mode="lines",
+                line=dict(color=viz.SERIES[i], width=1),
+                opacity=0.6,
+                hoverinfo="skip",
+            ),
+            go.Scatter(
+                x=[-1.2, *range(len(blocks))],
+                y=[row] * (len(blocks) + 1),
+                mode="markers+text",
+                marker=dict(
+                    symbol="square",
+                    size=[0] + [26] * len(blocks),
+                    color=viz.SERIES[i],
+                ),
+                text=[f"request {i}"]
+                + ["" if f == size else f"{max(f, 0)}/{size}" for f in fills],
+                textfont=dict(color=viz.INK),
+                hovertext=[f"request {i}: {length} tokens"]
+                + [
+                    f"request {i}, logical block {j} -> physical block {b}, "
+                    f"{max(f, 0)} of {size} slots filled"
+                    for j, (b, f) in enumerate(zip(blocks, fills))
+                ],
+                hoverinfo="text",
+            ),
         ]
-    )
+    frames.append(traces)
 fig = go.Figure(
+    go.Scatter(
+        x=[2.5, pool_x + 3.5],
+        y=[-0.9, -0.9],
+        mode="text",
+        text=["block tables (logical blocks)", "pool (physical blocks)"],
+        textfont=dict(color=viz.INK_SECONDARY),
+        hoverinfo="skip",
+    ),
     layout=dict(
-        title="Who owns each of the pool's 24 blocks",
-        height=380,
-        xaxis=dict(visible=False),
+        title="Block tables and the pool after each engine step",
+        height=400,
+        showlegend=False,
+        xaxis=dict(visible=False, range=[-2.6, pool_x + 8]),
         yaxis=dict(visible=False, autorange="reversed"),
-    )
+    ),
 )
-labels = [f"{i + 1}" for i in range(len(frames))]
+labels = [str(i + 1) for i in range(len(frames))]
 viz.show(
     viz.with_slider(
         fig, frames, labels, "after engine step ", active=len(frames) // 3
@@ -352,11 +406,9 @@ viz.show(
 )
 ```
 
-```text
-preemptions: 0
-```
+</details>
 
-<div class="plotly-figure" data-src="generated/05_03_paged_kv_cache_10_1.json"></div>
+<div class="plotly-figure" data-src="generated/05_03_paged_kv_cache_12_0.json"></div>
 
 Blocks are handed out from wherever they are free, so a request's blocks
 end up scattered across the pool, and a finished request's blocks go
@@ -390,14 +442,31 @@ reserve_max_context = batch * config.max_position_embeddings
 reserve_max_tokens = batch * (max(len(r.prompt) for r in paged_requests) + 512)
 paged_tokens = sum(sorted(-(-n // 16) * 16 for n in actual)[-batch:])
 
-print(f"{'scheme':38} {'tokens reserved':>15} {'memory':>9}")
-for name, tokens in [
-    ("reserve full context per request", reserve_max_context),
-    ("reserve max_tokens=512 per request", reserve_max_tokens),
-    ("paged, 16-token blocks (4 largest)", paged_tokens),
-]:
-    print(f"{name:38} {tokens:>15,} {tokens * per_token / 2**20:>7.1f} MiB")
+rows = [
+    (name, f"{tokens:,}", f"{tokens * per_token / 2**20:.1f} MiB")
+    for name, tokens in [
+        ("reserve full context per request", reserve_max_context),
+        ("reserve max_tokens=512 per request", reserve_max_tokens),
+        ("paged, 16-token blocks (4 largest)", paged_tokens),
+    ]
+]
+header = ("scheme", "tokens reserved", "memory")
+widths = [max(len(row[i]) for row in [header, *rows]) for i in range(3)]
+for name, tokens, memory in [header, *rows]:
+    print(f"{name:{widths[0]}}  {tokens:>{widths[1]}}  {memory:>{widths[2]}}")
+```
 
+```text
+scheme                              tokens reserved      memory
+reserve full context per request             32,768  1440.0 MiB
+reserve max_tokens=512 per request            2,080    91.4 MiB
+paged, 16-token blocks (4 largest)              160     7.0 MiB
+```
+
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">25 lines</span></summary>
+
+```python
 schemes = {
     "reserve full context": reserve_max_context,
     "reserve max_tokens=512": reserve_max_tokens,
@@ -425,14 +494,9 @@ fig.update_layout(
 viz.show(fig)
 ```
 
-```text
-scheme                                 tokens reserved    memory
-reserve full context per request                32,768  1440.0 MiB
-reserve max_tokens=512 per request               2,080    91.4 MiB
-paged, 16-token blocks (4 largest)                 160     7.0 MiB
-```
+</details>
 
-<div class="plotly-figure" data-src="generated/05_03_paged_kv_cache_12_1.json"></div>
+<div class="plotly-figure" data-src="generated/05_03_paged_kv_cache_15_0.json"></div>
 
 Saved memory becomes batch capacity. In the memory that one full-context
 reservation needs (8192 tokens), a paged cache fits about two hundred of
@@ -443,7 +507,7 @@ tables and more bookkeeping per step.
 
 MAX Serve's paged cache works the same way, and its attention kernels read the
 pages through the block table directly. Its scheduler also preempts a running
-request when the pool runs out of pages, and logs a warning that suggests giving
+request when the pool runs out of pages, and logs a message that suggests giving
 the cache more memory. `max serve` exposes the settings. `--kv-cache-page-size`
 sets the block size, 128 tokens by default. `--device-memory-utilization` sets
 the fraction of device memory the process may use, 0.95 by default, and the KV

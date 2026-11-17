@@ -12,6 +12,9 @@ optimized code. You can also build graphs directly with `max.graph`, which is
 how many of MAX's serving pipelines build their models, and load checkpoints
 with MAX's production weight loader.
 
+<details class="code-fold">
+<summary>Show the setup <span class="code-fold-lines">25 lines</span></summary>
+
 ```python
 import logging
 import re
@@ -39,6 +42,8 @@ DEVICE = pick_device()  # a GPU if MAX finds one, otherwise the CPU
 config = LlamaConfig.from_pretrained()
 weights = load_checkpoint()
 ```
+
+</details>
 
 ## What `compile` builds
 
@@ -80,6 +85,9 @@ mo.graph @MLP<seq_len>(%arg0: !mo.tensor<[seq_len, 576], f32, gpu:0>) -> !mo.ten
 The text is a dataflow graph: each line defines one value (`%4`) from
 earlier ones. Parse it and draw it, with each operation placed one column
 after the latest value it reads. Hover over a node to see its line of IR:
+
+<details class="code-fold">
+<summary>Show <code>kind</code> <span class="code-fold-lines">85 lines</span></summary>
 
 ```python
 LINE = re.compile(
@@ -169,6 +177,8 @@ fig.update_layout(
 viz.show(fig)
 ```
 
+</details>
+
 <div class="plotly-figure" data-src="generated/03_02_graph_api_6_0.json"></div>
 
 The graph is MAX's intermediate representation (in MLIR). A few things to
@@ -182,6 +192,11 @@ read in it:
 - On a GPU, each weight also passes through a `mo.transfer` that copies it
   from host memory to the device (yellow in the diagram); on a CPU there is
   nothing to copy.
+- Each projection's `rmo.matmul` is followed by an `rmo.add` of a constant
+  `0.0`. MAX's `Linear` built with `bias=False` stores its bias as the number
+  0 and still adds it. It costs nothing at run time: the kernel trace in
+  [Section 4.4](04_04_profiling.md) shows no
+  separate add.
 - Every line is one operation (`rmo.matmul`, `mo.silu`, ...) with fully known
   types. That is what lets the compiler fuse operations, plan memory for the
   whole computation, and generate code for the target device ahead of time.
@@ -255,6 +270,9 @@ place of `silu * up`:
 import mojo.notebook
 ```
 
+<details class="code-fold">
+<summary>Show <code>SwiGLU</code> <span class="code-fold-lines">14 lines</span></summary>
+
 ```mojo
 %%mojo package -o kernels.mojoc
 import extensibility
@@ -271,6 +289,11 @@ struct SwiGLU(ElementwiseBinaryOp):
         comptime assert dtype.is_floating_point(), "SwiGLU needs floats"
         return gate / (1 + exp(-gate)) * up
 ```
+
+</details>
+
+<details class="code-fold">
+<summary>Show <code>fused_forward</code> <span class="code-fold-lines">34 lines</span></summary>
 
 ```python
 def fused_forward(x):
@@ -308,6 +331,8 @@ relative = np.abs(fused_out.to_numpy() - expected).max() / scale
 print(f"max difference, relative to the largest output: {relative:.1e}")
 assert relative < 1e-5
 ```
+
+</details>
 
 ```text
 max difference, relative to the largest output: 4.8e-07

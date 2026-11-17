@@ -41,7 +41,11 @@ MAX runs the same code on CPUs and on NVIDIA, AMD, and Apple silicon GPUs.
 choose on its own, and `pick_device` takes the mesh's first device: a GPU if
 MAX finds one, otherwise the CPU. Every notebook in this book uses that
 device, so on Colab or Kaggle with a GPU runtime, or on a Mac, your code
-runs on the GPU without changes:
+runs on the GPU without changes.
+
+Code cells that start with `# export:` become part of this book's `minillm`
+package, so later sections import them instead of repeating them.
+`pick_device` is the first:
 
 ```python
 from __future__ import annotations
@@ -191,7 +195,19 @@ for i in range(4):
     F.gelu(z @ z).to_numpy()
     call_ms.append((time.perf_counter() - start) * 1000)
     print(f"call {i}: {call_ms[-1]:.0f} ms")
+```
 
+```text
+call 0: 10106 ms
+call 1: 19 ms
+call 2: 6 ms
+call 3: 5 ms
+```
+
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">14 lines</span></summary>
+
+```python
 fig = go.Figure(
     go.Bar(
         x=[f"call {i}" for i in range(4)],
@@ -208,17 +224,12 @@ fig.update_layout(
 viz.show(fig)
 ```
 
-```text
-call 0: 3646 ms
-call 1: 4 ms
-call 2: 2 ms
-call 3: 2 ms
-```
+</details>
 
-<div class="plotly-figure" data-src="generated/01_02_tensors_and_eager_18_1.json"></div>
+<div class="plotly-figure" data-src="generated/01_02_tensors_and_eager_19_0.json"></div>
 
 The first call pays for compilation. On this page's machine, an Apple-silicon
-Mac with a Metal GPU, it took about 3 seconds, and the later calls took a few
+Mac with a Metal GPU, it took several seconds, and the later calls took a few
 milliseconds. Treat these numbers as an example: yours depend on your hardware
 and vary from run to run. The cache persists across sessions, and
 `max warm-interpreter-cache` compiles the common kernels ahead of time.
@@ -301,18 +312,28 @@ MLP(
 ['gate_proj.weight', 'up_proj.weight', 'down_proj.weight']
 ```
 
-Calling the module runs it eagerly, one operation at a time:
+Calling the module runs it eagerly, one operation at a time. A single timing
+is noisy, so `median_ms` calls the function 20 times, after one untimed call
+that compiles its kernels, and reports the median:
 
 ```python
+def median_ms(fn, x: Tensor, repeats: int = 20) -> float:
+    fn(x).to_numpy()  # warm up: the first call compiles its kernels
+    times = []
+    for _ in range(repeats):
+        start = time.perf_counter()
+        fn(x).to_numpy()
+        times.append((time.perf_counter() - start) * 1000)
+    return float(np.median(times))
+
+
 inputs = Tensor(np.random.rand(1, 64, 576).astype(np.float32), device=DEVICE)
-mlp(inputs)  # the first call compiles its kernels
-start = time.perf_counter()
 eager_out = mlp(inputs).to_numpy()
-print(f"eager:    {(time.perf_counter() - start) * 1000:.1f} ms")
+print(f"eager:    {median_ms(mlp, inputs):.1f} ms")
 ```
 
 ```text
-eager:    110.2 ms
+eager:    46.9 ms
 ```
 
 `compile` traces `forward` once into a whole-model graph and optimizes it:
@@ -327,19 +348,17 @@ compiled_mlp = mlp.compile(
 )
 print(f"compiled in {time.perf_counter() - start:.1f} s")
 
-compiled_mlp(inputs)
-start = time.perf_counter()
 compiled_out = compiled_mlp(inputs).to_numpy()
-print(f"compiled: {(time.perf_counter() - start) * 1000:.1f} ms")
+print(f"compiled: {median_ms(compiled_mlp, inputs):.1f} ms")
 relative = np.abs(compiled_out - eager_out).max() / np.abs(eager_out).max()
 print(f"max difference, relative to the largest output: {relative:.1e}")
 assert relative < 1e-5
 ```
 
 ```text
-compiled in 9.5 s
-compiled: 1.1 ms
-max difference, relative to the largest output: 9.5e-07
+compiled in 10.9 s
+compiled: 1.2 ms
+max difference, relative to the largest output: 9.7e-07
 ```
 
 How much faster depends on the input size. Each eager operation pays a
@@ -347,25 +366,32 @@ fixed cost to dispatch, which dominates small inputs; the compiled graph
 pays it once. Time both over a range of sequence lengths:
 
 ```python
-def best_ms(fn, x: Tensor, repeats: int = 5) -> float:
-    fn(x).to_numpy()  # warm up
-    times = []
-    for _ in range(repeats):
-        start = time.perf_counter()
-        fn(x).to_numpy()
-        times.append((time.perf_counter() - start) * 1000)
-    return min(times)
-
-
 lengths = [1, 16, 64, 256, 1024]
 timings = {"eager": [], "compiled": []}
 for length in lengths:
     x_len = Tensor(
         np.random.rand(1, length, 576).astype(np.float32), device=DEVICE
     )
-    timings["eager"].append(best_ms(mlp, x_len))
-    timings["compiled"].append(best_ms(compiled_mlp, x_len))
+    timings["eager"].append(median_ms(mlp, x_len))
+    timings["compiled"].append(median_ms(compiled_mlp, x_len))
+    print(
+        f"{length:5} tokens: eager {timings['eager'][-1]:6.1f} ms, "
+        f"compiled {timings['compiled'][-1]:6.1f} ms"
+    )
+```
 
+```text
+    1 tokens: eager   21.9 ms, compiled    0.5 ms
+   16 tokens: eager   28.4 ms, compiled    1.3 ms
+   64 tokens: eager   42.7 ms, compiled    1.6 ms
+  256 tokens: eager   51.6 ms, compiled    3.9 ms
+ 1024 tokens: eager   42.5 ms, compiled    8.0 ms
+```
+
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">20 lines</span></summary>
+
+```python
 fig = go.Figure(
     [
         go.Scatter(
@@ -380,7 +406,7 @@ fig = go.Figure(
     ]
 )
 fig.update_layout(
-    title="The MLP block, eager and compiled",
+    title="The MLP block, eager and compiled (median of 20 calls)",
     height=420,
     xaxis=dict(title="sequence length (tokens)", type="log", dtick=1),
     yaxis=dict(title="ms (log scale)", type="log", dtick=1),
@@ -388,13 +414,15 @@ fig.update_layout(
 viz.show(fig)
 ```
 
-<div class="plotly-figure" data-src="generated/01_02_tensors_and_eager_30_0.json"></div>
+</details>
+
+<div class="plotly-figure" data-src="generated/01_02_tensors_and_eager_32_0.json"></div>
 
 The compiled MLP gives the same numbers up to `float32` rounding (the compiled
 graph may order additions differently) and runs many times faster. In the run
 shown here, on an Apple-silicon Mac with a Metal GPU, an eager call took about
-35 to 60 ms at every length, and a compiled one took about 1 ms up to 64 tokens
-and under 20 ms at the longest lengths. The rest of the book works the same way:
+20 to 50 ms at every length, and a compiled one took about 1 ms up to 64 tokens
+and a few milliseconds at the longest lengths. The rest of the book works the same way:
 write and debug a model eagerly, printing anything you like, then compile it to
 run it for real. MAX's docs cover
 [eager execution](https://max.modular.com/develop/eager-execution) and

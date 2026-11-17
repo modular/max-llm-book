@@ -30,7 +30,9 @@ derives everything else from them:
     execution takes its outputs from that run.
     Cell tags control the page: ``hide-in-book`` drops a cell,
     ``hide-input`` keeps only its output, and ``hide-output`` keeps only its
-    code.
+    code. A code cell longer than ``FOLD_LINES`` renders folded behind a
+    summary that the reader opens; ``collapse-input`` folds a shorter cell,
+    and ``expand-input`` keeps a long one open.
 
 Each command takes ``--check``, which fails instead of writing when a file
 would change.
@@ -39,9 +41,11 @@ would change.
 from __future__ import annotations
 
 import argparse
+import ast
 import atexit
 import base64
 import copy
+import html
 import json
 import os
 import re
@@ -80,6 +84,12 @@ BOOK_URL = "https://llm.modular.com/"
 BOOK_LINK_RE = re.compile(
     r"\]\(https://llm\.modular\.com/([\w-]+)\.html(#[\w-]+)?\)"
 )
+# Notebooks show a diagram from tools/diagrams.py by its published light SVG,
+# which works in Colab and Kaggle too. The book shows a light and a dark
+# copy, and the theme's CSS hides the one that doesn't match.
+DIAGRAM_RE = re.compile(
+    r"!\[([^\]]*)\]\(https://llm\.modular\.com/assets/diagrams/([\w-]+)\.svg\)"
+)
 ANSI_RE = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
 # Progress bars, download chatter and MAX's tuning hints are noise on a
 # static page.
@@ -88,6 +98,19 @@ NOISY_STDERR_RE = re.compile(
     r"downloading bytes|^WARNING:max\.|^INFO:max\."
 )
 MAX_OUTPUT_LINES = 40
+# Warnings and tracebacks name source files by absolute path, which would
+# publish the author's home directory. Pages show repository files relative
+# to the repository and notebook cells as <cell>.
+# The lookbehind skips URLs, such as the GitHub links in the badges.
+LOCAL_PATH_SUBS = (
+    (re.compile(r"(?<![\w.:/])/\S*?/max-llm-book/"), ""),
+    (re.compile(r"(?<![\w.:/])/\S*?/ipykernel_\d+/\d+\.py"), "<cell>"),
+    (re.compile(r"(?<![\w.:/])/(?:Users|home)/[^/\s]+/"), "~/"),
+)
+# Longer code cells start folded: most readers want the idea and the output,
+# and open the code when they want the detail.
+FOLD_LINES = 25
+MOJO_DEF_RE = re.compile(r"^(?:def|struct|trait)\s+(\w+)", re.MULTILINE)
 
 LICENSE_HEADER = """\
 # ===----------------------------------------------------------------------=== #
@@ -280,8 +303,14 @@ def execute(nb: nbformat.NotebookNode, timeout: int) -> nbformat.NotebookNode:
     return nb
 
 
+def scrub_paths(text: str) -> str:
+    for pattern, replacement in LOCAL_PATH_SUBS:
+        text = pattern.sub(replacement, text)
+    return text
+
+
 def clip(text: str) -> str:
-    lines = ANSI_RE.sub("", text).rstrip().splitlines()
+    lines = scrub_paths(ANSI_RE.sub("", text)).rstrip().splitlines()
     if len(lines) > MAX_OUTPUT_LINES:
         keep = MAX_OUTPUT_LINES // 2
         lines = lines[:keep] + ["..."] + lines[-keep:]
@@ -341,6 +370,63 @@ def render_outputs(
         yield f"```text\n{clip(''.join(text))}\n```"
 
 
+def fold_summary(code: str, language: str) -> str:
+    """Names what a folded cell holds: its imports, its setup, or the
+    top-level functions and classes it defines."""
+    if language == "mojo":
+        names = MOJO_DEF_RE.findall(code)
+    else:
+        try:
+            tree = ast.parse(code)
+        except SyntaxError:
+            # Cells with IPython magics aren't plain Python.
+            return "the code"
+        if all(isinstance(n, (ast.Import, ast.ImportFrom)) for n in tree.body):
+            return "the imports"
+        names = [
+            node.name
+            for node in tree.body
+            if isinstance(
+                node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
+            )
+        ]
+        if not names and isinstance(tree.body[0], (ast.Import, ast.ImportFrom)):
+            return "the setup"
+    if not names:
+        return "the code"
+    shown = ", ".join(f"<code>{html.escape(n)}</code>" for n in names[:4])
+    return shown + (", ..." if len(names) > 4 else "")
+
+
+def code_block(code: str, language: str, cell_tags: set[str]) -> str:
+    block = f"```{language}\n{code}\n```"
+    lines = code.count("\n") + 1
+    folded = "collapse-input" in cell_tags or (
+        lines > FOLD_LINES and "expand-input" not in cell_tags
+    )
+    if not folded:
+        return block
+    what = fold_summary(code, language)
+    # mdBook parses the fenced block between the HTML lines as Markdown only
+    # when blank lines separate them.
+    return (
+        f'<details class="code-fold">\n<summary>Show {what} '
+        f'<span class="code-fold-lines">{lines} line{"s" * (lines != 1)}'
+        "</span></summary>\n\n"
+        f"{block}\n\n</details>"
+    )
+
+
+def diagram_html(match: re.Match[str]) -> str:
+    alt, name = html.escape(match.group(1)), match.group(2)
+    return (
+        f'<img class="diagram diagram-light" src="assets/diagrams/{name}.svg"'
+        f' alt="{alt}">'
+        f'<img class="diagram diagram-dark" src="assets/diagrams/{name}-dark.svg"'
+        f' alt="{alt}">'
+    )
+
+
 def render_page(path: Path, nb: nbformat.NotebookNode) -> str:
     parts: list[str] = []
     for index, cell in enumerate(nb.cells):
@@ -350,6 +436,7 @@ def render_page(path: Path, nb: nbformat.NotebookNode) -> str:
         if cell.cell_type == "markdown":
             source = convert_math(cell.source.strip())
             source = BOOK_LINK_RE.sub(r"](\1.md\2)", source)
+            source = DIAGRAM_RE.sub(diagram_html, source)
             if not parts and source.startswith("# "):
                 heading, _, rest = source.partition("\n")
                 source = f"{heading}\n\n{badges(path)}\n{rest.strip()}"
@@ -360,7 +447,7 @@ def render_page(path: Path, nb: nbformat.NotebookNode) -> str:
             code = body.strip() if match else cell.source.strip()
             if code and "hide-input" not in cell_tags:
                 language = "mojo" if code.startswith("%%mojo") else "python"
-                parts.append(f"```{language}\n{code}\n```")
+                parts.append(code_block(code, language, cell_tags))
             if match:
                 parts.append(f"<small>Saved to `{match.group(1)}`.</small>")
             parts.extend(render_outputs(cell, path.stem, index))

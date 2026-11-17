@@ -229,3 +229,36 @@ def test_paged_engine_preempts_and_recomputes(
     assert len(starts) == len(requests)
     assert starts == sorted(starts)
     assert pool.available() == pool.num_blocks
+
+
+@compiles
+def test_paged_engine_admits_held_requests_in_arrival_order(
+    step,  # noqa: ANN001
+) -> None:
+    # Each request needs every block in the pool, so the others wait their
+    # turn, and must start in the order they arrived.
+    pool = BlockPool(TINY, num_blocks=3, block_size=4)
+    engine = PagedEngine(step, TINY, DEVICE, max_batch=4, pool=pool)
+    requests = [Request([1, 2, 3, 4, 5, 6, 7, k], 3) for k in range(5)]
+    for request in requests:
+        engine.add(request)
+    engine.run()
+
+    starts = [r.first_token for r in requests if r.first_token is not None]
+    assert len(starts) == len(requests)
+    assert starts == sorted(starts)
+
+
+def test_prefix_pool_evicts_the_tail_of_a_cached_prefix_first() -> None:
+    pool = PrefixCachingPool(TINY, num_blocks=5, block_size=4)
+    prompt = list(range(12))  # three full blocks
+    blocks = [pool.allocate() for _ in range(3)]
+    pool.register(prompt, blocks)
+    pool.release(blocks)
+
+    # Use up the free blocks, then force one eviction.
+    for _ in range(pool.available() - len(blocks) + 1):
+        pool.allocate()
+
+    # Losing the last block keeps the first two reusable.
+    assert len(pool.lookup(prompt + [99])) == 2

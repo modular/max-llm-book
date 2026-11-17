@@ -9,6 +9,9 @@ A benchmark tells you *how long* something takes. A profile tells you
 This section profiles at three levels: a whole generation run, the kernels
 a compiled graph launches, and the parts of your own model.
 
+<details class="code-fold">
+<summary>Show the setup <span class="code-fold-lines">21 lines</span></summary>
+
 ```python
 import logging
 import warnings
@@ -33,6 +36,8 @@ DEVICE = pick_device()  # a GPU if MAX finds one, otherwise the CPU
 config = LlamaConfig.from_pretrained()
 ```
 
+</details>
+
 ## Profile a whole run
 
 `max generate` takes a `--profile` flag. On an NVIDIA GPU with Nsight
@@ -48,15 +53,15 @@ model, or in the code around it?
 ```
 
 ```text
-=== Top 15 Python/CPU functions (95.5% of CPU time, 220.07 ms total) ===
+=== Top 15 Python/CPU functions (93.9% of CPU time, 321.38 ms total) ===
      %       total     calls  function
- 51.9%   114.19 ms        40  ~:0<built-in method numpy.from_dlpack>
- 41.8%    92.09 ms        20  max/engine/api.py:118(_Model_execute)
-  0.2%   496.38 us        10  max/pipelines/lib/pipeline_variants/text_generation.py:597(execute)
-  0.2%   436.71 us        10  max/pipelines/lib/module_registration.py:763(prepare_initial_token_inputs)
-  0.2%   417.04 us        10  max/pipelines/sampling/sampling_logits_processor.py:109(_packed_rows_to_device)
-  0.2%   363.58 us        90  max/driver/buffer.py:113(_view)
-  0.1%   291.33 us        24  ~:0<method 'control' of 'select.kqueue' objects>
+ 47.1%   151.33 ms        64  ~:0<built-in method numpy.from_dlpack>
+ 44.1%   141.86 ms        32  max/engine/api.py:118(_Model_execute)
+  0.5%     1.45 ms        16  max/pipelines/lib/pipeline_variants/text_generation.py:597(execute)
+  0.3%     1.05 ms        16  max/pipelines/sampling/sampling_logits_processor.py:109(_packed_rows_to_device)
+  0.3%   844.17 us        16  max/pipelines/lib/module_registration.py:763(prepare_initial_token_inputs)
+  0.2%   667.59 us        16  max/pipelines/lib/pipeline_variants/text_generation.py:610(_execute)
+  0.2%   658.54 us        16  max/driver/buffer.py:143(inplace_copy_from)
 ```
 
 The time is in the model: `_Model_execute`, the call into the compiled graph,
@@ -100,20 +105,23 @@ Overwriting trace_mlp.py
 ```
 
 ```python
-!MODULAR_DEBUG=op-log-level=TRACE python trace_mlp.py 2>&1 | sed -n '/--- run ---/,$p' | grep LAUNCH
+!MODULAR_DEBUG=op-log-level=TRACE python trace_mlp.py 2>&1 | sed -n '/--- run ---/,$p' | grep LAUNCH | grep -v 'LAUNCH matmul[^ ]'
 ```
 
 ```text
 [OP] LAUNCH matmul [id=22] target=gpu:0
-[OP] LAUNCH matmulmo.matmul [id=23] target=gpu:0
 [OP] LAUNCH Epilogue(matmul, Elementwise(silu, mul), operandIndices=[0]) [id=24] target=gpu:0
-[OP] LAUNCH matmulEpilogue(mo.matmul, Elementwise(mo.silu, mo.mul), operandIndices=[0]) [id=25] target=gpu:0
 [OP] LAUNCH matmul [id=26] target=gpu:0
-[OP] LAUNCH matmulmo.matmul [id=27] target=gpu:0
 ```
 
-The MLP has five operations in Python (three matmuls, `silu`, and a multiply),
-but the graph launches three top-level kernels. The `Epilogue` entry is the
+Each matmul logs a second `LAUNCH` line from inside the kernel, whose name MAX
+joins to the graph operation's name with no space (`matmulmo.matmul`); the
+`grep -v` drops those, which leaves one line per kernel the graph launches.
+
+The MLP has five operations in your Python (three matmuls, `silu`, and a
+multiply), more in the traced graph you saw in
+[Section 3.2](03_02_graph_api.md), and three kernels
+at run time. The `Epilogue` entry is the
 second matmul with `silu` and `mul` fused into it: the activation is applied as
 each tile of the matmul's output is produced, before it is written to memory.
 That fusion is why the hand-written SwiGLU kernel in
@@ -131,6 +139,9 @@ layer's attention, MLP, and norm, and the LM head, and time each at two shapes:
 one decode step (1 token) and a prefill (256 tokens). Each time is multiplied by
 how often the part runs in the model: 30 attention and MLP blocks, and 61 norms
 (two per layer plus the final one).
+
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">31 lines</span></summary>
 
 ```python
 model = load_model(config, load_checkpoint(), DEVICE)
@@ -166,18 +177,23 @@ for tokens in [1, 256]:
         print(f"  {name:16} {t:7.2f} ms  {t / total:5.0%}")
 ```
 
+</details>
+
 ```text
-1 token(s): 51.8 ms in total
-  attention (x30)    23.09 ms    45%
-  MLP (x30)          12.12 ms    23%
-  norms (x61)        15.07 ms    29%
-  LM head             1.53 ms     3%
-256 token(s): 154.9 ms in total
-  attention (x30)    65.05 ms    42%
-  MLP (x30)          35.46 ms    23%
-  norms (x61)        25.48 ms    16%
-  LM head            28.89 ms    19%
+1 token(s): 139.5 ms in total
+  attention (x30)    56.17 ms    40%
+  MLP (x30)          30.12 ms    22%
+  norms (x61)        50.82 ms    36%
+  LM head             2.42 ms     2%
+256 token(s): 290.6 ms in total
+  attention (x30)   118.63 ms    41%
+  MLP (x30)          68.72 ms    24%
+  norms (x61)        63.74 ms    22%
+  LM head            39.53 ms    14%
 ```
+
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">25 lines</span></summary>
 
 ```python
 rows = ["decode (1 token)", "prefill (256 tokens)"]
@@ -207,17 +223,19 @@ fig.update_layout(
 viz.show(fig)
 ```
 
+</details>
+
 <div class="plotly-figure" data-src="generated/04_04_profiling_10_0.json"></div>
 
 Compare the two bars. The shares below were measured on this page's
 Metal GPU.
 
-Attention takes the largest share at both shapes, over 40%. Its cost is the
+Attention takes the largest share at both shapes, about 40%. Its cost is the
 only one that grows with the square of the sequence length, so its share
 grows on longer prompts; at 256 tokens the prompt is still short enough that
 it barely moves.
 
-The LM head's share grows the most, from a few percent to about a fifth. It
+The LM head's share grows the most, from a few percent to over a tenth. It
 holds more weights than all 30 layers' attention put together (49,152 × 576),
 and here it runs on every one of the 256 prompt positions. The cached model from
 [Section 1.8](01_08_kv_cache.md) computes it for the
@@ -227,8 +245,33 @@ The norms look expensive at decode, over a quarter of the time, but that is
 mostly an artifact of this method. Each separately compiled call pays a fixed
 cost to launch its work and read back the result, and the decomposition counts
 that cost 61 times for the norms; the whole compiled model runs as one graph and
-pays it once. Profiling by decomposition overstates small operations, so check a
-surprising number with the kernel trace before acting on it.
+pays it once. Time the whole model as one compiled graph to see how large that
+overhead is:
+
+```python
+whole = model.compile(
+    TensorType(DType.int64, ("batch", "seq_len"), device=DEVICE)
+)
+for tokens in [1, 256]:
+    ids = Tensor(np.zeros((1, tokens), np.int64), device=DEVICE)
+    whole_ms = benchmark(lambda: whole(ids).to_numpy(), iterations=30).median_ms
+    parts_ms = sum(all_times[tokens].values())
+    print(
+        f"{tokens:3} token(s): whole model {whole_ms:6.1f} ms,"
+        f" sum of parts {parts_ms:6.1f} ms ({parts_ms / whole_ms:.1f}x)"
+    )
+```
+
+```text
+  1 token(s): whole model   58.3 ms, sum of parts  139.5 ms (2.4x)
+256 token(s): whole model  119.8 ms, sum of parts  290.6 ms (2.4x)
+```
+
+At both shapes the whole model takes less than half the time its parts add up
+to. The difference is what the 122 separate calls cost: each one launches its
+work and reads its result back to the host, and the whole graph does both once. So a
+decomposition ranks the parts, but its shares overstate small operations such as
+the norms. Check a surprising number with the kernel trace before acting on it.
 
 Every optimization starts here: find the largest share, decide whether it is
 memory-bound or compute-bound
@@ -239,8 +282,9 @@ at its kernels (the trace above).
 
 On NVIDIA GPUs, Nsight Systems answers the same questions: set
 `MODULAR_ENABLE_PROFILING=detailed` and run your program under `nsys profile`,
-or pass `--profile` to `max generate`. `max benchmark --profile` does the same
-for a server that already runs under `nsys launch`. MAX marks its operations as
+or pass `--profile` to `max generate`. `max benchmark --trace` does the same
+for a server that already runs under `nsys launch`, started with
+`--gpu-profiling detailed`. MAX marks its operations as
 named ranges in the timeline, so you can match GPU kernels to the operations
 that launched them. MAX's guide to
 [GPU profiling with Nsight Systems](https://max.modular.com/gpu-system-profiling)

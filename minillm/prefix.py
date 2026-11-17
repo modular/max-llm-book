@@ -52,7 +52,9 @@ class PrefixCachingPool(BlockPool):
         return len(self.free) + len(self.unused)
 
     def release(self, blocks: list[int]) -> None:
-        for block in blocks:
+        # Tail first: eviction then takes a prefix's last block before its
+        # first, and lookup can still reuse the rest.
+        for block in reversed(blocks):
             self.refs[block] -= 1
             if self.refs[block] == 0:
                 if block in self.hash_of:

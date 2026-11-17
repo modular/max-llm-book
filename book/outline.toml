@@ -35,7 +35,7 @@ page = "ch04.md"
 sections = [
   "04_01_layer_tests|4.1 Testing layers against references",
   "04_02_logit_verification|4.2 Verifying a model's logits",
-  "04_03_kernel_benchmarks|4.3 Testing and benchmarking kernels",
+  "04_03_kernel_benchmarks|4.3 Benchmarking kernels and layers",
   "04_04_profiling|4.4 Profiling",
 ]
 

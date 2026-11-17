@@ -17,6 +17,9 @@ large-model code. As in
 [Section 4.1](04_01_layer_tests.md), the test compares
 one layer with a reference implementation.
 
+<details class="code-fold">
+<summary>Show the setup <span class="code-fold-lines">32 lines</span></summary>
+
 ```python
 import json
 import logging
@@ -51,6 +54,8 @@ logging.getLogger("max").setLevel(logging.ERROR)
 warnings.filterwarnings("ignore", message="The eager interpreter failed")
 DEVICE = pick_device()  # a GPU if MAX finds one, otherwise the CPU
 ```
+
+</details>
 
 ## How big, and how sparse
 
@@ -93,10 +98,15 @@ An MoE layer replaces the MLP. For each token:
 1. The router, a `Linear` from the hidden size to the number of experts, scores
    every expert. Softmax turns the scores into probabilities.
 2. The `K` most probable experts are chosen, and their probabilities are
-   renormalized to sum to 1.
+   renormalized to sum to 1. Qwen3-MoE's config asks for this with
+   `norm_topk_prob: true`; a model that sets it to `false` weights the experts
+   by their raw probabilities, so reusing `MoE` for one means dropping that
+   step.
 3. Each chosen expert, a SwiGLU MLP like the one in
    [Section 1.4](01_04_building_blocks.md), processes
    the token, and the outputs are summed, weighted by those probabilities.
+
+<img class="diagram diagram-light" src="assets/diagrams/mixture-of-experts.svg" alt="Mixture-of-experts layer: a token&#x27;s hidden state goes to a router, which scores all 128 experts; the 8 highest-scoring experts run on the token, and their outputs are combined, weighted by the renormalized router probabilities."><img class="diagram diagram-dark" src="assets/diagrams/mixture-of-experts-dark.svg" alt="Mixture-of-experts layer: a token&#x27;s hidden state goes to a router, which scores all 128 experts; the 8 highest-scoring experts run on the token, and their outputs are combined, weighted by the renormalized router probabilities.">
 
 In symbols, with router weights \\(W\_r\\), the set \\(\\mathcal{T}\\) of the \\(K\\)
 most probable experts, and expert \\(e\\)'s MLP \\(E\_e\\):
@@ -111,6 +121,9 @@ checkpoint files store each expert's projections separately. This version
 computes *every* expert on every token and multiplies the unselected ones by
 zero. That wastes work, but it is simple and exact, and the last part of
 this section shows that it is easy to distribute.
+
+<details class="code-fold">
+<summary>Show <code>Experts</code>, <code>MoE</code> <span class="code-fold-lines">66 lines</span></summary>
 
 ```python
 from __future__ import annotations
@@ -181,6 +194,8 @@ class MoE(Module):
         return (weights * outputs).sum(axis=0).reshape([tokens, hidden])
 ```
 
+</details>
+
 <small>Saved to `minillm/moe.py`.</small>
 
 ## Check it against Qwen3-MoE
@@ -225,18 +240,46 @@ max difference 3.8e-06
 ## Where the tokens go
 
 The routing matrix shows which experts each token uses. Count the tokens per
-expert for a larger batch:
+expert for a larger batch, then make the router favor expert 0 by scaling its
+row of router weights, and count again:
 
 ```python
 batch = Tensor(
     np.random.default_rng(1).standard_normal((512, 64)).astype(np.float32),
     device=DEVICE,
 )
-load = (moe.routing(batch).to_numpy() > 0).sum(axis=0)
+weights_np = moe.routing(batch).to_numpy()
+load = (weights_np > 0).sum(axis=0)
 print("tokens per expert:", load, " ideal:", 512 * 2 // 8)
 assert load.sum() == 512 * 2
 
-weights_np = moe.routing(batch).to_numpy()
+
+def load_with_bias(factor: float) -> np.ndarray:
+    router = state["gate.weight"].copy()
+    router[0] *= factor
+    with default_device(DEVICE), default_dtype(DType.float32):
+        biased = MoE(num_experts=8, top_k=2, hidden=64, intermediate=32)
+    biased.load_state_dict({**state, "gate.weight": router})
+    return (biased.routing(batch).to_numpy() > 0).sum(axis=0)
+
+
+loads = {factor: load_with_bias(factor) for factor in [1, 2, 5]}
+for factor, counts in loads.items():
+    print(f"expert 0's row x{factor}: tokens per expert {counts}")
+assert (loads[1] == load).all()
+```
+
+```text
+tokens per expert: [122 116 157 121 117 134 122 135]  ideal: 128
+expert 0's row x1: tokens per expert [122 116 157 121 117 134 122 135]
+expert 0's row x2: tokens per expert [178 109 144 116 108 130 113 126]
+expert 0's row x5: tokens per expert [227 104 136 109 103 121 104 120]
+```
+
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">60 lines</span></summary>
+
+```python
 fig = make_subplots(
     rows=1,
     cols=2,
@@ -261,17 +304,33 @@ fig.add_trace(
     row=1,
     col=1,
 )
-fig.add_trace(
-    go.Bar(
-        x=np.arange(len(load)),
-        y=load,
-        marker_color=viz.BLUE,
-        showlegend=False,
-        hovertemplate="expert %{x}: %{y} tokens<extra></extra>",
-    ),
+steps = [
+    [
+        go.Bar(
+            x=np.arange(len(counts)),
+            y=counts,
+            marker_color=[viz.ORANGE] + [viz.BLUE] * (len(counts) - 1),
+            showlegend=False,
+            xaxis="x2",
+            yaxis="y2",
+            hovertemplate="expert %{x}: %{y} tokens<extra></extra>",
+        )
+    ]
+    for counts in loads.values()
+]
+fig.update_xaxes(title_text="expert", dtick=1, showgrid=False)
+fig.update_yaxes(
+    title_text="token", autorange="reversed", showgrid=False, row=1, col=1
+)
+fig.update_yaxes(
+    title_text="tokens routed",
+    range=[0, 1.1 * max(c.max() for c in loads.values())],
     row=1,
     col=2,
 )
+fig.update_layout(title="Top-2 routing over 8 experts", height=520)
+labels = [f"x{factor}" for factor in loads]
+viz.with_slider(fig, steps, labels, "expert 0's router row ")
 fig.add_hline(
     y=512 * 2 / len(load),
     line=dict(color=viz.INK_SECONDARY, dash="dash"),
@@ -280,24 +339,18 @@ fig.add_hline(
     annotation_text="even split",
     annotation_position="top right",
 )
-fig.update_xaxes(title_text="expert", dtick=1, showgrid=False)
-fig.update_yaxes(
-    title_text="token", autorange="reversed", showgrid=False, row=1, col=1
-)
-fig.update_yaxes(title_text="tokens routed", row=1, col=2)
-fig.update_layout(title="Top-2 routing over 8 experts", height=480)
 viz.show(fig)
 ```
 
-```text
-tokens per expert: [122 116 157 121 117 134 122 135]  ideal: 128
-```
+</details>
 
-<div class="plotly-figure" data-src="generated/06_03_mixture_of_experts_10_1.json"></div>
+<div class="plotly-figure" data-src="generated/06_03_mixture_of_experts_11_0.json"></div>
 
-Every token went to exactly two experts. How evenly a batch spreads across
-experts matters in practice: an expert that gets far more tokens than the
-others becomes the slowest part of the layer. MoE models are usually trained
+Every token went to exactly two experts. Move the slider to scale expert 0's
+row of router weights: its scores grow, so more tokens pick it, and its bar
+rises to nearly twice the even split at x5 while the others shrink. How evenly a batch
+spreads across experts matters in practice: an expert that gets far more tokens
+than the others becomes the slowest part of the layer. MoE models are usually trained
 with a *load-balancing* term in the loss that pushes the router to spread
 tokens evenly, and serving systems monitor the load on each expert.
 
@@ -370,7 +423,7 @@ mul(lhs, rhs) reshards lhs
 
   lhs = transfer_to(lhs, DeviceMapping(mesh, (Sharded(0),)))
   with auto_reshard(mode="silent"):
-  at /var/folders/gg/plf_qcqs5556rt10q1s96gl40000gn/T/ipykernel_89305/3728650120.py:45 in forward()
+  at <cell>:67 in forward()
 max difference from the reference: 2.9e-06
 ```
 
@@ -393,9 +446,10 @@ combine steps.
 2. Implement the routed version for one device: for each expert, gather its
    tokens, run the MLP on them only, and scatter the results back. Check it
    against `MoE`.
-3. Make the router unfair by scaling one row of `gate.weight` by 5. How does
-   the load per expert change, and what would that do to expert-parallel
-   serving?
+3. With the experts spread over 4 devices as above, 2 per device, how many
+   token copies does each device process at each slider setting of the
+   routing figure? What does the busiest device do to the time of an
+   expert-parallel step?
 
 ## What you built
 

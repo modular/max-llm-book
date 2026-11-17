@@ -16,8 +16,12 @@ all the same CPU. The program, the per-device pieces, and the results are
 the same as on four GPUs, so you can develop and test distributed code on a
 laptop and run it unchanged on real hardware.
 
+<details class="code-fold">
+<summary>Show the setup <span class="code-fold-lines">23 lines</span></summary>
+
 ```python
 import logging
+import re
 import warnings
 
 import numpy as np
@@ -40,6 +44,8 @@ from minillm import viz
 
 logging.getLogger("max").setLevel(logging.ERROR)
 ```
+
+</details>
 
 ## Meshes and placements
 
@@ -110,6 +116,9 @@ each element, using only `mapping.placements` and the shard shapes. The
 figures in this section draw it: one color per device, gray where every
 device holds the element, and a darker gray for a `Partial` tensor, whose
 every device holds a term of the sum.
+
+<details class="code-fold">
+<summary>Show <code>owners</code>, <code>owner_heatmap</code>, <code>device_legend</code> <span class="code-fold-lines">73 lines</span></summary>
 
 ```python
 ALL, PARTIAL = -1, -2
@@ -186,6 +195,8 @@ def device_legend(fig: go.Figure) -> None:
             )
         )
 ```
+
+</details>
 
 Move the slider to compare placements of the same 8 × 4 matrix:
 
@@ -272,7 +283,8 @@ with warnings.catch_warnings(record=True) as caught:
     warnings.simplefilter("always")
     with auto_reshard(mode="warn"):
         activated = F.relu(z)
-print(next(w.message for w in caught if "reshards" in str(w.message)))
+report = str(next(w.message for w in caught if "reshards" in str(w.message)))
+print(report)
 print("result:", activated.mapping)
 ```
 
@@ -292,7 +304,7 @@ relu(x) reshards x
   x = transfer_to(x, DeviceMapping(mesh, (R,)))
   with auto_reshard(mode="silent"):
   with auto_reshard(ALL_TRANSITIONS, mode="silent"):   # also allows the cheaper rows above
-  at /var/folders/gg/plf_qcqs5556rt10q1s96gl40000gn/T/ipykernel_87578/1282956743.py:4 in <module>()
+  at <cell>:4 in <module>()
 result: DeviceMapping(DeviceMesh(tp=4), [Replicated()])
 ```
 
@@ -312,6 +324,89 @@ print(replicated.mapping)
 ```text
 DeviceMapping(DeviceMesh(tp=4), [Replicated()])
 ```
+
+The figure shows what the two collectives do to `z`, built from its real
+shards. Each device in the top row holds a different full-size term, and the
+four terms add up to `a @ w`. Move the slider to see what each device holds
+afterward: an all-reduce gives every device the whole sum; a reduce-scatter
+gives each device only its two rows of the sum, for half the bytes. The byte
+counts come from MAX's report above.
+
+<details class="code-fold">
+<summary>Show <code>cells</code> <span class="code-fold-lines">66 lines</span></summary>
+
+```python
+terms = [shard.to_numpy() for shard in z.local_shards]
+assert np.allclose(sum(terms), a @ w, atol=1e-4)
+after = {
+    "all-reduce": F.transfer_to(z, on(Replicated())),
+    "reduce-scatter": F.transfer_to(z, on(Sharded(0))),
+}
+cost = {
+    name: int(re.search(rf"{op}\(x\)\s+(\d+)", report).group(1))
+    for name, op in [
+        ("all-reduce", "allreduce"),
+        ("reduce-scatter", "reduce_scatter"),
+    ]
+}
+limit = np.abs(a @ w).max()
+
+
+def cells(values: np.ndarray, rows: list[int], **trace) -> go.Heatmap:
+    return go.Heatmap(
+        z=values,
+        y=rows,
+        zmin=-limit,
+        zmax=limit,
+        colorscale=viz.DIVERGING,
+        showscale=False,
+        xgap=1,
+        ygap=1,
+        texttemplate="%{z:.0f}",
+        textfont=dict(size=9),
+        hovertemplate="row %{y}, column %{x}: %{z:.2f}<extra></extra>",
+        **trace,
+    )
+
+
+fig = make_subplots(
+    rows=2,
+    cols=4,
+    vertical_spacing=0.14,
+    horizontal_spacing=0.03,
+    subplot_titles=[f"device {d}: its term" for d in range(4)]
+    + [f"device {d} afterward" for d in range(4)],
+)
+for d, term in enumerate(terms):
+    fig.add_trace(cells(term, list(range(8))), row=1, col=d + 1)
+steps = []
+for name, tensor in after.items():
+    group = []
+    start = 0
+    for d, shard in enumerate(tensor.local_shards):
+        values = shard.to_numpy()
+        rows = (
+            list(range(start, start + len(values)))
+            if len(values) < 8
+            else list(range(8))
+        )
+        assert np.allclose(values, (a @ w)[rows], atol=1e-4)
+        start += len(values)
+        group.append(cells(values, rows, xaxis=f"x{d + 5}", yaxis=f"y{d + 5}"))
+    steps.append(group)
+fig.update_xaxes(showgrid=False, showticklabels=False)
+fig.update_yaxes(showgrid=False, showticklabels=False, range=[7.5, -0.5])
+fig.update_layout(
+    title="What a collective does to a Partial tensor on 4 devices",
+    height=560,
+)
+labels = [f"{name}, {cost[name]} bytes per device" for name in after]
+viz.show(viz.with_slider(fig, steps, labels, ""))
+```
+
+</details>
+
+<div class="plotly-figure" data-src="generated/02_01_distributed_tensors_24_0.json"></div>
 
 ## Column then row: one all-reduce per block
 
@@ -360,6 +455,9 @@ same way, so each device multiplies only its own slice. The row-parallel
 weight is split by rows to match, and the block's output, `h W_down`, is a
 partial sum on every device (dark gray) until the all-reduce sums it:
 
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">28 lines</span></summary>
+
 ```python
 panels = {
     "x": Tensor(a, device=on(Replicated())),
@@ -391,7 +489,9 @@ fig.update_layout(
 viz.show(fig)
 ```
 
-<div class="plotly-figure" data-src="generated/02_01_distributed_tensors_26_0.json"></div>
+</details>
+
+<div class="plotly-figure" data-src="generated/02_01_distributed_tensors_28_0.json"></div>
 
 The hidden activation stayed sharded, `relu` ran on each shard independently,
 and the only communication was the explicit all-reduce at the end.
@@ -440,7 +540,9 @@ more detail.
 2. Swap the order in the MLP block: row-parallel first, then column-parallel.
    Which collectives does MAX insert now?
 3. Count the bytes each device sends in the all-reduce of the MLP block.
-   How does it scale with the batch size and the hidden size?
+   How does it scale with the batch size and the hidden size? The `bytes`
+   column in MAX's reports is this per-device volume for a ring algorithm, so
+   you can check your count against one.
 
 ## Next
 

@@ -132,6 +132,38 @@ def test_notebooks_are_committed_without_outputs(path: Path) -> None:
             )
 
 
+LOCAL_PATH_RE = re.compile(r"/Users/|/home/\w|/var/folders/|ipykernel_\d")
+
+
+@pytest.mark.parametrize(
+    "path",
+    sorted((ROOT / "book" / "src").glob("*.md")),
+    ids=lambda p: p.name,
+)
+def test_pages_name_no_local_paths(path: Path) -> None:
+    for number, line in enumerate(path.read_text().splitlines(), 1):
+        assert not LOCAL_PATH_RE.search(line), (
+            f"{path.name}:{number} names a path on the machine that rendered "
+            f"it: {line.strip()}"
+        )
+
+
+DIAGRAM_URL_RE = re.compile(
+    r"https://llm\.modular\.com/assets/diagrams/([\w-]+)\.svg"
+)
+
+
+@pytest.mark.parametrize("path", NOTEBOOKS, ids=lambda p: p.name)
+def test_diagrams_have_light_and_dark_svgs(path: Path) -> None:
+    svgs = ROOT / "book" / "src" / "assets" / "diagrams"
+    for name in DIAGRAM_URL_RE.findall(path.read_text()):
+        for svg in (f"{name}.svg", f"{name}-dark.svg"):
+            assert (svgs / svg).exists(), (
+                f"{path.name} shows diagram {name!r}, but {svg} is missing; "
+                "run `python tools/diagrams.py`."
+            )
+
+
 def test_outline_lists_every_notebook() -> None:
     outline = tomllib.loads((ROOT / "book" / "outline.toml").read_text())
     listed = {

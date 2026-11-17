@@ -13,11 +13,12 @@ from outside its own package through *custom architectures*: a Python package
 that describes the model, which `max serve` imports with
 `--custom-architectures`.
 
+<details class="code-fold">
+<summary>Show the setup <span class="code-fold-lines">14 lines</span></summary>
+
 ```python
 import logging
-import subprocess
 import time
-import urllib.request
 import warnings
 
 from max.pipelines import AutoPipeline
@@ -25,11 +26,14 @@ from max.pipelines.lib.arch_lookup import import_custom_architectures
 from openai import OpenAI
 
 from minillm.config import MODEL_ID
+from minillm.server import start_max_serve
 
 logging.getLogger("max").setLevel(logging.ERROR)
 warnings.filterwarnings("ignore", message="The eager interpreter failed")
 PROMPT = ["The capital of France is"]
 ```
+
+</details>
 
 First, the reference: SmolLM2 as MAX implements it, loaded with
 `AutoPipeline`.
@@ -47,17 +51,14 @@ expected
 
 ## A custom architecture package
 
-A MAX architecture has three parts, all in the package below:
+A MAX architecture has three parts:
 
 - A config class tells MAX the sizes it needs to plan memory before it loads
   anything: the number of layers, key/value heads, and head size. It also
   declares the supported encodings; this model computes in `float32`.
 - A pipeline model loads the weights and runs the model. MAX gives it the
   checkpoint's weights and, at each step, the request's tokens, and it returns
-  the next-token logits. Here it builds your `LlamaForCausalLM` with
-  `load_model` from
-  [Section 1.6](01_06_full_model.md), casts the
-  checkpoint's `bfloat16` weights to `float32`, and compiles it.
+  the next-token logits.
 - A `SupportedArchitecture` ties them together under the name in the
   checkpoint's `config.json`, here `LlamaForCausalLM`, along with the tokenizer
   and the weight format. `ARCHITECTURES` lists it for `--custom-architectures`
@@ -70,10 +71,16 @@ MAX's own architectures use its paged KV cache and continuous batching instead:
 they implement a decoder module that reads keys and values from the cache. MAX's
 OLMo 3 architecture is a compact example.
 
+The package is one module, `minillm/serve/__init__.py`, which the cells below
+write part by part. The first imports what the package uses from MAX:
+
+<details class="code-fold">
+<summary>Show the imports <span class="code-fold-lines">41 lines</span></summary>
+
 ```python
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from typing import Any, ClassVar
 
@@ -112,8 +119,18 @@ from transformers import AutoConfig
 
 from minillm.config import LlamaConfig
 from minillm.model import load_model
+```
 
+</details>
 
+<small>Saved to `minillm/serve/__init__.py`.</small>
+
+The config class reads the sizes from the checkpoint's Hugging Face config:
+
+<details class="code-fold">
+<summary>Show <code>MinillmArchConfig</code> <span class="code-fold-lines">29 lines</span></summary>
+
+```python
 @dataclass
 class MinillmArchConfig(ArchConfigWithAttentionKVCache):
     DEFAULT_ENCODING: ClassVar[SupportedEncoding] = "float32"
@@ -143,8 +160,53 @@ class MinillmArchConfig(ArchConfigWithAttentionKVCache):
             upper_bound=huggingface_config.max_position_embeddings,
             default=model_config.max_length,
         )
+```
 
+</details>
 
+<small>Saved to `minillm/serve/__init__.py`.</small>
+
+The pipeline model's main job is to build your model. `build_model` turns the
+checkpoint's config into the `LlamaConfig` from
+[Section 1.3](01_03_tokens_and_weights.md), casts the
+checkpoint's `bfloat16` weights to `float32`, builds your `LlamaForCausalLM` with
+`load_model` from [Section 1.6](01_06_full_model.md),
+and compiles it for any sequence length:
+
+```python
+def build_model(
+    hf: AutoConfig,
+    pipeline_config: PipelineConfig,
+    weights: Weights,
+    adapter: WeightsAdapter | None,
+    device: Device,
+) -> Callable[[Tensor], Tensor]:
+    """Builds and compiles minillm's ``LlamaForCausalLM`` from a checkpoint."""
+    config = LlamaConfig(
+        **{
+            k: getattr(hf, k)
+            for k in LlamaConfig.__dataclass_fields__
+            if hasattr(hf, k)
+        }
+    )
+    state = parse_state_dict_from_weights(pipeline_config, weights, adapter)
+    state = {name: w.astype(DType.float32) for name, w in state.items()}
+    model = load_model(config, state, device)
+    return model.compile(
+        TensorType(DType.int64, ("batch", "seq_len"), device=device)
+    )
+```
+
+<small>Saved to `minillm/serve/__init__.py`.</small>
+
+MAX constructs the pipeline model with a long list of arguments, and asks it
+how to size the KV cache. The base class below passes both through and calls
+`build_model`:
+
+<details class="code-fold">
+<summary>Show <code>TokenInputs</code>, <code>PassThroughPipelineModel</code> <span class="code-fold-lines">66 lines</span></summary>
+
+```python
 @dataclass
 class TokenInputs(ModelInputs):
     tokens: Buffer
@@ -154,7 +216,10 @@ class TokenInputs(ModelInputs):
         return (self.tokens,)
 
 
-class MinillmPipelineModel(PipelineModelWithKVCache[TextContext]):
+class PassThroughPipelineModel(PipelineModelWithKVCache[TextContext]):
+    """Forwards MAX's constructor arguments and sizes the KV cache from the
+    checkpoint's config, then builds the model with ``build_model``."""
+
     def __init__(
         self,
         pipeline_config: PipelineConfig,
@@ -181,23 +246,12 @@ class MinillmPipelineModel(PipelineModelWithKVCache[TextContext]):
             max_batch_size=max_batch_size,
             memory_plan=memory_plan,
         )
-        hf = self.huggingface_config
-        config = LlamaConfig(
-            **{
-                k: getattr(hf, k)
-                for k in LlamaConfig.__dataclass_fields__
-                if hasattr(hf, k)
-            }
-        )
-        state = parse_state_dict_from_weights(
-            self.pipeline_config, weights, adapter
-        )
-        state = {name: w.astype(DType.float32) for name, w in state.items()}
-        model = load_model(config, state, self.devices[0])
-        self.model = model.compile(
-            TensorType(
-                DType.int64, ("batch", "seq_len"), device=self.devices[0]
-            )
+        self.model = build_model(
+            self.huggingface_config,
+            self.pipeline_config,
+            weights,
+            adapter,
+            self.devices[0],
         )
 
     @classmethod
@@ -219,6 +273,30 @@ class MinillmPipelineModel(PipelineModelWithKVCache[TextContext]):
             devices=devices,
             data_parallel_degree=pipeline_config.model.data_parallel_degree,
         )
+```
+
+</details>
+
+<small>Saved to `minillm/serve/__init__.py`.</small>
+
+That leaves the two methods MAX calls at every step.
+`prepare_initial_token_inputs` turns the request's context into model inputs:
+here all of its tokens, since the model keeps no cache. `execute` runs the
+compiled model and returns the last position's logits:
+
+```python
+class MinillmPipelineModel(PassThroughPipelineModel):
+    def prepare_initial_token_inputs(
+        self,
+        replica_batches: Sequence[Sequence[TextContext]],
+        kv_cache_inputs: KVCacheInputs[Buffer, Buffer] | None = None,
+        return_n_logits: int = 1,
+    ) -> TokenInputs:
+        ids = replica_batches[0][0].tokens.all
+        tokens = np.array([ids], dtype=np.int64)
+        inputs = TokenInputs(Buffer.from_numpy(tokens).to(self.devices[0]))
+        inputs.kv_cache_inputs = kv_cache_inputs
+        return inputs
 
     def execute(self, model_inputs: ModelInputs) -> ModelOutputs:
         assert isinstance(model_inputs, TokenInputs)
@@ -227,23 +305,15 @@ class MinillmPipelineModel(PipelineModelWithKVCache[TextContext]):
             np.ascontiguousarray(logits.to_numpy()[0, -1:, :])
         ).to(self.devices[0])
         return ModelOutputs(logits=last, next_token_logits=last)
+```
 
-    def prepare_initial_token_inputs(
-        self,
-        replica_batches: Sequence[Sequence[TextContext]],
-        kv_cache_inputs: KVCacheInputs[Buffer, Buffer] | None = None,
-        return_n_logits: int = 1,
-    ) -> TokenInputs:
-        ids = replica_batches[0][0].tokens.all
-        inputs = TokenInputs(
-            tokens=Buffer.from_numpy(np.array([ids], dtype=np.int64)).to(
-                self.devices[0]
-            )
-        )
-        inputs.kv_cache_inputs = kv_cache_inputs
-        return inputs
+<small>Saved to `minillm/serve/__init__.py`.</small>
 
+Finally, `SupportedArchitecture` registers the parts under the checkpoint's
+architecture name. `required_arguments` makes MAX serve one request at a time
+and turns off prefix caching, which this model can't use:
 
+```python
 def _identity_adapter(state_dict: dict[str, Weights], **_: object) -> dict:
     return {name: w.data() for name, w in state_dict.items()}
 
@@ -307,34 +377,15 @@ imports it, and `--no-prefer-module-v3` selects it over MAX's own
 implementation:
 
 ```python
-server = subprocess.Popen(
-    [
-        "max",
-        "serve",
-        "--model",
-        MODEL_ID,
-        "--port",
-        "8000",
-        "--quantization-encoding",
-        "float32",
-        "--custom-architectures",
-        "minillm.serve",
-        "--no-prefer-module-v3",
-    ],
-    stdout=subprocess.DEVNULL,
-    stderr=subprocess.DEVNULL,
-)
 start = time.perf_counter()
-while True:
-    try:
-        urllib.request.urlopen("http://localhost:8000/health")
-        break
-    except OSError:
-        if server.poll() is not None:
-            raise RuntimeError(
-                "max serve exited; run it in a terminal to see why"
-            )
-        time.sleep(1)
+server = start_max_serve(
+    MODEL_ID,
+    "--quantization-encoding",
+    "float32",
+    "--custom-architectures",
+    "minillm.serve",
+    "--no-prefer-module-v3",
+)
 print(f"server ready in {time.perf_counter() - start:.0f} s")
 
 client = OpenAI(base_url="http://localhost:8000/v1", api_key="unused")
@@ -348,7 +399,7 @@ _ = server.wait()
 ```
 
 ```text
-server ready in 14 s
+server ready in 18 s
 The capital of France is Paris. Paris is the largest city in France and the capital of the French department
 ```
 

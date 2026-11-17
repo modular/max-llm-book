@@ -27,6 +27,9 @@ The handbook's
 [How does LLM inference work?](https://handbook.modular.com/llm-inference-basics/how-does-llm-inference-work/)
 page describes the same two phases from the serving side.
 
+<details class="code-fold">
+<summary>Show the setup <span class="code-fold-lines">27 lines</span></summary>
+
 ```python
 import logging
 import time
@@ -57,6 +60,8 @@ weights = load_checkpoint()
 tokenizer = AutoTokenizer(MODEL_ID)
 ```
 
+</details>
+
 The difference in work is easy to see. Each row below is one generation
 step for a 6-token prompt; each column is a position whose key and value
 that step computes. Without a cache, every step recomputes every earlier
@@ -73,7 +78,12 @@ for step in range(steps):
     recompute_work[step, :end] = 1
     cached_work[step, :end] = 1 if step == 0 else 0
     cached_work[step, end - 1] = 1
+```
 
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">28 lines</span></summary>
+
+```python
 fig = make_subplots(
     rows=1,
     cols=2,
@@ -104,7 +114,9 @@ fig.update_layout(height=380, title="Which keys and values each step computes")
 viz.show(fig)
 ```
 
-<div class="plotly-figure" data-src="generated/01_08_kv_cache_4_0.json"></div>
+</details>
+
+<div class="plotly-figure" data-src="generated/01_08_kv_cache_5_0.json"></div>
 
 ## How big is the cache?
 
@@ -139,13 +151,28 @@ print(
 ```
 
 The cache grows with the context and with the number of sequences served at
-once. Move the slider to serve more sequences, and compare the cache with
-the model's weights:
+once. Compare it with the model's weights:
+
+```python
+weights_mib = sum(w.nbytes for w in weights.values()) / 2**20
+two_sequences_mib = per_token * 8192 * 2 / 2**20
+print(f"weights: {weights_mib:.0f} MiB")
+print(f"cache for two sequences of 8192 tokens: {two_sequences_mib:.0f} MiB")
+```
+
+```text
+weights: 513 MiB
+cache for two sequences of 8192 tokens: 720 MiB
+```
+
+Move the slider to serve more sequences at once:
+
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">43 lines</span></summary>
 
 ```python
 lengths = np.arange(256, 8193, 256)
-weights_mib = sum(w.nbytes for w in weights.values()) / 2**20
-batches = [1, 4, 16, 64]
+batches = [1, 2, 4, 16, 64]
 steps = []
 for batch in batches:
     steps.append(
@@ -189,7 +216,9 @@ viz.show(
 )
 ```
 
-<div class="plotly-figure" data-src="generated/01_08_kv_cache_8_0.json"></div>
+</details>
+
+<div class="plotly-figure" data-src="generated/01_08_kv_cache_11_0.json"></div>
 
 This is where grouped-query attention
 ([Section 1.5](01_05_attention.md)) pays off: 3
@@ -202,13 +231,17 @@ adds it to the weights when sizing a deployment.
 
 ## Attention with a cache
 
-`CachedAttention` extends Section 1.5's `Attention`. Its `forward` takes the
+`CachedAttention` extends
+[Section 1.5](01_05_attention.md)'s `Attention`. Its `forward` takes the
 layer's cached keys and values, if any, and returns them extended by the new
 positions. `start` is the position of the first new token, so RoPE rotates
 the new queries and keys for where they really are.
 
 Prefill uses the causal mask as before. Decode has one query, the newest
 token, which may attend to every cached position, so it needs no mask.
+
+<details class="code-fold">
+<summary>Show <code>CachedAttention</code> <span class="code-fold-lines">37 lines</span></summary>
 
 ```python
 from __future__ import annotations
@@ -250,11 +283,16 @@ class CachedAttention(Attention):
         return self.o_proj(out), (k, v)
 ```
 
+</details>
+
 <small>Saved to `minillm/kv_cache.py`.</small>
 
 The layer and model pass each layer's cache through. The model returns
 logits for the last position only: generation never needs the others, and
 skipping them saves most of the LM head's work during prefill.
+
+<details class="code-fold">
+<summary>Show <code>CachedDecoderLayer</code>, <code>CachedLlamaModel</code>, <code>CachedLlamaForCausalLM</code> <span class="code-fold-lines">52 lines</span></summary>
 
 ```python
 class CachedDecoderLayer(DecoderLayer):
@@ -311,6 +349,8 @@ class CachedLlamaForCausalLM(LlamaForCausalLM):
         return self.lm_head(hidden[:, -1]), new_cache
 ```
 
+</details>
+
 <small>Saved to `minillm/kv_cache.py`.</small>
 
 ## Two compiled graphs
@@ -319,12 +359,17 @@ Prefill and decode have different inputs, so they compile into two graphs
 that share the same weights. The cache is a list of 30 `(key, value)` pairs.
 Its length, `cache_len`, is a named dimension, so one decode graph serves
 every step. `start` is a one-element tensor rather than a Python number, so
-that it is an input of the graph instead of a constant baked into it.
+that it is an input of the graph instead of a constant baked into it. It is
+`float32` because RoPE computes its angles in `float32`, and `float32` holds
+every position up to 2^24 exactly.
 
 `KVCacheDecoder` keeps the cache between calls. It has the same interface as
-Section 1.7's `next_logits`: given the tokens so far, it returns the next
+[Section 1.7](01_07_sampling.md)'s `next_logits`: given the tokens so far, it returns the next
 token's logits, running a prefill for a new prompt and a decode step when
 exactly one token was added. It plugs straight into `generate`.
+
+<details class="code-fold">
+<summary>Show <code>KVCacheDecoder</code> <span class="code-fold-lines">41 lines</span></summary>
 
 ```python
 class KVCacheDecoder:
@@ -370,6 +415,8 @@ class KVCacheDecoder:
         )
 ```
 
+</details>
+
 <small>Saved to `minillm/kv_cache.py`.</small>
 
 ```python
@@ -381,13 +428,13 @@ print(f"compiled prefill and decode in {time.perf_counter() - start:.0f} s")
 ```
 
 ```text
-compiled prefill and decode in 24 s
+compiled prefill and decode in 26 s
 ```
 
 ## Check it
 
-The cache must not change the result. Generate greedily with Section 1.7's
-full recompute and with the cache, and compare the tokens:
+The cache must not change the result. Generate greedily with
+[Section 1.7](01_07_sampling.md)'s full recompute and with the cache, and compare the tokens:
 
 ```python
 full = load_model(config, weights, DEVICE).compile(
@@ -429,8 +476,9 @@ def ms_per_token(next_logits, prompt: list[int], steps: int = 24) -> float:
     for _ in range(steps):
         ids.append(int(np.argmax(next_logits(ids).to_numpy())))
     return (time.perf_counter() - start) / steps * 1000
+```
 
-
+```python
 rng = np.random.default_rng(0)
 lengths = [32, 128, 256, 512, 1024]
 timings = {"recompute": [], "KV cache": []}
@@ -438,7 +486,19 @@ for length in lengths:
     prompt = rng.integers(0, config.vocab_size, length).tolist()
     timings["recompute"].append(ms_per_token(recompute, prompt))
     timings["KV cache"].append(ms_per_token(cached, prompt))
+for name, ms in timings.items():
+    print(f"{name:10}", "  ".join(f"{t:6.1f}" for t in ms), "ms")
+```
 
+```text
+recompute    82.1   108.8   151.0   198.6   568.9 ms
+KV cache     93.8   140.5   149.5   123.5   141.9 ms
+```
+
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">21 lines</span></summary>
+
+```python
 fig = go.Figure(
     [
         go.Scatter(
@@ -462,18 +522,27 @@ fig.update_layout(
 viz.show(fig)
 ```
 
-<div class="plotly-figure" data-src="generated/01_08_kv_cache_19_0.json"></div>
+</details>
 
-Hover over the points to read the timings. On this page's machine, an
-Apple-silicon Mac with a Metal GPU, a cached decode step took about 130 to 160
-ms at every length, while recompute grew from about 150 ms at 32 tokens to about
-610 ms at 1,024. Treat these numbers as an example: yours depend on your
-hardware and vary from run to run. At short contexts the two take about the same
-time, because fixed work, such as launching kernels and reading every weight,
-dominates a step of a model this small. The cached step still does more work as
-the context grows: attention reads a longer cache, and `F.concat` copies the
-whole cache into a new tensor every step. At these lengths that growth is
-smaller than the variation between runs.
+<div class="plotly-figure" data-src="generated/01_08_kv_cache_24_0.json"></div>
+
+Hover over the points to read the timings; yours depend on your hardware and
+vary from run to run. Recompute grows with the context, because every step
+reruns attention over the whole sequence. The cached step grows much more
+slowly. Below a few hundred tokens the cache doesn't pay off, and can even be
+slower, because fixed work, such as launching kernels and reading every
+weight, dominates a step of a model this small.
+
+MAX's own decode step is far faster: the TPOT measured in [Section
+1.1](01_01_run_and_serve.md) was about 10 ms on the
+same machine. Part of the gap is this section's simple design: every decode call
+passes the 60 cache tensors in and gets 60 new ones back, `F.concat` copies each
+layer's whole cache into a new tensor, and the loop reads the logits back to
+NumPy to pick each token on the host. MAX's engine writes new keys and values
+into preallocated cache blocks that its attention kernel reads in place, and it
+samples on the GPU. [Section
+5.3](05_03_paged_kv_cache.md) builds a block-based
+cache and explains how production engines avoid the copy.
 
 This simple cache has limits that production engines address:
 

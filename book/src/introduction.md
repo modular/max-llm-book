@@ -15,8 +15,8 @@ Most explanations of LLM inference stop at diagrams, and most inference
 engines are too large to read. This book sits between the two. You write
 every piece yourself, small enough to read in one sitting, and you run it on
 a real model so that each claim is a number you measured: the logits match
-the reference, the KV cache makes decoding flat, batching raises
-throughput.
+the reference, the KV cache stops each new token from recomputing the whole
+text, batching raises throughput.
 
 You do it with MAX's own APIs, the same ones its production models use, so
 what you learn carries over directly:
@@ -52,8 +52,8 @@ extends it to Qwen3, Gemma 3, and mixture-of-experts models.
 in the
 <a href="https://max.modular.com/system-requirements/">MAX
 system requirements</a>. MAX runs on Linux and on macOS with Apple silicon.
-These notebooks need an NVIDIA GPU from the Ampere generation or newer; on
-an older one, such as a T4 or P100, they run on the CPU instead.</p>
+On NVIDIA, the notebooks need an Ampere-generation GPU or newer; on an older
+one, such as a T4 or P100, they run on the CPU instead.</p>
 </div>
 
 You can run the notebooks in Colab or Kaggle with nothing installed, or on

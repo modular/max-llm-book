@@ -236,3 +236,29 @@ class Request:
     @property
     def done(self) -> bool:
         return len(self.output) >= self.max_new_tokens
+
+
+import time
+from collections.abc import Mapping
+
+Tokenizer = Callable[[list[str]], Mapping[str, list[list[int]]]]
+
+WORKLOAD = [
+    ("Tell me about Paris.", 32),
+    ("Write a haiku about the sea.", 24),
+    ("What is 2 + 2?", 8),
+    ("List three colors.", 16),
+    ("Explain gravity in one sentence.", 32),
+    ("Name a fruit.", 8),
+    ("Describe a cat.", 24),
+    ("Say hello in French.", 16),
+]
+
+
+def make_workload(tokenizer: Tokenizer) -> list[Request]:
+    """Returns the chapter's eight requests, all arriving now."""
+    now = time.perf_counter()
+    return [
+        Request(tokenizer([text])["input_ids"][0], n, arrived=now)
+        for text, n in WORKLOAD
+    ]

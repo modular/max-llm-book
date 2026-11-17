@@ -15,13 +15,11 @@ model name.
 
 ```python
 import os
-import subprocess
-import time
-import urllib.request
 
 from openai import OpenAI
 
 from minillm.config import MODEL_ID
+from minillm.server import start_max_serve
 ```
 
 ## Two ways to call a hosted model
@@ -46,30 +44,7 @@ API, and so do Modular's endpoints. Here is the client from
 local server again:
 
 ```python
-server = subprocess.Popen(
-    [
-        "max",
-        "serve",
-        "--model",
-        MODEL_ID,
-        "--port",
-        "8000",
-        "--quantization-encoding",
-        "float32",
-    ],
-    stdout=subprocess.DEVNULL,
-    stderr=subprocess.DEVNULL,
-)
-while True:
-    try:
-        urllib.request.urlopen("http://localhost:8000/health")
-        break
-    except OSError:
-        if server.poll() is not None:
-            raise RuntimeError(
-                "max serve exited; run it in a terminal to see why"
-            )
-        time.sleep(1)
+server = start_max_serve(MODEL_ID, "--quantization-encoding", "float32")
 
 
 def ask(client: OpenAI, model: str, question: str) -> str:
@@ -77,6 +52,7 @@ def ask(client: OpenAI, model: str, question: str) -> str:
         model=model,
         messages=[{"role": "user", "content": question}],
         max_tokens=60,
+        temperature=0,
     )
     return completion.choices[0].message.content
 
@@ -88,7 +64,7 @@ _ = server.wait()
 ```
 
 ```text
-The capital city of France is Paris. It is located in the northern part of the country, in the eastern part of the Po River, and is the cultural heart of France. Paris is known for its rich history, iconic landmarks, and stunning architecture.
+The capital of France is Paris.
 ```
 
 To call a hosted model instead:
@@ -126,14 +102,16 @@ Set MODULAR_API_KEY and MODULAR_MODEL to call a hosted model.
 The API is the same, so code written against it, such as the structured output
 in [Section 7.3](07_03_structured_output.md), works
 with hosted models that support the feature. `max benchmark` measures a hosted
-endpoint as it measured your local server. The `mcloud` backend reads the key
-from `OPENAI_API_KEY`, and because a hosted endpoint manages its own cache, the
-command skips flushing it:
+endpoint as it measured your local server. The `mcloud` backend sends the key
+from `OPENAI_API_KEY`. A hosted endpoint manages its own cache and doesn't
+expose server metrics, so the command skips both. If the model ID isn't a
+Hugging Face repo, add `--tokenizer` with the repo of its tokenizer:
 
 ```bash
 OPENAI_API_KEY=$MODULAR_API_KEY max benchmark --backend mcloud \
   --base-url https://api.modular.com --endpoint /v1/chat/completions \
-  --no-flush-prefix-cache --model $MODULAR_MODEL \
+  --no-flush-prefix-cache --no-collect-server-stats \
+  --model $MODULAR_MODEL \
   --dataset-name random --random-input-len 128 --random-output-len 32 \
   --num-prompts 32 --max-concurrency 8
 ```

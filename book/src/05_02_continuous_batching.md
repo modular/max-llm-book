@@ -13,26 +13,28 @@ one. Batching uses that spare capacity, and the way you batch decides who waits.
 This section adds a scheduler to the engine and compares three policies on the
 same workload.
 
+<details class="code-fold">
+<summary>Show the setup <span class="code-fold-lines">31 lines</span></summary>
+
 ```python
 import logging
-import time
 import warnings
-from collections import deque
 
 import numpy as np
 import plotly.graph_objects as go
-from max.driver import CPU
 from max.pipelines import AutoTokenizer
 
 from minillm import viz
-from minillm.device import pick_device
 from minillm.config import MODEL_ID, LlamaConfig
+from minillm.device import pick_device
 from minillm.model import load_model
 from minillm.step import (
+    WORKLOAD,
     ContiguousCache,
     Request,
     StepModel,
     compile_step,
+    make_workload,
     run_step,
 )
 from minillm.weights import load_checkpoint
@@ -47,6 +49,8 @@ step = compile_step(
     load_model(config, load_checkpoint(), DEVICE, StepModel), config, DEVICE
 )
 ```
+
+</details>
 
 ## The engine
 
@@ -71,6 +75,9 @@ for a step. Production engines can also split a long prompt into chunks
 one big prefill doesn't stall everyone. MAX Serve chunks long prefills by
 default (`--enable-chunked-prefill`) and batches them with decodes when you
 pass `--enable-in-flight-batching`.
+
+<details class="code-fold">
+<summary>Show <code>Engine</code> <span class="code-fold-lines">86 lines</span></summary>
 
 ```python
 from __future__ import annotations
@@ -97,12 +104,12 @@ class Engine:
         continuous: bool = True,
         new_cache: Callable[[LlamaConfig], object] = ContiguousCache,
     ) -> None:
-        self.step_fn, self.config, self.device = step, config, device
-        self.max_batch, self.continuous, self.new_cache = (
-            max_batch,
-            continuous,
-            new_cache,
-        )
+        self.step_fn = step
+        self.config = config
+        self.device = device
+        self.max_batch = max_batch
+        self.continuous = continuous
+        self.new_cache = new_cache
         self.waiting: deque[Request] = deque()
         self.running: list[tuple[Request, object]] = []
         self.steps = 0
@@ -161,43 +168,56 @@ class Engine:
             self.step()
 ```
 
+</details>
+
 <small>Saved to `minillm/engine.py`.</small>
 
 ## A workload
 
-Eight requests arrive at once, each asking for between 8 and 32 new tokens.
-The workload is the same as in
-[Section 5.1](05_01_request_lifecycle.md):
+Serve the eight requests from
+[Section 5.1](05_01_request_lifecycle.md) under three
+policies. A recording subclass of `Engine` notes which request holds each batch
+slot at every step, for the figures below:
+
+<details class="code-fold">
+<summary>Show <code>RecordingEngine</code>, <code>run_policy</code>, <code>summarize</code> <span class="code-fold-lines">51 lines</span></summary>
 
 ```python
-TEXTS = [
-    "Tell me about Paris.",
-    "Write a haiku about the sea.",
-    "What is 2 + 2?",
-    "List three colors.",
-    "Explain gravity in one sentence.",
-    "Name a fruit.",
-    "Describe a cat.",
-    "Say hello in French.",
-]
-LENGTHS = [32, 24, 8, 16, 32, 8, 24, 16]
+class RecordingEngine(Engine):
+    """Records, per step, the request in each batch slot and what it did."""
+
+    def step(self) -> None:
+        before = {id(r): len(r.output) for r in self.requests}
+        super().step()
+        ran = [r for r in self.requests if len(r.output) > before[id(r)]]
+        for r in ran:
+            if r not in self.slots:
+                self.slots[self.slots.index(None)] = r
+        row = []
+        for r in self.slots:
+            if r is None:
+                row.append(None)
+            elif r not in ran:
+                row.append((self.requests.index(r), "waits"))
+            elif before[id(r)] == 0:
+                row.append((self.requests.index(r), "prefill"))
+            else:
+                row.append((self.requests.index(r), "decode"))
+        self.history.append(row)
+        self.slots = [None if r is None or r.done else r for r in self.slots]
 
 
-def run_policy(
-    max_batch: int, continuous: bool
-) -> tuple[list[Request], Engine]:
-    engine = Engine(
+def run_policy(max_batch: int, continuous: bool) -> tuple[list, Engine]:
+    engine = RecordingEngine(
         step, config, DEVICE, max_batch=max_batch, continuous=continuous
     )
-    now = time.perf_counter()
-    requests = [
-        Request(tokenizer([t])["input_ids"][0], n, arrived=now)
-        for t, n in zip(TEXTS, LENGTHS)
-    ]
-    for r in requests:
+    engine.requests = make_workload(tokenizer)
+    engine.slots = [None] * max_batch
+    engine.history = []
+    for r in engine.requests:
         engine.add(r)
     engine.run()
-    return requests, engine
+    return engine.requests, engine
 
 
 def summarize(name: str, requests: list[Request], engine: Engine) -> dict:
@@ -212,9 +232,13 @@ def summarize(name: str, requests: list[Request], engine: Engine) -> dict:
         "ttft": ttft,
         "outputs": [r.output for r in requests],
         "requests": requests,
+        "history": engine.history,
     }
+```
 
+</details>
 
+```python
 results = {}
 for name, max_batch, continuous in [
     ("one at a time", 1, True),
@@ -225,9 +249,9 @@ for name, max_batch, continuous in [
 ```
 
 ```text
-one at a time           160 steps    3.6 tokens/s  TTFT median  20020 ms  worst  39529 ms
-static batches of 4      64 steps    8.5 tokens/s  TTFT median   4942 ms  worst   9643 ms
-continuous, batch 4      50 steps   11.3 tokens/s  TTFT median   1334 ms  worst   7702 ms
+one at a time           160 steps    2.9 tokens/s  TTFT median  27801 ms  worst  50743 ms
+static batches of 4      64 steps    3.2 tokens/s  TTFT median   6450 ms  worst  12693 ms
+continuous, batch 4      50 steps    9.3 tokens/s  TTFT median   2151 ms  worst   8903 ms
 ```
 
 Batching changes only the order of the work, so greedy decoding must
@@ -243,11 +267,14 @@ assert all(r["outputs"] == reference for r in results.values())
 True
 ```
 
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">41 lines</span></summary>
+
 ```python
 steps = []
 for name, r in results.items():
     start = min(q.arrived for q in r["requests"])
-    rows = [f"request {i} ({n} tokens)" for i, n in enumerate(LENGTHS)]
+    rows = [f"request {i} ({n} tokens)" for i, (_, n) in enumerate(WORKLOAD)]
     wait = [(q.first_token - q.arrived) * 1000 for q in r["requests"]]
     gen = [(q.finished - q.first_token) * 1000 for q in r["requests"]]
     first = [(q.first_token - start) * 1000 for q in r["requests"]]
@@ -287,49 +314,92 @@ fig = go.Figure(
 viz.show(viz.with_slider(fig, steps, list(results), "policy: ", active=2))
 ```
 
-<div class="plotly-figure" data-src="generated/05_02_continuous_batching_9_0.json"></div>
+</details>
+
+<div class="plotly-figure" data-src="generated/05_02_continuous_batching_10_0.json"></div>
 
 Slide between the policies. One at a time, each request waits for every
 request before it. Static batches run in two rounds, and the second round
 can't start until the slowest request of the first finishes. Continuous
 batching starts a waiting request as soon as any slot frees up.
 
-The same data as a distribution of time to first token:
+The same runs from the engine's side: each column is one engine step, each row
+one of the four batch slots, and the color says which request holds the slot.
+"P" marks a request's prefill step, and a dot marks a running request that sat
+out the step because another request was prefilling:
+
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">54 lines</span></summary>
 
 ```python
-fig = go.Figure(
-    [
-        go.Scatter(
-            x=sorted(r["ttft"]),
-            y=np.arange(1, 9) / 8,
-            name=name,
-            mode="lines+markers",
-            line=dict(color=color, shape="hv"),
-            hovertemplate=name
-            + ": %{y:.0%} of requests within %{x:.0f} ms<extra></extra>",
-        )
-        for (name, r), color in zip(results.items(), viz.SERIES)
+policies = ["static batches of 4", "continuous, batch 4"]
+colors = [viz.GRID] + viz.SERIES  # empty, then one color per request
+scale = [
+    [edge, c] for i, c in enumerate(colors) for edge in (i / 9, (i + 1) / 9)
+]
+steps = []
+for name in policies:
+    history = np.array(
+        [
+            [-1 if s is None else s[0] for s in row]
+            for row in results[name]["history"]
+        ]
+    ).T
+    marks = {"prefill": "P", "waits": "·", "decode": ""}
+    text = [
+        ["" if s is None else marks[s[1]] for s in row]
+        for row in results[name]["history"]
     ]
+    hover = [
+        [
+            f"step {t + 1}, slot {k}: "
+            + ("empty" if s is None else f"request {s[0]}, {s[1]}")
+            for t, s in enumerate(column)
+        ]
+        for k, column in enumerate(zip(*results[name]["history"]))
+    ]
+    steps.append(
+        [
+            go.Heatmap(
+                z=history,
+                x=np.arange(1, history.shape[1] + 1),
+                y=[f"slot {k}" for k in range(history.shape[0])],
+                zmin=-1.5,
+                zmax=7.5,
+                colorscale=scale,
+                showscale=False,
+                xgap=1,
+                ygap=3,
+                text=np.array(text).T,
+                texttemplate="%{text}",
+                customdata=hover,
+                hovertemplate="%{customdata}<extra></extra>",
+            )
+        ]
+    )
+fig = go.Figure(
+    layout=dict(
+        title="Which request holds each batch slot at every engine step",
+        height=320,
+        xaxis=dict(title="engine step", showgrid=False),
+        yaxis=dict(autorange="reversed", showgrid=False),
+    )
 )
-fig.update_layout(
-    title="Time to first token across the 8 requests",
-    height=400,
-    xaxis_title="time to first token (ms)",
-    yaxis=dict(title="fraction of requests", tickformat=".0%", range=[0, 1.05]),
-)
-viz.show(fig)
+viz.show(viz.with_slider(fig, steps, policies, "policy: ", active=1))
 ```
 
-<div class="plotly-figure" data-src="generated/05_02_continuous_batching_11_0.json"></div>
+</details>
 
-Read the second chart as "what fraction of users had their first token
-within this time". Both batching policies cut the number of model steps,
-from 160 to 64 for static batches and 50 for continuous batching, so they
-finish the workload sooner and raise throughput. They differ in who waits:
+<div class="plotly-figure" data-src="generated/05_02_continuous_batching_12_0.json"></div>
+
+Both batching policies cut the number of model steps, from 160 to 64 for
+static batches and 50 for continuous batching, so they finish the workload
+sooner and raise throughput. They differ in who waits:
 
 - Static batching admits four requests and runs until the *longest* of
   them finishes. The second group waits for that, even after the short
-  requests in the first group are done and their slots sit empty.
+  requests in the first group are done and their slots sit empty: the grey
+  holes in the slot chart.
 - Continuous batching refills a slot as soon as a request finishes, so
   waiting requests start sooner, and the batch stays full while any request
   is waiting.

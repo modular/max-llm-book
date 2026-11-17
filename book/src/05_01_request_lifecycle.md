@@ -12,41 +12,32 @@ engine over five sections, on top of a new model interface designed for it.
 
 MAX Serve and other inference engines share this structure:
 
-```text
-requests ─► scheduler ─► model step (one batched forward pass) ─► sampler
-               ▲                                                     │
-               └─────────── KV cache manager ◄──── new tokens ◄──────┘
-```
+<img class="diagram diagram-light" src="assets/diagrams/request-lifecycle.svg" alt="The serving loop: requests go to the scheduler, which forms a batch for the model step; the sampler turns the logits into a new token for each request, which goes back to the scheduler. The KV cache manager sits beside the loop: the scheduler allocates and releases its blocks, and the model step reads and writes keys and values in them."><img class="diagram diagram-dark" src="assets/diagrams/request-lifecycle-dark.svg" alt="The serving loop: requests go to the scheduler, which forms a batch for the model step; the sampler turns the logits into a new token for each request, which goes back to the scheduler. The KV cache manager sits beside the loop: the scheduler allocates and releases its blocks, and the model step reads and writes keys and values in them.">
 
 The handbook's
 [How does LLM inference work?](https://handbook.modular.com/llm-inference-basics/how-does-llm-inference-work/)
 page describes the same loop.
 
+<details class="code-fold">
+<summary>Show the setup <span class="code-fold-lines">24 lines</span></summary>
+
 ```python
 import logging
-import math
 import time
 import warnings
-from dataclasses import dataclass, field
 
 import numpy as np
 import plotly.graph_objects as go
-from max import functional as F
-from max.driver import CPU
 from max.dtype import DType
-from max.nn import ModuleList
-from max.nn.kernels.attention import flash_attention
 from max.pipelines import AutoTokenizer
 from max.tensor import Tensor
 from max.tensor.tensor import TensorType
 from plotly.subplots import make_subplots
 
 from minillm import viz
-from minillm.attention import Attention
-from minillm.device import pick_device
 from minillm.config import MODEL_ID, LlamaConfig
-from minillm.layers import rotate_half
-from minillm.model import DecoderLayer, LlamaForCausalLM, load_model
+from minillm.device import pick_device
+from minillm.model import load_model
 from minillm.weights import load_checkpoint
 
 logging.getLogger("max").setLevel(logging.ERROR)
@@ -57,27 +48,10 @@ config = LlamaConfig.from_pretrained()
 tokenizer = AutoTokenizer(MODEL_ID)
 ```
 
-## A model step for an engine
+</details>
 
-The cached model from [Section 1.8](01_08_kv_cache.md)
-kept its cache inside and handled one sequence. An engine needs one call that
-advances *several* sequences, each with its own history, by any number of
-tokens. The *step* model does that. Each call takes, for every sequence in the
-batch:
-
-- the new tokens and their positions,
-- an attention mask saying which past and new positions each token may see,
-- the past keys and values,
-
-and returns the next-token logits plus only the *new* keys and values. The model
-keeps no state. Where the cache lives and how it is laid out is up to the
-engine, and [Section 5.3](05_03_paged_kv_cache.md) and
-[Section 5.4](05_04_prefix_caching.md) change exactly
-that.
-
-Positions now differ per sequence, so
-[RoPE](01_04_building_blocks.md#rotary-position-embeddings)
-takes a position for each token instead of a start offset:
+<details class="code-fold">
+<summary>Show the setup <span class="code-fold-lines">22 lines</span></summary>
 
 ```python
 from __future__ import annotations
@@ -102,8 +76,35 @@ Step = Callable[..., tuple[Tensor, list[KVPair]]]
 # process keys in blocks, and a row whose first block is fully -inf computes
 # exp(-inf - -inf) = NaN, which then spreads through the values to other rows.
 MASKED = -1e30
+```
 
+</details>
 
+<small>Saved to `minillm/step.py`.</small>
+
+## A model step for an engine
+
+The cached model from [Section 1.8](01_08_kv_cache.md)
+kept its cache inside and handled one sequence. An engine needs one call that
+advances *several* sequences, each with its own history, by any number of
+tokens. The *step* model does that. Each call takes, for every sequence in the
+batch:
+
+- the new tokens and their positions,
+- an attention mask saying which past and new positions each token may see,
+- the past keys and values,
+
+and returns the next-token logits plus only the *new* keys and values. The model
+keeps no state. Where the cache lives and how it is laid out is up to the
+engine, and [Section 5.3](05_03_paged_kv_cache.md) and
+[Section 5.4](05_04_prefix_caching.md) change exactly
+that.
+
+Positions now differ per sequence, so
+[RoPE](01_04_building_blocks.md#rotary-position-embeddings)
+takes a position for each token instead of a start offset:
+
+```python
 def rope_at(
     x: Tensor, positions: Tensor, head_dim: int, theta: float
 ) -> Tensor:
@@ -120,8 +121,18 @@ def rope_at(
         [batch, q, 1, head_dim]
     )
     return x * F.cos(angles) + rotate_half(x) * F.sin(angles)
+```
 
+<small>Saved to `minillm/step.py`.</small>
 
+The attention layer projects only the new tokens, appends their keys and values
+to the past ones, and attends over both. The mask has one column per past and
+new position:
+
+<details class="code-fold">
+<summary>Show <code>StepAttention</code> <span class="code-fold-lines">27 lines</span></summary>
+
+```python
 class StepAttention(Attention):
     """Attends from new tokens to the past keys and values plus their own."""
 
@@ -149,8 +160,19 @@ class StepAttention(Attention):
         ).rebind_mapping(query.mapping)
         out = out.reshape([batch, q, self.num_heads * self.head_dim])
         return self.o_proj(out), (key, value)
+```
 
+</details>
 
+<small>Saved to `minillm/step.py`.</small>
+
+The decoder layer and the model pass the new arguments through, and the model
+collects each layer's new keys and values:
+
+<details class="code-fold">
+<summary>Show <code>StepLayer</code>, <code>StepModel</code> <span class="code-fold-lines">38 lines</span></summary>
+
+```python
 class StepLayer(DecoderLayer):
     def __init__(self, config: LlamaConfig) -> None:
         super().__init__(config)
@@ -191,6 +213,8 @@ class StepModel(LlamaForCausalLM):
         return self.lm_head(self.model.norm(x)[:, -1]), new_kv
 ```
 
+</details>
+
 <small>Saved to `minillm/step.py`.</small>
 
 Compile it once. Every dimension that changes between calls is symbolic: the
@@ -230,7 +254,7 @@ print(f"compiled the step model in {time.perf_counter() - start:.0f} s")
 ```
 
 ```text
-compiled the step model in 12 s
+compiled the step model in 51 s
 ```
 
 ## The cache and the batch
@@ -282,6 +306,9 @@ NaN. In the next layer that NaN would become the padding position's keys and
 values, and the real tokens of the same sequence would pick it up even
 though the mask hides that position.
 
+<details class="code-fold">
+<summary>Show <code>run_step</code> <span class="code-fold-lines">45 lines</span></summary>
+
 ```python
 def run_step(
     step: Step, caches: list, new_tokens: list[list[int]], device: Device
@@ -330,11 +357,16 @@ def run_step(
     return logits.to_numpy()
 ```
 
+</details>
+
 <small>Saved to `minillm/step.py`.</small>
 
 Check the step against the model from
 [Section 1.6](01_06_full_model.md) by generating
 greedily for two prompts of different lengths in the *same* steps:
+
+<details class="code-fold">
+<summary>Show <code>greedy_reference</code> <span class="code-fold-lines">12 lines</span></summary>
 
 ```python
 full = load_model(config, weights, DEVICE).compile(
@@ -343,18 +375,17 @@ full = load_model(config, weights, DEVICE).compile(
 
 
 def greedy_reference(ids: list[int], n: int) -> list[int]:
+    """Generates ``n`` tokens greedily with the full model, no cache."""
     ids = list(ids)
     for _ in range(n):
-        ids.append(
-            int(
-                full(Tensor(np.array([ids]), device=DEVICE))
-                .to_numpy()[0, -1]
-                .argmax()
-            )
-        )
+        logits = full(Tensor(np.array([ids]), device=DEVICE)).to_numpy()
+        ids.append(int(logits[0, -1].argmax()))
     return ids[-n:]
+```
 
+</details>
 
+```python
 prompts = [
     tokenizer([t])["input_ids"][0]
     for t in ["The capital of France is", "Once upon a time, there was a"]
@@ -403,11 +434,23 @@ run_step(
     step, caches[:1], [prompts[1][:6]], DEVICE
 )  # sequence 0 now has 6 cached tokens
 run_step(recording_step, caches, [[prompts[1][6]], prompts[0][:4]], DEVICE)
+```
 
+```text
+array([[ -2.6938362,  -9.929393 ,  -7.831539 , ...,  -7.389453 ,
+         -0.1006913, -14.242568 ],
+       [ 13.415854 ,   5.296691 ,  10.037319 , ...,   2.9147892,
+          6.7043333,   4.4411554]], shape=(2, 49152), dtype=float32)
+```
+
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">60 lines</span></summary>
+
+```python
 mask, positions = recorded["mask"], recorded["positions"]
 past = mask.shape[2] - mask.shape[1]
-columns = [f"cached slot {j}" for j in range(past)] + [
-    f"new slot {j}" for j in range(mask.shape[1])
+columns = [f"cached position {j}" for j in range(past)] + [
+    f"new position {j}" for j in range(mask.shape[1])
 ]
 fig = make_subplots(
     rows=1,
@@ -466,12 +509,14 @@ fig.update_layout(
 viz.show(fig)
 ```
 
-<div class="plotly-figure" data-src="generated/05_01_request_lifecycle_15_0.json"></div>
+</details>
+
+<div class="plotly-figure" data-src="generated/05_01_request_lifecycle_22_0.json"></div>
 
 Sequence 0's single new token sits in the last row, after three padding rows
-that each see only themselves. It sees its 6 cached slots and itself.
-Sequence 1 has no cached tokens, so its 6 cached slots are masked in every
-row. They hold zeros, there only because the batch's longest past is 6. Its
+that each see only themselves. It sees its 6 cached positions and itself.
+Sequence 1 has no cached tokens, so its 6 cached positions are masked in
+every row. They hold zeros, there only because the batch's longest past is 6. Its
 4 new tokens form the triangle of the
 [causal mask](01_05_attention.md#the-causal-mask).
 
@@ -480,8 +525,9 @@ row. They hold zeros, there only because the batch's longest past is 6. Its
 A request carries its prompt, how many tokens it may generate, and timestamps
 for the latency metrics from
 [Section 1.1](01_01_run_and_serve.md#measure-it), such
-as time to first token (TTFT). The simplest engine serves requests in arrival
-order, each to completion, one at a time:
+as time to first token (TTFT). Every engine in this chapter serves the
+same workload: eight requests that arrive at once, each asking for between 8
+and 32 new tokens:
 
 ```python
 from dataclasses import dataclass, field
@@ -504,6 +550,55 @@ class Request:
 <small>Saved to `minillm/step.py`.</small>
 
 ```python
+import time
+from collections.abc import Mapping
+
+Tokenizer = Callable[[list[str]], Mapping[str, list[list[int]]]]
+
+WORKLOAD = [
+    ("Tell me about Paris.", 32),
+    ("Write a haiku about the sea.", 24),
+    ("What is 2 + 2?", 8),
+    ("List three colors.", 16),
+    ("Explain gravity in one sentence.", 32),
+    ("Name a fruit.", 8),
+    ("Describe a cat.", 24),
+    ("Say hello in French.", 16),
+]
+
+
+def make_workload(tokenizer: Tokenizer) -> list[Request]:
+    """Returns the chapter's eight requests, all arriving now."""
+    now = time.perf_counter()
+    return [
+        Request(tokenizer([text])["input_ids"][0], n, arrived=now)
+        for text, n in WORKLOAD
+    ]
+```
+
+<small>Saved to `minillm/step.py`.</small>
+
+The simplest engine serves requests in arrival order, each to completion, one at
+a time:
+
+<details class="code-fold">
+<summary>Show <code>report</code> <span class="code-fold-lines">9 lines</span></summary>
+
+```python
+def report(requests: list[Request]) -> None:
+    ttft = [(r.first_token - r.arrived) * 1000 for r in requests]
+    total = max(r.finished for r in requests) - min(r.arrived for r in requests)
+    tokens = sum(len(r.output) for r in requests)
+    print(
+        f"TTFT: first request {ttft[0]:.0f} ms, "
+        f"median {np.median(ttft):.0f} ms, worst {max(ttft):.0f} ms"
+    )
+    print(f"{tokens} tokens in {total:.1f} s = {tokens / total:.1f} tokens/s")
+```
+
+</details>
+
+```python
 def serve_one_at_a_time(requests: list[Request]) -> None:
     for request in requests:
         cache = ContiguousCache(config)
@@ -517,42 +612,14 @@ def serve_one_at_a_time(requests: list[Request]) -> None:
         request.finished = time.perf_counter()
 
 
-def make_workload() -> list[Request]:
-    texts = [
-        "Tell me about Paris.",
-        "Write a haiku about the sea.",
-        "What is 2 + 2?",
-        "List three colors.",
-        "Explain gravity in one sentence.",
-        "Name a fruit.",
-        "Describe a cat.",
-        "Say hello in French.",
-    ]
-    now = time.perf_counter()
-    return [
-        Request(tokenizer([t])["input_ids"][0], max_new_tokens=n, arrived=now)
-        for t, n in zip(texts, [32, 24, 8, 16, 32, 8, 24, 16])
-    ]
-
-
-def report(requests: list[Request]) -> None:
-    ttft = [(r.first_token - r.arrived) * 1000 for r in requests]
-    total = max(r.finished for r in requests) - min(r.arrived for r in requests)
-    tokens = sum(len(r.output) for r in requests)
-    print(
-        f"TTFT: first request {ttft[0]:.0f} ms, median {np.median(ttft):.0f} ms, worst {max(ttft):.0f} ms"
-    )
-    print(f"{tokens} tokens in {total:.1f} s = {tokens / total:.0f} tokens/s")
-
-
-sequential = make_workload()
+sequential = make_workload(tokenizer)
 serve_one_at_a_time(sequential)
 report(sequential)
 ```
 
 ```text
-TTFT: first request 317 ms, median 25305 ms, worst 50618 ms
-160 tokens in 56.2 s = 3 tokens/s
+TTFT: first request 328 ms, median 24279 ms, worst 44820 ms
+160 tokens in 47.8 s = 3.3 tokens/s
 ```
 
 Eight users sent their requests at the same moment. The first one got a token
@@ -562,6 +629,13 @@ its time to first token is most of the total run time.
 measured a decoder layer's decode step for 32 sequences at about 1.2 to 1.3
 times the cost of a step for one, on the Mac the book was built on, so this
 engine leaves most of the hardware's capacity unused.
+
+The engines in this chapter favor clarity over speed. On every step,
+`run_step` packs each layer's past keys and values into NumPy arrays, copies
+them to the device, and copies the new ones back, so a step costs more here
+than the cached decode step in
+[Section 1.8](01_08_kv_cache.md). Compare this
+chapter's timings with each other, not with Chapter 1's.
 [Section 5.2](05_02_continuous_batching.md) runs
 several requests in each step.
 

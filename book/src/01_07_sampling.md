@@ -11,6 +11,9 @@ text: the generation loop, and the sampling strategies behind the `temperature`,
 on your own model from
 [Section 1.6](01_06_full_model.md).
 
+<details class="code-fold">
+<summary>Show the setup <span class="code-fold-lines">32 lines</span></summary>
+
 ```python
 import logging
 import time
@@ -18,6 +21,7 @@ import warnings
 
 import numpy as np
 import plotly.graph_objects as go
+from IPython.display import Markdown, display
 from plotly.subplots import make_subplots
 from max import functional as F
 from max.driver import CPU
@@ -44,6 +48,8 @@ compiled = model.compile(
     TensorType(DType.int64, ("batch", "seq_len"), device=DEVICE)
 )
 ```
+
+</details>
 
 The generation loop needs one thing from the model: the logits for the next
 token, given the tokens so far.
@@ -108,8 +114,13 @@ story = tokenizer(["Once upon a time, there was a"])["input_ids"][0]
 logits = next_logits(story)
 top = np.argsort(logits.to_numpy())[::-1][:12]
 labels = [repr(tokenizer.decode([int(i)])) for i in top]
-
 temperatures = [0.1, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0]
+```
+
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">26 lines</span></summary>
+
+```python
 steps = []
 for temperature in temperatures:
     probs = F.softmax(logits / temperature).to_numpy()
@@ -138,7 +149,9 @@ viz.show(
 )
 ```
 
-<div class="plotly-figure" data-src="generated/01_07_sampling_10_0.json"></div>
+</details>
+
+<div class="plotly-figure" data-src="generated/01_07_sampling_11_0.json"></div>
 
 ## Sampling with MAX operations
 
@@ -175,7 +188,7 @@ assert np.abs(counts / 2000 - F.softmax(toy).to_numpy()).max() < 0.05
 ```
 
 ```text
-sampled: [0.556 0.205 0.133 0.08  0.026]
+sampled: [0.558 0.214 0.121 0.08  0.027]
 softmax: [0.559 0.205 0.125 0.084 0.028]
 ```
 
@@ -198,6 +211,9 @@ the running total, and `F.where` drops every token that the total had
 already passed \\(p\\) before reaching. The filtered scores go through the
 Gumbel-max trick, and the ID map turns the winning position back into a
 token. Without a filter, nothing needs sorting.
+
+<details class="code-fold">
+<summary>Show <code>sample</code>, <code>generate</code> <span class="code-fold-lines">57 lines</span></summary>
 
 ```python
 from __future__ import annotations
@@ -259,6 +275,8 @@ def generate(
     return ids[len(prompt) :]
 ```
 
+</details>
+
 <small>Saved to `minillm/sampling.py`.</small>
 
 Top-p adapts to the model's confidence. After "The capital of France is", two
@@ -274,7 +292,12 @@ sorted_probs = []
 for text in prompts:
     probs = F.softmax(next_logits(tokenizer([text])["input_ids"][0])).to_numpy()
     sorted_probs.append(np.sort(probs)[::-1])
+```
 
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">58 lines</span></summary>
+
+```python
 ps = [0.5, 0.75, 0.9, 0.95, 0.99]
 rank = np.arange(1, shown + 1)
 steps = []
@@ -335,7 +358,9 @@ fig.update_xaxes(title="rank", row=2, col=1)
 viz.show(viz.with_slider(fig, steps, [str(p) for p in ps], "top_p ", active=2))
 ```
 
-<div class="plotly-figure" data-src="generated/01_07_sampling_16_0.json"></div>
+</details>
+
+<div class="plotly-figure" data-src="generated/01_07_sampling_18_0.json"></div>
 
 `generate` stops at the model's end-of-sequence token, which a chat model
 emits when its answer is complete. Try a few settings. `random.set_seed`
@@ -367,8 +392,73 @@ for settings in [
   ' neighboring realm on your planet, mist. Even then; Unlocking beastellandsis deathshire istsubbralgenaki'
 ```
 
-Higher temperatures read less predictably. At 1.5 without a filter, the text
-turns to gibberish within a few words. Many chat applications use settings near
+Why does a high temperature drift? Color each generated token by the
+probability it had in the distribution it was drawn from (temperature 1 for
+the greedy run), and hover over a chip for the five likeliest alternatives:
+
+```python
+def generate_with_probs(
+    prompt: list[int], n: int, temperature: float
+) -> tuple[list[int], list[np.ndarray]]:
+    """Generates like `generate`, keeping each step's sampling distribution."""
+    ids, dists = list(prompt), []
+    for _ in range(n):
+        logits = next_logits(ids)
+        dists.append(F.softmax(logits / (temperature or 1.0)).to_numpy())
+        token = sample(logits, temperature=temperature)
+        ids.append(token)
+        if token == config.eos_token_id:
+            break
+    return ids[len(prompt) :], dists
+
+
+runs = {}
+for temperature in [0, 1.5]:
+    random.set_seed(0)
+    runs[temperature] = generate_with_probs(story, 24, temperature)
+```
+
+<details class="code-fold">
+<summary>Show <code>chip_title</code> <span class="code-fold-lines">20 lines</span></summary>
+
+```python
+def chip_title(token: int, dist: np.ndarray) -> str:
+    likeliest = np.argsort(dist)[::-1][:5]
+    alternatives = ", ".join(
+        f"{tokenizer.decode([int(i)])!r} {dist[i]:.2f}" for i in likeliest
+    )
+    return f"p = {dist[token]:.2f}; likeliest: {alternatives}"
+
+
+for temperature, (new, dists) in runs.items():
+    chosen = [float(d[t]) for t, d in zip(new, dists)]
+    mean = np.mean(chosen)
+    display(Markdown(f"`temperature={temperature}`, mean p = {mean:.2f}:"))
+    display(
+        viz.tokens(
+            [tokenizer.decode([t]) for t in new],
+            new,
+            colors=[f"rgba(42,120,214,{0.08 + 0.72 * p:.2f})" for p in chosen],
+            titles=[chip_title(t, d) for t, d in zip(new, dists)],
+        )
+    )
+```
+
+</details>
+
+`temperature=0`, mean p = 0.56:
+
+<div style="line-height:2"><span title="p = 0.21; likeliest: &#x27; young&#x27; 0.21, &#x27; man&#x27; 0.12, &#x27; small&#x27; 0.06, &#x27; woman&#x27; 0.04, &#x27; great&#x27; 0.03" style="background:rgba(42,120,214,0.23);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;young</span><span title="p = 0.23; likeliest: &#x27; woman&#x27; 0.23, &#x27; girl&#x27; 0.23, &#x27; man&#x27; 0.14, &#x27; boy&#x27; 0.08, &#x27; and&#x27; 0.02" style="background:rgba(42,120,214,0.25);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;woman</span><span title="p = 0.94; likeliest: &#x27; named&#x27; 0.94, &#x27; who&#x27; 0.03, &#x27;,&#x27; 0.02, &#x27; with&#x27; 0.00, &#x27; in&#x27; 0.00" style="background:rgba(42,120,214,0.75);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;named</span><span title="p = 0.10; likeliest: &#x27; Sarah&#x27; 0.10, &#x27; Sophia&#x27; 0.10, &#x27; Emma&#x27; 0.09, &#x27; A&#x27; 0.06, &#x27; Av&#x27; 0.05" style="background:rgba(42,120,214,0.16);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;Sarah</span><span title="p = 0.52; likeliest: &#x27; who&#x27; 0.52, &#x27;.&#x27; 0.26, &#x27;,&#x27; 0.20, &#x27; living&#x27; 0.00, &#x27; from&#x27; 0.00" style="background:rgba(42,120,214,0.45);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;who</span><span title="p = 0.27; likeliest: &#x27; was&#x27; 0.27, &#x27; had&#x27; 0.23, &#x27; lived&#x27; 0.18, &#x27; worked&#x27; 0.04, &#x27; loved&#x27; 0.04" style="background:rgba(42,120,214,0.27);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;was</span><span title="p = 0.19; likeliest: &#x27; struggling&#x27; 0.19, &#x27; a&#x27; 0.15, &#x27; working&#x27; 0.05, &#x27; an&#x27; 0.04, &#x27; on&#x27; 0.02" style="background:rgba(42,120,214,0.21);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;struggling</span><span title="p = 0.72; likeliest: &#x27; to&#x27; 0.72, &#x27; with&#x27; 0.25, &#x27; in&#x27; 0.02, &#x27; financially&#x27; 0.01, &#x27;.&#x27; 0.01" style="background:rgba(42,120,214,0.60);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;to</span><span title="p = 0.52; likeliest: &#x27; find&#x27; 0.52, &#x27; make&#x27; 0.21, &#x27; balance&#x27; 0.05, &#x27; decide&#x27; 0.03, &#x27; get&#x27; 0.02" style="background:rgba(42,120,214,0.45);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;find</span><span title="p = 0.81; likeliest: &#x27; her&#x27; 0.81, &#x27; a&#x27; 0.09, &#x27; happiness&#x27; 0.01, &#x27; meaning&#x27; 0.01, &#x27; work&#x27; 0.01" style="background:rgba(42,120,214,0.66);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;her</span><span title="p = 0.84; likeliest: &#x27; place&#x27; 0.84, &#x27; voice&#x27; 0.08, &#x27; way&#x27; 0.01, &#x27; passion&#x27; 0.01, &#x27; own&#x27; 0.01" style="background:rgba(42,120,214,0.69);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;place</span><span title="p = 0.90; likeliest: &#x27; in&#x27; 0.90, &#x27;.&#x27; 0.06, &#x27; within&#x27; 0.01, &#x27; and&#x27; 0.01, &#x27; at&#x27; 0.01" style="background:rgba(42,120,214,0.73);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;in</span><span title="p = 0.61; likeliest: &#x27; the&#x27; 0.61, &#x27; a&#x27; 0.19, &#x27; her&#x27; 0.09, &#x27; society&#x27; 0.04, &#x27; this&#x27; 0.02" style="background:rgba(42,120,214,0.52);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;the</span><span title="p = 0.90; likeliest: &#x27; world&#x27; 0.90, &#x27; community&#x27; 0.01, &#x27; city&#x27; 0.01, &#x27; bustling&#x27; 0.00, &#x27; corporate&#x27; 0.00" style="background:rgba(42,120,214,0.73);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;world</span><span title="p = 0.96; likeliest: &#x27;.&#x27; 0.96, &#x27; of&#x27; 0.01, &#x27; and&#x27; 0.01, &#x27; around&#x27; 0.01, &#x27;,&#x27; 0.01" style="background:rgba(42,120,214,0.77);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">.</span><span title="p = 0.94; likeliest: &#x27; She&#x27; 0.94, &#x27; Her&#x27; 0.03, &#x27; Sarah&#x27; 0.01, &#x27; Despite&#x27; 0.00, &#x27; The&#x27; 0.00" style="background:rgba(42,120,214,0.76);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;She</span><span title="p = 0.44; likeliest: &#x27; had&#x27; 0.44, &#x27; was&#x27; 0.29, &#x27; felt&#x27; 0.11, &#x27; loved&#x27; 0.05, &#x27; lived&#x27; 0.03" style="background:rgba(42,120,214,0.40);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;had</span><span title="p = 0.77; likeliest: &#x27; always&#x27; 0.77, &#x27; been&#x27; 0.09, &#x27; a&#x27; 0.04, &#x27; just&#x27; 0.01, &#x27; no&#x27; 0.01" style="background:rgba(42,120,214,0.63);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;always</span><span title="p = 0.34; likeliest: &#x27; been&#x27; 0.34, &#x27; dreamed&#x27; 0.32, &#x27; felt&#x27; 0.19, &#x27; wanted&#x27; 0.05, &#x27; loved&#x27; 0.03" style="background:rgba(42,120,214,0.32);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;been</span><span title="p = 0.15; likeliest: &#x27; a&#x27; 0.15, &#x27; drawn&#x27; 0.15, &#x27; passionate&#x27; 0.12, &#x27; the&#x27; 0.05, &#x27; fascinated&#x27; 0.05" style="background:rgba(42,120,214,0.19);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;a</span><span title="p = 0.19; likeliest: &#x27; bit&#x27; 0.19, &#x27; quiet&#x27; 0.11, &#x27; creative&#x27; 0.08, &#x27; shy&#x27; 0.07, &#x27; free&#x27; 0.04" style="background:rgba(42,120,214,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;bit</span><span title="p = 0.93; likeliest: &#x27; of&#x27; 0.93, &#x27; reserved&#x27; 0.01, &#x27; shy&#x27; 0.01, &#x27; awkward&#x27; 0.01, &#x27; unconventional&#x27; 0.01" style="background:rgba(42,120,214,0.75);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;of</span><span title="p = 0.87; likeliest: &#x27; a&#x27; 0.87, &#x27; an&#x27; 0.13, &#x27; trouble&#x27; 0.00, &#x27; someone&#x27; 0.00, &#x27; of&#x27; 0.00" style="background:rgba(42,120,214,0.71);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;a</span><span title="p = 0.15; likeliest: &#x27; rebel&#x27; 0.15, &#x27; free&#x27; 0.14, &#x27; lon&#x27; 0.13, &#x27; intro&#x27; 0.06, &#x27; shy&#x27; 0.05" style="background:rgba(42,120,214,0.19);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;rebel</span></div>
+
+`temperature=1.5`, mean p = 0.01:
+
+<div style="line-height:2"><span title="p = 0.00; likeliest: &#x27; young&#x27; 0.05, &#x27; man&#x27; 0.03, &#x27; small&#x27; 0.02, &#x27; woman&#x27; 0.02, &#x27; great&#x27; 0.01" style="background:rgba(42,120,214,0.08);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;neighboring</span><span title="p = 0.00; likeliest: &#x27; kingdom&#x27; 0.12, &#x27; town&#x27; 0.10, &#x27; city&#x27; 0.07, &#x27; country&#x27; 0.05, &#x27; nation&#x27; 0.04" style="background:rgba(42,120,214,0.08);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;realm</span><span title="p = 0.01; likeliest: &#x27; called&#x27; 0.20, &#x27;,&#x27; 0.18, &#x27; that&#x27; 0.08, &#x27; known&#x27; 0.08, &#x27;.&#x27; 0.04" style="background:rgba(42,120,214,0.08);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;on</span><span title="p = 0.00; likeliest: &#x27; the&#x27; 0.47, &#x27; a&#x27; 0.09, &#x27; Earth&#x27; 0.04, &#x27; which&#x27; 0.02, &#x27; an&#x27; 0.02" style="background:rgba(42,120,214,0.08);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;your</span><span title="p = 0.02; likeliest: &#x27; side&#x27; 0.09, &#x27; own&#x27; 0.03, &#x27; journey&#x27; 0.02, &#x27; home&#x27; 0.02, &#x27; planet&#x27; 0.02" style="background:rgba(42,120,214,0.09);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;planet</span><span title="p = 0.19; likeliest: &#x27;,&#x27; 0.19, &#x27;.&#x27; 0.19, &#x27; that&#x27; 0.07, &quot;&#x27;s&quot; 0.04, &#x27; called&#x27; 0.04" style="background:rgba(42,120,214,0.22);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">,</span><span title="p = 0.00; likeliest: &#x27; where&#x27; 0.06, &#x27; and&#x27; 0.05, &#x27; a&#x27; 0.05, &#x27; known&#x27; 0.04, &#x27; one&#x27; 0.04" style="background:rgba(42,120,214,0.08);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;mist</span><span title="p = 0.01; likeliest: &#x27;y&#x27; 0.17, &#x27;-&#x27; 0.10, &#x27;ing&#x27; 0.02, &#x27; and&#x27; 0.02, &#x27;bound&#x27; 0.02" style="background:rgba(42,120,214,0.09);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">.</span><span title="p = 0.00; likeliest: &#x27; The&#x27; 0.05, &#x27; It&#x27; 0.04, &#x27; This&#x27; 0.03, &#x27; You&#x27; 0.03, &#x27; In&#x27; 0.02" style="background:rgba(42,120,214,0.08);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;Even</span><span title="p = 0.01; likeliest: &#x27; though&#x27; 0.11, &#x27; now&#x27; 0.04, &#x27; the&#x27; 0.04, &#x27; in&#x27; 0.03, &#x27; as&#x27; 0.02" style="background:rgba(42,120,214,0.09);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;then</span><span title="p = 0.00; likeliest: &#x27;,&#x27; 0.42, &#x27; you&#x27; 0.03, &#x27; there&#x27; 0.02, &#x27; the&#x27; 0.02, &#x27; I&#x27; 0.02" style="background:rgba(42,120,214,0.08);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">;</span><span title="p = 0.00; likeliest: &#x27; you&#x27; 0.03, &#x27; the&#x27; 0.02, &#x27; it&#x27; 0.02, &#x27; there&#x27; 0.02, &#x27; I&#x27; 0.01" style="background:rgba(42,120,214,0.08);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;Unlocking</span><span title="p = 0.00; likeliest: &#x27; the&#x27; 0.08, &#x27; was&#x27; 0.02, &#x27; your&#x27; 0.02, &#x27;.&#x27; 0.01, &#x27; The&#x27; 0.01" style="background:rgba(42,120,214,0.08);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;beast</span><span title="p = 0.00; likeliest: &#x27;.&#x27; 0.03, &#x27;,&#x27; 0.02, &#x27; of&#x27; 0.01, &#x27; was&#x27; 0.01, &quot;&#x27;s&quot; 0.01" style="background:rgba(42,120,214,0.08);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">ell</span><span title="p = 0.00; likeliest: &quot;&#x27;s&quot; 0.01, &#x27;.&#x27; 0.01, &#x27;,&#x27; 0.01, &#x27; was&#x27; 0.01, &#x27; were&#x27; 0.01" style="background:rgba(42,120,214,0.08);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">ands</span><span title="p = 0.00; likeliest: &#x27;,&#x27; 0.03, &#x27; was&#x27; 0.02, &#x27;.&#x27; 0.02, &#x27; is&#x27; 0.01, &#x27; were&#x27; 0.01" style="background:rgba(42,120,214,0.08);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">is</span><span title="p = 0.00; likeliest: &#x27;.&#x27; 0.02, &#x27; was&#x27; 0.01, &#x27;,&#x27; 0.01, &#x27; is&#x27; 0.01, &#x27;\n&#x27; 0.01" style="background:rgba(42,120,214,0.08);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;death</span><span title="p = 0.00; likeliest: &#x27;.&#x27; 0.03, &#x27;,&#x27; 0.02, &#x27; and&#x27; 0.01, &#x27; to&#x27; 0.01, &#x27; was&#x27; 0.01" style="background:rgba(42,120,214,0.08);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">shire</span><span title="p = 0.00; likeliest: &#x27;.&#x27; 0.02, &#x27;,&#x27; 0.01, &#x27;\n&#x27; 0.01, &#x27; was&#x27; 0.01, &#x27; and&#x27; 0.01" style="background:rgba(42,120,214,0.08);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">&middot;i</span><span title="p = 0.00; likeliest: &#x27;.&#x27; 0.01, &#x27; am&#x27; 0.01, &#x27; was&#x27; 0.01, &#x27; would&#x27; 0.01, &#x27; have&#x27; 0.01" style="background:rgba(42,120,214,0.08);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">sts</span><span title="p = 0.00; likeliest: &#x27;.&#x27; 0.01, &#x27; the&#x27; 0.00, &#x27;,&#x27; 0.00, &#x27; a&#x27; 0.00, &#x27; and&#x27; 0.00" style="background:rgba(42,120,214,0.08);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">ub</span><span title="p = 0.00; likeliest: &#x27;st&#x27; 0.02, &#x27;ject&#x27; 0.02, &#x27;sc&#x27; 0.02, &#x27;scription&#x27; 0.02, &#x27;scribed&#x27; 0.01" style="background:rgba(42,120,214,0.08);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">bral</span><span title="p = 0.00; likeliest: &#x27;.&#x27; 0.01, &#x27;,&#x27; 0.00, &#x27; and&#x27; 0.00, &#x27;\n&#x27; 0.00, &#x27;ly&#x27; 0.00" style="background:rgba(42,120,214,0.08);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">gen</span><span title="p = 0.00; likeliest: &#x27;i&#x27; 0.01, &#x27;.&#x27; 0.01, &#x27;ii&#x27; 0.01, &#x27;ial&#x27; 0.01, &#x27;ies&#x27; 0.01" style="background:rgba(42,120,214,0.08);border-radius:4px;padding:2px 4px;margin:0 2px 4px 0;display:inline-block;font-family:ui-monospace,monospace;font-size:0.9em">aki</span></div>
+
+Higher temperatures read less predictably. The greedy run picks tokens with
+probabilities from about 0.1 to over 0.9. At 1.5 without a filter, nearly
+every chip is pale: a flattened distribution gives the long tail of unlikely
+tokens enough combined weight that most picks are tokens the model gave
+almost no chance, and the text turns to gibberish within a few words. Many chat applications use settings near
 `temperature=0.7` and `top_p=0.9`. The handbook's
 [inference parameters](https://handbook.modular.com/model-interaction/inference-parameters/)
 page covers these and the other settings servers accept, such as stop sequences
@@ -388,13 +478,27 @@ for length in lengths:
     ids = rng.integers(0, config.vocab_size, length).tolist()
     next_logits(ids).to_numpy()  # warm up this length
     times = []
-    for _ in range(3):
+    for _ in range(5):
         start = time.perf_counter()
         next_logits(ids).to_numpy()
         times.append((time.perf_counter() - start) * 1000)
-    step_ms.append(min(times))
+    step_ms.append(float(np.median(times)))
     print(f"{length:5} tokens: {step_ms[-1]:6.1f} ms per new token")
+```
 
+```text
+   16 tokens:   69.3 ms per new token
+   64 tokens:  110.7 ms per new token
+  256 tokens:   87.1 ms per new token
+  512 tokens:  192.9 ms per new token
+ 1024 tokens:  560.4 ms per new token
+ 2048 tokens: 1801.7 ms per new token
+```
+
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">17 lines</span></summary>
+
+```python
 fig = go.Figure(
     go.Scatter(
         x=lengths,
@@ -414,19 +518,12 @@ fig.update_layout(
 viz.show(fig)
 ```
 
-```text
-   16 tokens:   82.2 ms per new token
-   64 tokens:  104.0 ms per new token
-  256 tokens:  101.7 ms per new token
-  512 tokens:  186.9 ms per new token
- 1024 tokens:  570.1 ms per new token
- 2048 tokens: 1906.7 ms per new token
-```
+</details>
 
-<div class="plotly-figure" data-src="generated/01_07_sampling_20_6.json"></div>
+<div class="plotly-figure" data-src="generated/01_07_sampling_26_0.json"></div>
 
 In the run shown here, on an Apple-silicon Mac with a Metal GPU, a step took
-about 80 to 105 ms up to 256 tokens, about 570 ms at 1,024 tokens, and about 1.9
+about 70 to 110 ms up to 256 tokens, about 560 ms at 1,024 tokens, and about 1.8
 s at 2,048. Treat these numbers as an example: yours depend on your hardware and
 vary from run to run. For short sequences the step costs about the same at any
 length, because fixed work, such as reading every weight and launching each

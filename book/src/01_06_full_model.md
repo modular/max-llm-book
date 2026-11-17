@@ -10,6 +10,9 @@ all 272 weights, and compiles the result. Then it checks that your model's
 logits match MAX's own implementation of SmolLM2, the one `AutoModel`
 loads.
 
+<details class="code-fold">
+<summary>Show the setup <span class="code-fold-lines">27 lines</span></summary>
+
 ```python
 import logging
 import time
@@ -40,6 +43,8 @@ config = LlamaConfig.from_pretrained()
 weights = load_checkpoint()
 ```
 
+</details>
+
 ## The decoder layer
 
 A layer normalizes its input, runs attention, and adds the result back to
@@ -56,6 +61,9 @@ train well.
 
 The attribute names match the checkpoint once more, so a layer loads
 `model.layers.N.*` directly.
+
+<details class="code-fold">
+<summary>Show <code>DecoderLayer</code> <span class="code-fold-lines">27 lines</span></summary>
 
 ```python
 from __future__ import annotations
@@ -86,6 +94,8 @@ class DecoderLayer(Module):
         x = x + self.self_attn(self.input_layernorm(x))
         return x + self.mlp(self.post_attention_layernorm(x))
 ```
+
+</details>
 
 <small>Saved to `minillm/model.py`.</small>
 
@@ -128,6 +138,9 @@ to one logit per vocabulary entry. The module tree mirrors Hugging Face's
 initialization never runs, and then loads the weights. SmolLM2 ties
 `lm_head` to the embedding table, so the loader uses the same array for
 both.
+
+<details class="code-fold">
+<summary>Show <code>LlamaModel</code>, <code>LlamaForCausalLM</code>, <code>load_model</code> <span class="code-fold-lines">44 lines</span></summary>
 
 ```python
 class LlamaModel(Module):
@@ -176,11 +189,16 @@ def load_model(
     return model
 ```
 
+</details>
+
 <small>Saved to `minillm/model.py`.</small>
 
 Here is the whole model as a diagram, built from the config. The shaded
 block repeats 30 times, and the curved lines are the residual connections.
 Hover over a box for the shape of the tensor it produces:
+
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">121 lines</span></summary>
 
 ```python
 H, V, I = config.hidden_size, config.vocab_size, config.intermediate_size
@@ -272,10 +290,8 @@ for upper, lower in zip(ys, ys[1:]):  # the main path
         arrowcolor=viz.INK_SECONDARY,
         text="",
     )
-for start, add in [
-    (1, 4),
-    (4, 7),
-]:  # residual connections skip the norm and the sublayer
+# The residual connections skip the norm and the sublayer.
+for start, add in [(1, 4), (4, 7)]:
     y0, y1 = ys[start] - 0.5, ys[add]
     fig.add_trace(
         go.Scatter(
@@ -308,6 +324,8 @@ fig.update_layout(
 viz.show(fig)
 ```
 
+</details>
+
 <div class="plotly-figure" data-src="generated/01_06_full_model_11_0.json"></div>
 
 ```python
@@ -322,6 +340,14 @@ print(
 273 parameter tensors, 162.8M values
 ```
 
+Your model has 273 parameter tensors and 162.8M values. That is 28M more than
+the checkpoint's 134.5M because `lm_head` counts as its own 49152 × 576
+parameter, loaded from the same array as the embedding table. `load_state_dict`
+is strict: a missing or misnamed weight raises an error instead of silently
+keeping a random value, so a successful load already proves the names line up.
+
+## Inside the forward pass
+
 Before compiling, run the layers one at a time and keep each one's output.
 The size of each token's hidden state grows as layers add their updates:
 
@@ -332,8 +358,13 @@ for layer in model.model.layers:
     x = layer(x)
     states.append(x.to_numpy()[0])
 states = np.array(states)  # [layer + 1, token, hidden]
-labels = [repr(tokenizer.decode([i])) for i in ids]
+```
 
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">21 lines</span></summary>
+
+```python
+labels = [repr(tokenizer.decode([i])) for i in ids]
 fig = go.Figure(
     [
         go.Scatter(
@@ -356,7 +387,9 @@ fig.update_layout(
 viz.show(fig)
 ```
 
-<div class="plotly-figure" data-src="generated/01_06_full_model_14_0.json"></div>
+</details>
+
+<div class="plotly-figure" data-src="generated/01_06_full_model_16_0.json"></div>
 
 The first token behaves differently. Its state jumps to about 24,000 at layer
 12, over a hundred times the other tokens' (about 120 to 165), and stays there
@@ -372,59 +405,77 @@ layer's output. For the hidden state \\(h\_\\ell\\) after layer \\(\\ell\\), the
 
 \\[p\_\\ell = \\mathrm{softmax}\\big(E \\, \\mathrm{RMSNorm}(h\_\\ell)\\big)\\]
 
-where \\(E\\) is the embedding table that `lm_head` shares. Applied to the
-last position, it shows the prediction forming. Hover to see each layer's top
-token:
+where \\(E\\) is the embedding table that `lm_head` shares. Apply it at every
+position and after every layer:
 
 ```python
 final_norm = weights["model.norm.weight"]
 table = weights["model.embed_tokens.weight"]  # lm_head shares it
-paris = tokenizer([" Paris"])["input_ids"][0][0]
-last = states[:, -1]
 normed = (
-    last
-    / np.sqrt((last**2).mean(-1, keepdims=True) + config.rms_norm_eps)
+    states
+    / np.sqrt((states**2).mean(-1, keepdims=True) + config.rms_norm_eps)
     * final_norm
 )
-lens = normed @ table.T
+lens = normed @ table.T  # [layer + 1, token, vocab]
 lens_probs = np.exp(lens - lens.max(-1, keepdims=True))
 lens_probs /= lens_probs.sum(-1, keepdims=True)
-top_tokens = [repr(tokenizer.decode([int(i)])) for i in lens.argmax(-1)]
 
+positions = np.arange(len(ids))
+final_top = lens[-1].argmax(-1)  # each position's prediction after layer 30
+p_final = lens_probs[:, positions, final_top]  # [layer + 1, token]
+paris = tokenizer([" Paris"])["input_ids"][0][0]
+assert final_top[-1] == paris
+```
+
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">29 lines</span></summary>
+
+```python
+top_tokens = [
+    [repr(tokenizer.decode([int(i)])) for i in row] for row in lens.argmax(-1)
+]
+finals = [repr(tokenizer.decode([int(i)])) for i in final_top]
 fig = go.Figure(
-    go.Scatter(
-        x=np.arange(31),
-        y=lens_probs[:, paris],
-        mode="lines+markers",
-        line_color=viz.BLUE,
-        customdata=top_tokens,
-        name="P(' Paris')",
-        hovertemplate="layer %{x}: P(' Paris') = %{y:.2f}<br>top token %{customdata}<extra></extra>",
+    go.Heatmap(
+        z=p_final,
+        x=[f"{t}: {label}" for t, label in enumerate(labels)],
+        y=np.arange(31),
+        text=top_tokens,
+        texttemplate="%{text}",
+        textfont=dict(size=10),
+        customdata=[finals] * 31,
+        zmin=0,
+        zmax=1,
+        colorscale=viz.SEQUENTIAL,
+        colorbar=dict(title="P(final)", thickness=12),
+        xgap=1,
+        ygap=1,
+        hovertemplate="after %{x}, layer %{y}<br>top token %{text}<br>P(%{customdata}) = %{z:.3f}<extra></extra>",
     )
 )
 fig.update_layout(
-    title="Logit lens: the probability of ' Paris' after each layer",
-    height=400,
-    xaxis_title="layer",
-    yaxis=dict(title="probability", range=[0, 1]),
+    title="Logit lens: the top next token at each position and layer",
+    height=820,
+    xaxis=dict(title="position: the token read last", showgrid=False),
+    yaxis=dict(title="layer", dtick=2, showgrid=False),
 )
 viz.show(fig)
 ```
 
-<div class="plotly-figure" data-src="generated/01_06_full_model_16_0.json"></div>
+</details>
 
-Through most of the stack the top token is filler: a period or a space,
-then " the" from layer 23. " Paris" becomes the top token only after layer
-30, the last. Its probability stays near zero through layer 28, reaches
-about 0.06 after layer 29 and about 0.47 after layer 30, so for this prompt
-the answer forms in the last two layers.
+<div class="plotly-figure" data-src="generated/01_06_full_model_19_0.json"></div>
 
-Before these plots, the model printed 273 parameter tensors and 162.8M
-values. That is 28M more than the checkpoint's 134.5M because `lm_head`
-counts as its own 49152 × 576 parameter, loaded from the same array as the
-embedding table. `load_state_dict` is strict: a
-missing or misnamed weight raises an error instead of silently keeping a
-random value, so a successful load already proves the names line up.
+Each column is a position, labeled with the token read last; each cell shows the
+layer's top guess for the next token, shaded by the probability of the
+position's final prediction. Read the last column from the bottom up: the top
+token is filler, a period or a space and then " the" from layer 23, and " Paris"
+becomes the top token only after layer 30, the last. Hover to read its
+probability: near zero through layer 28, about 0.06 after layer 29 and about
+0.47 after layer 30. The middle positions settle earlier: " of" after " capital"
+from layer 25, and " the" after " of" from layer 23. Their probability peaks a
+few layers before the end, and the last layers spread some of it to other
+tokens.
 
 ## Compile
 
@@ -447,8 +498,8 @@ print(
 ```
 
 ```text
-compiled in 10 s
-forward pass: 30 ms, logits (1, 5, 49152)
+compiled in 18 s
+forward pass: 56 ms, logits (1, 5, 49152)
 ```
 
 ## Check against MAX's SmolLM2
@@ -484,32 +535,43 @@ top token, yours: ' Paris'
 top token, MAX's: ' Paris'
 ```
 
-Plot your logits against MAX's for the 2,000 likeliest tokens. The points sit
-on the diagonal:
+The check covers every one of the 49,152 logits, not only the top one. Count
+how far each of your logits is from MAX's; the dashed line marks the
+tolerance the check allows, and every logit sits orders of magnitude below
+it:
+
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">23 lines</span></summary>
 
 ```python
-likeliest = np.argsort(expected)[::-1][:2000]
-words = [repr(tokenizer.decode([int(i)])) for i in likeliest]
+# Exact matches go in the lowest bin, since a log scale has no zero.
+log_error = np.log10(np.maximum(np.abs(ours - expected), 1e-9))
 fig = go.Figure(
-    go.Scatter(
-        x=expected[likeliest],
-        y=ours[likeliest],
-        mode="markers",
-        text=words,
-        marker=dict(color=viz.BLUE, size=6, opacity=0.6),
-        hovertemplate="%{text}<br>MAX %{x:.4f}<br>yours %{y:.4f}<extra></extra>",
+    go.Histogram(
+        x=log_error,
+        xbins=dict(start=-9, end=0, size=0.25),
+        marker_color=viz.BLUE,
+        hovertemplate="%{y:,} logits<extra></extra>",
     )
 )
+fig.add_vline(x=-2, line=dict(color=viz.ORANGE, dash="dash"))
 fig.update_layout(
-    title="Next-token logits: your model against MAX's",
-    height=480,
-    xaxis_title="MAX's logit",
-    yaxis=dict(title="your logit", scaleanchor="x"),
+    title="Difference between your logits and MAX's, over the whole vocabulary",
+    height=380,
+    bargap=0.05,
+    xaxis=dict(
+        title="absolute difference",
+        tickvals=list(range(-9, 1)),
+        ticktext=[f"1e{p}" for p in range(-9, 1)],
+    ),
+    yaxis_title="logits",
 )
 viz.show(fig)
 ```
 
-<div class="plotly-figure" data-src="generated/01_06_full_model_23_0.json"></div>
+</details>
+
+<div class="plotly-figure" data-src="generated/01_06_full_model_26_0.json"></div>
 
 In the run shown here, on an Apple-silicon Mac with a Metal GPU, the largest
 difference between your logits and MAX's was about `4e-5`, and both models
@@ -527,8 +589,8 @@ discusses how size, architecture, and license trade off when you pick one.
 
 ## Exercises
 
-1. The logit lens above reads only the last position. Plot it for every
-   position: at which layer does each one settle on its final prediction?
+1. Run the logit lens on a longer prompt of your own. At which layer does
+   each position settle on its final prediction?
 2. Load `HuggingFaceTB/SmolLM2-360M-Instruct` with the same code. What
    changes in `config`, and how do compile and forward times scale?
 3. Break something on purpose, such as dropping `rotate_half` from

@@ -17,7 +17,7 @@ Edit the notebook, then run ``pixi run export``.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from typing import Any, ClassVar
 
@@ -89,6 +89,29 @@ class MinillmArchConfig(ArchConfigWithAttentionKVCache):
         )
 
 
+def build_model(
+    hf: AutoConfig,
+    pipeline_config: PipelineConfig,
+    weights: Weights,
+    adapter: WeightsAdapter | None,
+    device: Device,
+) -> Callable[[Tensor], Tensor]:
+    """Builds and compiles minillm's ``LlamaForCausalLM`` from a checkpoint."""
+    config = LlamaConfig(
+        **{
+            k: getattr(hf, k)
+            for k in LlamaConfig.__dataclass_fields__
+            if hasattr(hf, k)
+        }
+    )
+    state = parse_state_dict_from_weights(pipeline_config, weights, adapter)
+    state = {name: w.astype(DType.float32) for name, w in state.items()}
+    model = load_model(config, state, device)
+    return model.compile(
+        TensorType(DType.int64, ("batch", "seq_len"), device=device)
+    )
+
+
 @dataclass
 class TokenInputs(ModelInputs):
     tokens: Buffer
@@ -98,7 +121,10 @@ class TokenInputs(ModelInputs):
         return (self.tokens,)
 
 
-class MinillmPipelineModel(PipelineModelWithKVCache[TextContext]):
+class PassThroughPipelineModel(PipelineModelWithKVCache[TextContext]):
+    """Forwards MAX's constructor arguments and sizes the KV cache from the
+    checkpoint's config, then builds the model with ``build_model``."""
+
     def __init__(
         self,
         pipeline_config: PipelineConfig,
@@ -125,23 +151,12 @@ class MinillmPipelineModel(PipelineModelWithKVCache[TextContext]):
             max_batch_size=max_batch_size,
             memory_plan=memory_plan,
         )
-        hf = self.huggingface_config
-        config = LlamaConfig(
-            **{
-                k: getattr(hf, k)
-                for k in LlamaConfig.__dataclass_fields__
-                if hasattr(hf, k)
-            }
-        )
-        state = parse_state_dict_from_weights(
-            self.pipeline_config, weights, adapter
-        )
-        state = {name: w.astype(DType.float32) for name, w in state.items()}
-        model = load_model(config, state, self.devices[0])
-        self.model = model.compile(
-            TensorType(
-                DType.int64, ("batch", "seq_len"), device=self.devices[0]
-            )
+        self.model = build_model(
+            self.huggingface_config,
+            self.pipeline_config,
+            weights,
+            adapter,
+            self.devices[0],
         )
 
     @classmethod
@@ -164,14 +179,8 @@ class MinillmPipelineModel(PipelineModelWithKVCache[TextContext]):
             data_parallel_degree=pipeline_config.model.data_parallel_degree,
         )
 
-    def execute(self, model_inputs: ModelInputs) -> ModelOutputs:
-        assert isinstance(model_inputs, TokenInputs)
-        logits = self.model(Tensor.from_dlpack(model_inputs.tokens))
-        last = Buffer.from_numpy(
-            np.ascontiguousarray(logits.to_numpy()[0, -1:, :])
-        ).to(self.devices[0])
-        return ModelOutputs(logits=last, next_token_logits=last)
 
+class MinillmPipelineModel(PassThroughPipelineModel):
     def prepare_initial_token_inputs(
         self,
         replica_batches: Sequence[Sequence[TextContext]],
@@ -179,13 +188,18 @@ class MinillmPipelineModel(PipelineModelWithKVCache[TextContext]):
         return_n_logits: int = 1,
     ) -> TokenInputs:
         ids = replica_batches[0][0].tokens.all
-        inputs = TokenInputs(
-            tokens=Buffer.from_numpy(np.array([ids], dtype=np.int64)).to(
-                self.devices[0]
-            )
-        )
+        tokens = np.array([ids], dtype=np.int64)
+        inputs = TokenInputs(Buffer.from_numpy(tokens).to(self.devices[0]))
         inputs.kv_cache_inputs = kv_cache_inputs
         return inputs
+
+    def execute(self, model_inputs: ModelInputs) -> ModelOutputs:
+        assert isinstance(model_inputs, TokenInputs)
+        logits = self.model(Tensor.from_dlpack(model_inputs.tokens))
+        last = Buffer.from_numpy(
+            np.ascontiguousarray(logits.to_numpy()[0, -1:, :])
+        ).to(self.devices[0])
+        return ModelOutputs(logits=last, next_token_logits=last)
 
 
 def _identity_adapter(state_dict: dict[str, Weights], **_: object) -> dict:

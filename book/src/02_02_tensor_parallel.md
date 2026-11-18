@@ -24,6 +24,7 @@ import plotly.graph_objects as go
 from max import functional as F
 from max.driver import CPU
 from max.dtype import DType
+from max.graph import TensorType
 from max.nn.common_layers.linear import col_parallel, row_parallel
 from max.pipelines import AutoTokenizer
 from max.tensor import Tensor, default_device, default_dtype
@@ -34,7 +35,6 @@ from max.tensor.sharding import (
     auto_reshard,
     visualize,
 )
-from max.tensor.tensor import TensorType
 
 from minillm import viz
 from minillm.config import MODEL_ID, LlamaConfig
@@ -306,7 +306,7 @@ print(reshards[0])
 ```
 
 ```text
-forward pass in 215 s, 60 collectives inserted
+forward pass in 108 s, 60 collectives inserted
 
 add(lhs, rhs) reshards rhs
   lhs    : float32[1, 5, 576]@mesh(tp=3){"tp":R}
@@ -363,11 +363,10 @@ The logits agree to within `1e-4`, the size of a change in summation order:
 the all-reduce adds three partial sums where one device computed one full
 sum. On real hardware, replace the mesh's `CPU()` entries with
 `Accelerator(0)`, `Accelerator(1)`, and `Accelerator(2)`, and nothing else
-changes. `max serve` splits models across GPUs too: pass
-`--devices gpu:0,1,2` to use three. MAX's Llama implementation, which serves
-SmolLM2, uses the same column-then-row layout, built from the older
-tensor-parallel layers in `max.nn.legacy` instead of distributed tensors, and
-it also splits the embedding and the LM head across the vocabulary.
+changes. MAX's own models shard their layers with the same `col_parallel`
+and `row_parallel` helpers; Gemma 4's attention, for example, uses the
+column-then-row layout you built here. `max serve` runs such a model across
+GPUs: pass `--devices gpu:0,1,2` to use three.
 
 Simulation answers *is it correct?* cheaply. Whether a layout is *fast* depends
 on the hardware: an all-reduce over NVLink costs microseconds, over PCIe or a

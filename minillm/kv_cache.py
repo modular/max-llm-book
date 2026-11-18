@@ -23,10 +23,10 @@ import numpy as np
 from max import functional as F
 from max.driver import Device
 from max.dtype import DType
+from max.graph import TensorType
 from max.nn import ModuleList
-from max.nn.kernels.attention import flash_attention
+from max.nn.kernels import flash_attention
 from max.tensor import Tensor
-from max.tensor.tensor import TensorType
 
 from minillm.attention import Attention
 from minillm.config import LlamaConfig

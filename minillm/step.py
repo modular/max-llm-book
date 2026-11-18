@@ -23,7 +23,7 @@ from collections.abc import Callable
 from max import functional as F
 from max.dtype import DType
 from max.nn import ModuleList
-from max.nn.kernels.attention import flash_attention
+from max.nn.kernels import flash_attention
 from max.tensor import Tensor
 
 from minillm.attention import Attention
@@ -128,7 +128,7 @@ class StepModel(LlamaForCausalLM):
 
 import numpy as np
 from max.driver import Device
-from max.tensor.tensor import TensorType
+from max.graph import TensorType
 
 
 def compile_step(model: StepModel, config: LlamaConfig, device: Device) -> Step:

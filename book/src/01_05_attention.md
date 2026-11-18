@@ -88,7 +88,7 @@ from max.driver import Device
 from max.dtype import DType
 from max.graph import Dim
 from max.nn import Linear, Module
-from max.nn.kernels.attention import flash_attention
+from max.nn.kernels import flash_attention
 from max.tensor import Tensor
 from max.tensor.sharding import DeviceMesh
 
@@ -277,7 +277,7 @@ hold `x`. Here that is one device; in
 devices at once.
 
 For the attention itself it uses `flash_attention` from
-`max.nn.kernels.attention`, which takes grouped heads directly. Flash
+`max.nn.kernels`, which takes grouped heads directly. Flash
 attention computes the same result as `naive_attention` but never builds the
 per-head `[seq, seq]` score matrices: it processes keys in blocks and keeps
 a running softmax. This module still passes a dense `[seq, seq]` mask, one for
@@ -393,8 +393,8 @@ print(f"flash: {timed(lambda: attn.attend(q, k, v)):.0f} ms  (includes o_proj)")
 ```
 
 ```text
-naive: 81 ms
-flash: 55 ms  (includes o_proj)
+naive: 93 ms
+flash: 41 ms  (includes o_proj)
 ```
 
 In the run shown here, on an Apple-silicon Mac with a Metal GPU, flash attention

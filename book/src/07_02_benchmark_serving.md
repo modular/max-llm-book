@@ -375,10 +375,9 @@ serializes requests, read the untrimmed rate, or pass
 
 The engine in [Chapter 5](ch05.md) fixed both with a
 paged KV cache and continuous batching. MAX's own architectures get them from
-MAX's serving stack, which is why a production architecture implements a decoder
-on MAX's paged KV cache
-([Section 7.1](07_01_serve_your_model.md) links the
-guide).
+MAX's serving stack, which is why a production architecture registers a
+decoder on MAX's paged KV cache, as the second registration in
+[Section 7.1](07_01_serve_your_model.md) does.
 
 ## Reading benchmarks well
 

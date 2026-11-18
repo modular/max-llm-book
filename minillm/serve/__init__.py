@@ -19,21 +19,24 @@ from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from typing import Any, ClassVar
+from typing import ClassVar
 
 import numpy as np
-from max.driver import Buffer, Device
+from max import functional as F
+from max.driver import CPU, Buffer, Device
 from max.dtype import DType
-from max.engine import InferenceSession
-from max.graph import DeviceRef
+from max.graph import TensorType
 from max.graph.weights import Weights, WeightsAdapter, WeightsFormat
-from max.nn.kv_cache import KVCacheInputs, KVCacheParams
-from max.nn.outputs import ReturnHiddenStates, ReturnLogits
+from max.nn import Embedding, Linear, Module, ModuleList, RMSNorm
+from max.nn.attention_mask import MHAMaskVariant
+from max.nn.common_layers.kv_cache import per_device_caches
+from max.nn.kernels import flash_attention_ragged, rope_split_store_ragged
+from max.nn.kv_cache import KVCacheInputs, KVCacheParams, PagedCacheValues
+from max.pipelines import upper_bounded_default
 from max.pipelines.context import TextContext
 from max.pipelines.lib import (
-    KVCacheConfig,
+    GraphRole,
     MAXModelConfig,
-    MemoryPlan,
     ModelInputs,
     ModelOutputs,
     PipelineConfig,
@@ -42,24 +45,25 @@ from max.pipelines.lib import (
     SupportedEncoding,
     TextTokenizer,
 )
-from max.pipelines.lib.interfaces.arch_config import (
+from max.pipelines.lib.interfaces import (
     ArchConfigWithAttentionKVCache,
+    ArchConfigWithStoredKVParams,
 )
-from max.pipelines.lib.utils import (
-    parse_state_dict_from_weights,
-    upper_bounded_default,
-)
+from max.pipelines.lib.role_contracts import DecoderInputs, DecoderOutputs
+from max.pipelines.lib.utils import parse_state_dict_from_weights
 from max.pipelines.modeling.types import PipelineTask
 from max.tensor import Tensor
-from max.tensor.tensor import TensorType
 from transformers import AutoConfig
 
 from minillm.config import LlamaConfig
+from minillm.layers import MLP, rope_cos_sin
 from minillm.model import load_model
 
 
 @dataclass
-class MinillmArchConfig(ArchConfigWithAttentionKVCache):
+class MinillmArchConfig(
+    ArchConfigWithAttentionKVCache, ArchConfigWithStoredKVParams
+):
     DEFAULT_ENCODING: ClassVar[SupportedEncoding] = "float32"
     SUPPORTED_ENCODINGS: ClassVar[set[SupportedEncoding]] = {"float32"}
 
@@ -69,11 +73,7 @@ class MinillmArchConfig(ArchConfigWithAttentionKVCache):
 
     @property
     def head_dim(self) -> int:
-        hf = self.huggingface_config
-        return (
-            getattr(hf, "head_dim", None)
-            or hf.hidden_size // hf.num_attention_heads
-        )
+        return self.get_head_dim(self.huggingface_config)
 
     @property
     def num_layers(self) -> int:
@@ -89,21 +89,25 @@ class MinillmArchConfig(ArchConfigWithAttentionKVCache):
         )
 
 
-def build_model(
-    hf: AutoConfig,
-    pipeline_config: PipelineConfig,
-    weights: Weights,
-    adapter: WeightsAdapter | None,
-    device: Device,
-) -> Callable[[Tensor], Tensor]:
-    """Builds and compiles minillm's ``LlamaForCausalLM`` from a checkpoint."""
-    config = LlamaConfig(
+def llama_config(hf: AutoConfig) -> LlamaConfig:
+    """Returns the checkpoint's sizes as a ``LlamaConfig``."""
+    return LlamaConfig(
         **{
             k: getattr(hf, k)
             for k in LlamaConfig.__dataclass_fields__
             if hasattr(hf, k)
         }
     )
+
+
+def build_model(
+    config: LlamaConfig,
+    pipeline_config: PipelineConfig,
+    weights: Weights,
+    adapter: WeightsAdapter | None,
+    device: Device,
+) -> Callable[[Tensor], Tensor]:
+    """Builds and compiles minillm's ``LlamaForCausalLM`` from a checkpoint."""
     state = parse_state_dict_from_weights(pipeline_config, weights, adapter)
     state = {name: w.astype(DType.float32) for name, w in state.items()}
     model = load_model(config, state, device)
@@ -121,66 +125,19 @@ class TokenInputs(ModelInputs):
         return (self.tokens,)
 
 
-class PassThroughPipelineModel(PipelineModelWithKVCache[TextContext]):
-    """Forwards MAX's constructor arguments and sizes the KV cache from the
-    checkpoint's config, then builds the model with ``build_model``."""
+class MinillmPipelineModel(PipelineModelWithKVCache[TextContext]):
+    model_config_cls: ClassVar[type[MinillmArchConfig]] = MinillmArchConfig
 
-    def __init__(
-        self,
-        pipeline_config: PipelineConfig,
-        session: InferenceSession,
-        devices: list[Device],
-        kv_cache_config: KVCacheConfig,
-        weights: Weights,
-        adapter: WeightsAdapter | None,
-        return_logits: ReturnLogits,
-        *,
-        memory_plan: MemoryPlan,
-        return_hidden_states: ReturnHiddenStates = ReturnHiddenStates.NONE,
-        max_batch_size: int = 1,
-    ) -> None:
-        super().__init__(
-            pipeline_config=pipeline_config,
-            session=session,
-            devices=devices,
-            kv_cache_config=kv_cache_config,
-            weights=weights,
-            adapter=adapter,
-            return_logits=return_logits,
-            return_hidden_states=return_hidden_states,
-            max_batch_size=max_batch_size,
-            memory_plan=memory_plan,
-        )
+    def __init__(self, *args: object, **kwargs: object) -> None:
+        super().__init__(*args, **kwargs)
         self.model = build_model(
-            self.huggingface_config,
+            llama_config(self.huggingface_config),
             self.pipeline_config,
-            weights,
-            adapter,
+            self.weights,
+            self.adapter,
             self.devices[0],
         )
 
-    @classmethod
-    def get_kv_params(
-        cls,
-        huggingface_config: Any,
-        pipeline_config: PipelineConfig,
-        devices: list[DeviceRef],
-        kv_cache_config: KVCacheConfig,
-        cache_dtype: DType,
-    ) -> KVCacheParams:
-        hf = huggingface_config
-        return kv_cache_config.to_params(
-            dtype=cache_dtype,
-            n_kv_heads=hf.num_key_value_heads,
-            head_dim=getattr(hf, "head_dim", None)
-            or hf.hidden_size // hf.num_attention_heads,
-            num_layers=hf.num_hidden_layers,
-            devices=devices,
-            data_parallel_degree=pipeline_config.model.data_parallel_degree,
-        )
-
-
-class MinillmPipelineModel(PassThroughPipelineModel):
     def prepare_initial_token_inputs(
         self,
         replica_batches: Sequence[Sequence[TextContext]],
@@ -202,8 +159,11 @@ class MinillmPipelineModel(PassThroughPipelineModel):
         return ModelOutputs(logits=last, next_token_logits=last)
 
 
-def _identity_adapter(state_dict: dict[str, Weights], **_: object) -> dict:
-    return {name: w.data() for name, w in state_dict.items()}
+def tie_embeddings(state_dict: dict[str, Weights], **_: object) -> dict:
+    """Loads the checkpoint as is, with the LM head sharing the embedding."""
+    weights = {name: w.data() for name, w in state_dict.items()}
+    weights.setdefault("lm_head.weight", weights["model.embed_tokens.weight"])
+    return weights
 
 
 minillm_arch = SupportedArchitecture(
@@ -217,10 +177,145 @@ minillm_arch = SupportedArchitecture(
     tokenizer=TextTokenizer,
     context_type=TextContext,
     multi_gpu_supported=False,
-    weight_adapters={WeightsFormat.safetensors: _identity_adapter},
+    weight_adapters={WeightsFormat.safetensors: tie_embeddings},
     config=MinillmArchConfig,
     required_arguments={"enable_prefix_caching": False, "max_batch_size": 1},
     supports_overlap_scheduler=False,
     supports_device_graph_capture=False,
 )
-ARCHITECTURES = [minillm_arch]
+
+
+def rope_table(config: LlamaConfig, length: int, device: Device) -> Tensor:
+    """Returns the RoPE table as ``[length, head_dim]`` (cos, sin) pairs."""
+    cos, sin = rope_cos_sin(
+        config.head_dim, config.rope_theta, 0, length, device
+    )
+    half = config.head_dim // 2
+    pairs = F.stack([cos[:, :half], sin[:, :half]], axis=-1)
+    return pairs.reshape([length, config.head_dim])
+
+
+class PagedAttention(Module):
+    """Grouped-query attention that reads keys and values from the cache."""
+
+    def __init__(
+        self, config: LlamaConfig, kv_params: KVCacheParams, layer_idx: int
+    ) -> None:
+        q_dim = config.num_attention_heads * config.head_dim
+        kv_dim = config.num_key_value_heads * config.head_dim
+        self.q_proj = Linear(config.hidden_size, q_dim, bias=False)
+        self.k_proj = Linear(config.hidden_size, kv_dim, bias=False)
+        self.v_proj = Linear(config.hidden_size, kv_dim, bias=False)
+        self.o_proj = Linear(q_dim, config.hidden_size, bias=False)
+        self.n_heads = config.num_attention_heads
+        self.head_dim = config.head_dim
+        self.kv_params = kv_params
+        self.layer_idx = layer_idx
+
+    def forward(
+        self,
+        x: Tensor,
+        kv: PagedCacheValues,
+        rope: Tensor,
+        input_row_offsets: Tensor,
+    ) -> Tensor:
+        qkv = F.concat(
+            [self.q_proj(x), self.k_proj(x), self.v_proj(x)], axis=-1
+        )
+        # The kernels read the layer index on the host.
+        layer = F.constant(self.layer_idx, DType.uint32, device=CPU())
+        q = rope_split_store_ragged(
+            kv_params=self.kv_params,
+            qkv=qkv,
+            input_row_offsets=input_row_offsets,
+            freqs_cis=rope,
+            kv_collection=kv,
+            layer_idx=layer,
+            n_heads=self.n_heads,
+            interleaved=False,
+        )
+        out = flash_attention_ragged(
+            self.kv_params,
+            input=q.reshape([-1, self.n_heads, self.head_dim]),
+            input_row_offsets=input_row_offsets,
+            kv_collection=kv,
+            layer_idx=layer,
+            mask_variant=MHAMaskVariant.CAUSAL_MASK,
+            scale=self.head_dim**-0.5,
+        )
+        return self.o_proj(out.reshape([-1, self.n_heads * self.head_dim]))
+
+
+class PagedDecoderLayer(Module):
+    def __init__(
+        self, config: LlamaConfig, kv_params: KVCacheParams, layer_idx: int
+    ) -> None:
+        eps = config.rms_norm_eps
+        self.input_layernorm = RMSNorm(config.hidden_size, eps=eps)
+        self.self_attn = PagedAttention(config, kv_params, layer_idx)
+        self.post_attention_layernorm = RMSNorm(config.hidden_size, eps=eps)
+        self.mlp = MLP(config)
+
+    def forward(
+        self,
+        x: Tensor,
+        kv: PagedCacheValues,
+        rope: Tensor,
+        input_row_offsets: Tensor,
+    ) -> Tensor:
+        h = self.input_layernorm(x)
+        x = x + self.self_attn(h, kv, rope, input_row_offsets)
+        return x + self.mlp(self.post_attention_layernorm(x))
+
+
+class PagedLlamaModel(Module):
+    def __init__(self, config: LlamaConfig, kv_params: KVCacheParams) -> None:
+        self.embed_tokens = Embedding(config.vocab_size, dim=config.hidden_size)
+        self.layers = ModuleList(
+            [
+                PagedDecoderLayer(config, kv_params, i)
+                for i in range(config.num_hidden_layers)
+            ]
+        )
+        self.norm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
+
+
+class MinillmDecoder(Module[[DecoderInputs], DecoderOutputs]):
+    def __init__(self, arch_config: MinillmArchConfig) -> None:
+        self.config = llama_config(arch_config.huggingface_config)
+        self.max_seq_len = arch_config.max_seq_len
+        self.kv_params = arch_config.get_kv_params()
+        self.model = PagedLlamaModel(self.config, self.kv_params)
+        self.lm_head = Linear(
+            self.config.hidden_size, self.config.vocab_size, bias=False
+        )
+
+    def forward(self, inputs: DecoderInputs) -> DecoderOutputs:
+        (kv,) = per_device_caches(self.kv_params, inputs.kv)
+        offsets = inputs.input_row_offsets
+        rope = rope_table(self.config, self.max_seq_len, inputs.tokens.device)
+        x = self.model.embed_tokens(inputs.tokens)
+        for layer in self.model.layers:
+            x = layer(x, kv, rope, offsets)
+        last = F.gather(x, offsets[1:] - 1, axis=0)
+        return DecoderOutputs(
+            next_token_logits=self.lm_head(self.model.norm(last))
+        )
+
+
+minillm_decoder_arch = SupportedArchitecture(
+    name="LlamaForCausalLM_ModuleV3",
+    task=PipelineTask.TEXT_GENERATION,
+    example_repo_ids=["HuggingFaceTB/SmolLM2-135M-Instruct"],
+    default_weights_format=WeightsFormat.safetensors,
+    default_encoding=MinillmArchConfig.DEFAULT_ENCODING,
+    supported_encodings=MinillmArchConfig.SUPPORTED_ENCODINGS,
+    modules={GraphRole.DECODER: MinillmDecoder},
+    tokenizer=TextTokenizer,
+    context_type=TextContext,
+    weight_adapters={WeightsFormat.safetensors: tie_embeddings},
+    config=MinillmArchConfig,
+    supports_overlap_scheduler=False,
+    supports_device_graph_capture=False,
+)
+ARCHITECTURES = [minillm_arch, minillm_decoder_arch]

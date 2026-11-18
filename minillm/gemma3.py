@@ -25,7 +25,7 @@ from max.driver import Device
 from max.dtype import DType
 from max.graph import Dim
 from max.nn import Embedding, GemmaRMSNorm, Linear, Module, ModuleList
-from max.nn.kernels.attention import flash_attention
+from max.nn.kernels import flash_attention
 from max.tensor import Tensor
 from max.tensor.sharding import DeviceMesh
 

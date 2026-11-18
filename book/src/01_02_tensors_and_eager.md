@@ -25,9 +25,9 @@ import plotly.graph_objects as go
 from max import functional as F
 from max.driver import CPU, accelerator_count
 from max.dtype import DType
+from max.graph import TensorType
 from max.nn import Linear, Module
 from max.tensor import Tensor, default_device, default_dtype
-from max.tensor.tensor import TensorType
 
 from minillm import viz
 
@@ -198,9 +198,9 @@ for i in range(4):
 ```
 
 ```text
-call 0: 10106 ms
-call 1: 19 ms
-call 2: 6 ms
+call 0: 4380 ms
+call 1: 6 ms
+call 2: 5 ms
 call 3: 5 ms
 ```
 
@@ -333,7 +333,7 @@ print(f"eager:    {median_ms(mlp, inputs):.1f} ms")
 ```
 
 ```text
-eager:    46.9 ms
+eager:    49.0 ms
 ```
 
 `compile` traces `forward` once into a whole-model graph and optimizes it:
@@ -356,9 +356,9 @@ assert relative < 1e-5
 ```
 
 ```text
-compiled in 10.9 s
-compiled: 1.2 ms
-max difference, relative to the largest output: 9.7e-07
+compiled in 9.1 s
+compiled: 0.6 ms
+max difference, relative to the largest output: 1.2e-06
 ```
 
 How much faster depends on the input size. Each eager operation pays a
@@ -381,11 +381,11 @@ for length in lengths:
 ```
 
 ```text
-    1 tokens: eager   21.9 ms, compiled    0.5 ms
-   16 tokens: eager   28.4 ms, compiled    1.3 ms
-   64 tokens: eager   42.7 ms, compiled    1.6 ms
-  256 tokens: eager   51.6 ms, compiled    3.9 ms
- 1024 tokens: eager   42.5 ms, compiled    8.0 ms
+    1 tokens: eager   50.9 ms, compiled    0.7 ms
+   16 tokens: eager   31.0 ms, compiled    1.0 ms
+   64 tokens: eager   44.6 ms, compiled    1.8 ms
+  256 tokens: eager   54.5 ms, compiled    4.1 ms
+ 1024 tokens: eager   59.0 ms, compiled    9.7 ms
 ```
 
 <details class="code-fold">

@@ -27,9 +27,9 @@ from max import functional as F
 from max.driver import CPU
 from max.dtype import DType
 from max.functional import random
+from max.graph import TensorType
 from max.pipelines import AutoModel, AutoTokenizer
 from max.tensor import Tensor
-from max.tensor.tensor import TensorType
 
 from minillm import viz
 from minillm.device import pick_device
@@ -188,7 +188,7 @@ assert np.abs(counts / 2000 - F.softmax(toy).to_numpy()).max() < 0.05
 ```
 
 ```text
-sampled: [0.558 0.214 0.121 0.08  0.027]
+sampled: [0.546 0.209 0.138 0.079 0.028]
 softmax: [0.559 0.205 0.125 0.084 0.028]
 ```
 
@@ -487,12 +487,12 @@ for length in lengths:
 ```
 
 ```text
-   16 tokens:   69.3 ms per new token
-   64 tokens:  110.7 ms per new token
-  256 tokens:   87.1 ms per new token
-  512 tokens:  192.9 ms per new token
- 1024 tokens:  560.4 ms per new token
- 2048 tokens: 1801.7 ms per new token
+   16 tokens:   57.7 ms per new token
+   64 tokens:   60.1 ms per new token
+  256 tokens:   70.9 ms per new token
+  512 tokens:  179.8 ms per new token
+ 1024 tokens:  563.3 ms per new token
+ 2048 tokens: 1839.3 ms per new token
 ```
 
 <details class="code-fold">

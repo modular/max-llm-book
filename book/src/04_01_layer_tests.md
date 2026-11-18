@@ -25,8 +25,8 @@ import torch
 from max import functional as F
 from max.driver import CPU
 from max.dtype import DType
+from max.graph import TensorType
 from max.tensor import Tensor, default_device, default_dtype
-from max.tensor.tensor import TensorType
 from transformers import AutoConfig
 from transformers.models.llama.modeling_llama import (
     LlamaDecoderLayer,
@@ -132,8 +132,7 @@ checkpoint entries load into both. `"eager"` selects its plain attention
 code instead of a fused kernel, so the reference stays simple.
 
 ```python
-hf_config = AutoConfig.from_pretrained(MODEL_ID)
-hf_config._attn_implementation = "eager"
+hf_config = AutoConfig.from_pretrained(MODEL_ID, attn_implementation="eager")
 reference = LlamaDecoderLayer(hf_config, layer_idx=0).float().eval()
 reference.load_state_dict(
     {name: torch.from_numpy(w.copy()) for name, w in layer0.items()}
@@ -372,7 +371,7 @@ change. `%%writefile` saves a cell as a file. The test compiles the layer
 once per module, as MAX's own tests do, and checks every shape:
 
 <details class="code-fold">
-<summary>Show the code <span class="code-fold-lines">46 lines</span></summary>
+<summary>Show the code <span class="code-fold-lines">45 lines</span></summary>
 
 ```python
 %%writefile test_decoder_layer.py
@@ -380,8 +379,8 @@ import numpy as np
 import pytest
 import torch
 from max.dtype import DType
+from max.graph import TensorType
 from max.tensor import Tensor, default_device, default_dtype
-from max.tensor.tensor import TensorType
 from transformers import AutoConfig
 from transformers.models.llama.modeling_llama import LlamaDecoderLayer, LlamaRotaryEmbedding
 
@@ -403,8 +402,7 @@ def layers():
     compiled = ours.compile(
         TensorType(DType.float32, ("batch", "seq_len", CONFIG.hidden_size), device=pick_device())
     )
-    hf_config = AutoConfig.from_pretrained(MODEL_ID)
-    hf_config._attn_implementation = "eager"
+    hf_config = AutoConfig.from_pretrained(MODEL_ID, attn_implementation="eager")
     reference = LlamaDecoderLayer(hf_config, layer_idx=0).float().eval()
     reference.load_state_dict({k: torch.from_numpy(v.copy()) for k, v in weights.items()})
     return compiled, reference, LlamaRotaryEmbedding(hf_config)
@@ -435,7 +433,7 @@ Overwriting test_decoder_layer.py
 
 ```text
 ...                                                                      [100%]
-3 passed in 60.67s (0:01:00)
+3 passed in 4.76s
 ```
 
 MAX's own layer tests follow the same shape, with one more step: each harness

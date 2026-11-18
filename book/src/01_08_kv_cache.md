@@ -40,9 +40,9 @@ import plotly.graph_objects as go
 from max.driver import CPU
 from plotly.subplots import make_subplots
 from max.dtype import DType
+from max.graph import TensorType
 from max.pipelines import AutoTokenizer
 from max.tensor import Tensor
-from max.tensor.tensor import TensorType
 
 from minillm import viz
 from minillm.device import pick_device
@@ -252,10 +252,10 @@ import numpy as np
 from max import functional as F
 from max.driver import Device
 from max.dtype import DType
+from max.graph import TensorType
 from max.nn import ModuleList
-from max.nn.kernels.attention import flash_attention
+from max.nn.kernels import flash_attention
 from max.tensor import Tensor
-from max.tensor.tensor import TensorType
 
 from minillm.attention import Attention
 from minillm.config import LlamaConfig
@@ -428,7 +428,7 @@ print(f"compiled prefill and decode in {time.perf_counter() - start:.0f} s")
 ```
 
 ```text
-compiled prefill and decode in 26 s
+compiled prefill and decode in 30 s
 ```
 
 ## Check it
@@ -491,8 +491,8 @@ for name, ms in timings.items():
 ```
 
 ```text
-recompute    82.1   108.8   151.0   198.6   568.9 ms
-KV cache     93.8   140.5   149.5   123.5   141.9 ms
+recompute   100.9   130.0   134.0   209.5   595.8 ms
+KV cache    112.9   136.1   110.8   135.5   169.9 ms
 ```
 
 <details class="code-fold">

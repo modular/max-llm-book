@@ -29,9 +29,9 @@ import warnings
 import numpy as np
 import plotly.graph_objects as go
 from max.dtype import DType
+from max.graph import TensorType
 from max.pipelines import AutoTokenizer
 from max.tensor import Tensor
-from max.tensor.tensor import TensorType
 from plotly.subplots import make_subplots
 
 from minillm import viz
@@ -62,7 +62,7 @@ from collections.abc import Callable
 from max import functional as F
 from max.dtype import DType
 from max.nn import ModuleList
-from max.nn.kernels.attention import flash_attention
+from max.nn.kernels import flash_attention
 from max.tensor import Tensor
 
 from minillm.attention import Attention
@@ -223,7 +223,7 @@ batch size, the number of new tokens `q`, and the past length:
 ```python
 import numpy as np
 from max.driver import Device
-from max.tensor.tensor import TensorType
+from max.graph import TensorType
 
 
 def compile_step(model: StepModel, config: LlamaConfig, device: Device) -> Step:
@@ -254,7 +254,7 @@ print(f"compiled the step model in {time.perf_counter() - start:.0f} s")
 ```
 
 ```text
-compiled the step model in 51 s
+compiled the step model in 13 s
 ```
 
 ## The cache and the batch
@@ -618,8 +618,8 @@ report(sequential)
 ```
 
 ```text
-TTFT: first request 328 ms, median 24279 ms, worst 44820 ms
-160 tokens in 47.8 s = 3.3 tokens/s
+TTFT: first request 296 ms, median 16553 ms, worst 30666 ms
+160 tokens in 35.6 s = 4.5 tokens/s
 ```
 
 Eight users sent their requests at the same moment. The first one got a token

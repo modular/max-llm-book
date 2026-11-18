@@ -23,10 +23,10 @@ import plotly.graph_objects as go
 from max import functional as F
 from max.driver import CPU
 from max.dtype import DType
+from max.graph import TensorType
 from max.nn import Embedding, Linear, Module, ModuleList, RMSNorm
 from max.pipelines import AutoModel, AutoTokenizer
 from max.tensor import Tensor, default_device, default_dtype
-from max.tensor.tensor import TensorType
 
 from minillm import viz
 from minillm.attention import Attention
@@ -498,8 +498,8 @@ print(
 ```
 
 ```text
-compiled in 18 s
-forward pass: 56 ms, logits (1, 5, 49152)
+compiled in 13 s
+forward pass: 115 ms, logits (1, 5, 49152)
 ```
 
 ## Check against MAX's SmolLM2

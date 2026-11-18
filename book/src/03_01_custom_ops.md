@@ -25,9 +25,9 @@ import plotly.graph_objects as go
 from max import functional as F
 from max.driver import CPU
 from max.dtype import DType
+from max.graph import TensorType
 from max.pipelines import AutoTokenizer
 from max.tensor import Tensor, default_device, default_dtype
-from max.tensor.tensor import TensorType
 from plotly.subplots import make_subplots
 
 from minillm import viz
@@ -321,8 +321,8 @@ for name, ms in times.items():
 </details>
 
 ```text
-MAX ops      median 2.34 ms
-custom op    median 2.48 ms
+MAX ops      median 3.58 ms
+custom op    median 3.41 ms
 ```
 
 <details class="code-fold">

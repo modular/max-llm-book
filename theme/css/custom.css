@@ -1266,3 +1266,71 @@ main .content {
   font-weight: 600;
   color: var(--modular-heading);
 }
+
+/* A long code cell, folded behind a summary until the reader opens it. */
+details.code-fold {
+  margin: 1em 0;
+  border: 1px solid var(--modular-border);
+  border-radius: 4px;
+  background: var(--modular-code-bg);
+}
+
+details.code-fold > summary {
+  padding: 8px 12px;
+  list-style: none;
+  cursor: pointer;
+  font-size: 0.9em;
+  color: var(--modular-secondary-text);
+  user-select: none;
+}
+
+details.code-fold > summary::-webkit-details-marker {
+  display: none;
+}
+
+details.code-fold > summary::before {
+  content: "▸";
+  display: inline-block;
+  width: 1.2em;
+}
+
+details.code-fold[open] > summary::before {
+  content: "▾";
+}
+
+details.code-fold > summary:hover {
+  color: var(--links);
+}
+
+details.code-fold .code-fold-lines {
+  margin-left: 8px;
+  color: var(--modular-text-inactive);
+}
+
+details.code-fold > pre {
+  margin: 0;
+  border: none;
+  border-top: 1px solid var(--modular-border);
+  border-radius: 0 0 4px 4px;
+}
+
+/* Diagrams from tools/diagrams.py come in a light and a dark copy. */
+img.diagram {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 1.5em auto;
+}
+
+img.diagram-dark,
+.coal img.diagram-light,
+.navy img.diagram-light,
+.ayu img.diagram-light {
+  display: none;
+}
+
+.coal img.diagram-dark,
+.navy img.diagram-dark,
+.ayu img.diagram-dark {
+  display: block;
+}

@@ -202,6 +202,8 @@ description of the computation, and MAX’s compiler turns the graph into
 optimized code. You can also build graphs directly with <code>max.graph</code>, which is
 how many of MAX’s serving pipelines build their models, and load checkpoints
 with MAX’s production weight loader.</p>
+<details class="code-fold">
+<summary>Show the setup <span class="code-fold-lines">25 lines</span></summary>
 <pre><code class="language-python">import logging
 import re
 from pathlib import Path
@@ -228,6 +230,7 @@ DEVICE = pick_device()  # a GPU if MAX finds one, otherwise the CPU
 config = LlamaConfig.from_pretrained()
 weights = load_checkpoint()
 </code></pre>
+</details>
 <h2 id="what-compile-builds"><a class="header" href="#what-compile-builds">What <code>compile</code> builds</a></h2>
 <p><code>trace</code> runs the first half of <code>compile</code>: it calls <code>forward</code> with symbolic
 inputs and records every operation into a graph, without compiling it. Here is
@@ -262,6 +265,8 @@ print("\n".join(str(staged.graph).splitlines()[:12]))
 <p>The text is a dataflow graph: each line defines one value (<code>%4</code>) from
 earlier ones. Parse it and draw it, with each operation placed one column
 after the latest value it reads. Hover over a node to see its line of IR:</p>
+<details class="code-fold">
+<summary>Show <code>kind</code> <span class="code-fold-lines">85 lines</span></summary>
 <pre><code class="language-python">LINE = re.compile(
     r"^\s*(%\w+)(?:, %\w+)* = ([\w.]+)(.*)$"
 )  # some ops have two results
@@ -348,6 +353,7 @@ fig.update_layout(
 )
 viz.show(fig)
 </code></pre>
+</details>
 <div class="plotly-figure" data-src="generated/03_02_graph_api_6_0.json"></div>
 <p>The graph is MAX’s intermediate representation (in MLIR). A few things to
 read in it:</p>
@@ -360,6 +366,11 @@ values when it is loaded, so the same graph works with any checkpoint.</li>
 <li>On a GPU, each weight also passes through a <code>mo.transfer</code> that copies it
 from host memory to the device (yellow in the diagram); on a CPU there is
 nothing to copy.</li>
+<li>Each projection’s <code>rmo.matmul</code> is followed by an <code>rmo.add</code> of a constant
+<code>0.0</code>. MAX’s <code>Linear</code> built with <code>bias=False</code> stores its bias as the number
+0 and still adds it. It costs nothing at run time: the kernel trace in
+<a href="04_04_profiling.html">Section 4.4</a> shows no
+separate add.</li>
 <li>Every line is one operation (<code>rmo.matmul</code>, <code>mo.silu</code>, …) with fully known
 types. That is what lets the compiler fuse operations, plan memory for the
 whole computation, and generate code for the target device ahead of time.</li>
@@ -420,6 +431,8 @@ and wraps the result so it takes and returns <code>Tensor</code>s.</p>
 place of <code>silu * up</code>:</p>
 <pre><code class="language-python">import mojo.notebook
 </code></pre>
+<details class="code-fold">
+<summary>Show <code>SwiGLU</code> <span class="code-fold-lines">14 lines</span></summary>
 <pre><code class="language-mojo">%%mojo package -o kernels.mojoc
 import extensibility
 from extensibility import ElementwiseBinaryOp
@@ -435,6 +448,9 @@ struct SwiGLU(ElementwiseBinaryOp):
         comptime assert dtype.is_floating_point(), "SwiGLU needs floats"
         return gate / (1 + exp(-gate)) * up
 </code></pre>
+</details>
+<details class="code-fold">
+<summary>Show <code>fused_forward</code> <span class="code-fold-lines">34 lines</span></summary>
 <pre><code class="language-python">def fused_forward(x):
     def weight(name: str, shape: list[int]) -&gt; Weight:
         return Weight(
@@ -470,6 +486,7 @@ relative = np.abs(fused_out.to_numpy() - expected).max() / scale
 print(f"max difference, relative to the largest output: {relative:.1e}")
 assert relative &lt; 1e-5
 </code></pre>
+</details>
 <pre><code class="language-text">max difference, relative to the largest output: 4.8e-07
 </code></pre>
 <h2 id="production-weight-loading"><a class="header" href="#production-weight-loading">Production weight loading</a></h2>

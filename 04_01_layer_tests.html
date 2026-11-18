@@ -202,6 +202,8 @@ pattern MAX uses for its own layers, in
 <a href="https://github.com/modular/modular/tree/main/max/python/layer_benchmarks"><code>max/python/layer_benchmarks</code></a>,
 and applies it to your decoder layer, with Hugging Face’s PyTorch Llama as the
 reference.</p>
+<details class="code-fold">
+<summary>Show the setup <span class="code-fold-lines">29 lines</span></summary>
 <pre><code class="language-python">import logging
 import warnings
 
@@ -232,6 +234,7 @@ DEVICE = pick_device()  # a GPU if MAX finds one, otherwise the CPU
 config = LlamaConfig.from_pretrained()
 layer0 = select(load_checkpoint(), "model.layers.0.")
 </code></pre>
+</details>
 <h2 id="how-to-compare-outputs"><a class="header" href="#how-to-compare-outputs">How to compare outputs</a></h2>
 <p>One number is not enough. MAX’s test harness reports three:</p>
 <ul>
@@ -243,7 +246,12 @@ near 0 when the outputs point the same way even if their scale differs
 slightly, and large for a structural bug such as a wrong head layout.</li>
 </ul>
 <p>A test passes when the outputs are <code>allclose</code>, within an absolute and a
-relative tolerance, and the cosine distance is below a threshold.</p>
+relative tolerance, and the cosine distance is below a threshold. The defaults
+below, <code>1e-3</code> for both tolerances and <code>1e-5</code> for the cosine distance, are
+tighter than MAX’s (<code>1e-2</code> and <code>1e-3</code>) because every test here runs in
+<code>float32</code>; MAX’s <code>bfloat16</code> layer tests loosen them further.</p>
+<details class="code-fold">
+<summary>Show <code>CorrectnessResult</code>, <code>compare_outputs</code> <span class="code-fold-lines">48 lines</span></summary>
 <pre><code class="language-python">from __future__ import annotations
 
 from dataclasses import dataclass
@@ -293,6 +301,7 @@ def compare_outputs(
         passed=allclose and cos_dist &lt; cos_threshold,
     )
 </code></pre>
+</details>
 <p><small>Saved to <code>minillm/testing.py</code>.</small></p>
 <h2 id="the-reference"><a class="header" href="#the-reference">The reference</a></h2>
 <p>Hugging Face’s <code>LlamaDecoderLayer</code> is an independent implementation of the
@@ -328,6 +337,8 @@ layer’s sizes), from <em>dynamic</em> ones, which vary per run (batch size and
 sequence length). Compile once with symbolic dimensions, then run every
 shape through the same compiled layer. The shapes cover the edges: a single
 token (a decode step), odd lengths, a batch, and a long prefill.</p>
+<details class="code-fold">
+<summary>Show <code>compiled_layer</code>, <code>check</code> <span class="code-fold-lines">34 lines</span></summary>
 <pre><code class="language-python">def compiled_layer(layer_class=DecoderLayer, weights=layer0, cfg=config):
     with F.lazy(), default_device(DEVICE), default_dtype(DType.float32):
         layer = layer_class(cfg)
@@ -363,6 +374,7 @@ for result in correct:
     print(result)
 assert all(r.passed for r in correct)
 </code></pre>
+</details>
 <pre><code class="language-text">batch 1, seq 1   mae 2.7e-07  max 2.9e-06  cos dist 2.4e-14  pass
 batch 1, seq 7   mae 6.5e-07  max 1.7e-05  cos dist 1.9e-13  pass
 batch 2, seq 33  mae 7.0e-07  max 2.1e-05  cos dist 1.9e-13  pass
@@ -388,31 +400,60 @@ batch 1, seq 7   mae 4.9e-04  max 6.6e-03  cos dist 1.2e-07  FAIL
 batch 2, seq 33  mae 2.2e-03  max 1.3e-01  cos dist 2.3e-06  FAIL
 batch 1, seq 512 mae 5.0e-03  max 2.3e-01  cos dist 1.1e-05  FAIL
 </code></pre>
-<pre><code class="language-python">labels = [r.label for r in correct]
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">45 lines</span></summary>
+<pre><code class="language-python">ATOL, COS_THRESHOLD = 1e-3, 1e-5
 fig = go.Figure(
-    [
-        go.Bar(
-            x=labels,
-            y=[r.max_abs_err for r in results],
-            name=name,
-            marker_color=color,
-            hovertemplate="%{x}: max error %{y:.1e}&lt;extra&gt;" + name + "&lt;/extra&gt;",
-        )
-        for name, results, color in [
-            ("correct layer", correct, viz.BLUE),
-            ("rope_theta = 10000", buggy_results, viz.ORANGE),
-        ]
-    ]
+    go.Scatter(
+        x=[1e-7, ATOL, ATOL, 1e-7],
+        y=[1e-15, 1e-15, COS_THRESHOLD, COS_THRESHOLD],
+        fill="toself",
+        fillcolor="rgba(27,175,122,0.15)",
+        line=dict(color=viz.AQUA, width=1, dash="dot"),
+        name="pass region (about)",
+        hoverinfo="skip",
+    )
 )
+for name, results, color in [
+    ("correct layer", correct, viz.BLUE),
+    ("rope_theta = 10000", buggy_results, viz.ORANGE),
+]:
+    fig.add_trace(
+        go.Scatter(
+            x=[r.max_abs_err for r in results],
+            y=[max(r.cos_dist, 1e-15) for r in results],
+            mode="markers+text",
+            name=name,
+            text=[
+                r.label.replace("batch ", "b").replace(", seq ", "/s")
+                for r in results
+            ],
+            textposition="middle right",
+            marker=dict(
+                color=color,
+                size=11,
+                symbol=["circle" if r.passed else "x" for r in results],
+            ),
+            hovertemplate="%{text}: max error %{x:.1e}, cos dist %{y:.1e}"
+            + "&lt;extra&gt;"
+            + name
+            + "&lt;/extra&gt;",
+        )
+    )
 fig.update_layout(
-    title="Max absolute error against Hugging Face, per shape",
-    barmode="group",
-    height=400,
-    yaxis=dict(title="max |error| (log scale)", type="log", dtick=1),
+    title="Each shape's max error against its cosine distance",
+    height=440,
+    xaxis=dict(title="max |error| (log scale)", type="log", dtick=1),
+    yaxis=dict(title="cosine distance (log scale)", type="log", dtick=2),
 )
 viz.show(fig)
 </code></pre>
+</details>
 <div class="plotly-figure" data-src="generated/04_01_layer_tests_11_0.json"></div>
+<p>Each point is one shape, labeled batch/sequence length, and an <code>x</code> marks a
+failure. The shaded corner is where both checks pass; its right edge is only
+approximate, because <code>allclose</code> also allows a relative error of <code>1e-3</code> of each
+expected value.</p>
 <p>The single-token case still passes: at position 0, RoPE doesn’t rotate at
 all, so the bug can’t show there. Every longer input fails. The maximum
 error grows by two to four orders of magnitude and breaks the <code>allclose</code>
@@ -435,7 +476,10 @@ per_position = {
         ("rope_theta = 10000", buggy),
     ]
 }
-fig = go.Figure(
+</code></pre>
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">22 lines</span></summary>
+<pre><code class="language-python">fig = go.Figure(
     [
         go.Scatter(
             x=np.arange(512),
@@ -458,7 +502,8 @@ fig.update_layout(
 )
 viz.show(fig)
 </code></pre>
-<div class="plotly-figure" data-src="generated/04_01_layer_tests_13_0.json"></div>
+</details>
+<div class="plotly-figure" data-src="generated/04_01_layer_tests_14_0.json"></div>
 <p>At position 0 the two layers agree, because RoPE doesn’t rotate there.
 Within a few positions the buggy layer’s error is three to four orders of
 magnitude larger, and it stays there for the whole sequence, while the
@@ -468,6 +513,8 @@ would have passed both.</p>
 <p>In a repository, these checks belong in a test file that runs on every
 change. <code>%%writefile</code> saves a cell as a file. The test compiles the layer
 once per module, as MAX’s own tests do, and checks every shape:</p>
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">46 lines</span></summary>
 <pre><code class="language-python">%%writefile test_decoder_layer.py
 import numpy as np
 import pytest
@@ -515,12 +562,13 @@ def test_decoder_layer_matches_reference(layers, batch, seq):
     result = compare_outputs(compiled(Tensor(x, device=pick_device())).to_numpy(), expected)
     assert result.passed, result
 </code></pre>
+</details>
 <pre><code class="language-text">Overwriting test_decoder_layer.py
 </code></pre>
 <pre><code class="language-python">!python -m pytest -q -p no:cacheprovider test_decoder_layer.py 2&gt;&amp;1 | tail -n 3
 </code></pre>
 <pre><code class="language-text">...                                                                      [100%]
-3 passed in 4.34s
+3 passed in 60.67s (0:01:00)
 </code></pre>
 <p>MAX’s own layer tests follow the same shape, with one more step: each harness
 also <em>benchmarks</em> the layer on the same shapes, so correctness and speed are

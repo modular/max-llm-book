@@ -199,8 +199,8 @@
 model on Hugging Face is two things: a configuration that gives its sizes,
 and a checkpoint that holds its trained weights. This section loads both,
 then builds the model’s first layer, the token embedding.</p>
-<p>Code cells that start with <code># export:</code> become part of the <code>minillm</code> package,
-so later sections can import them instead of repeating them.</p>
+<p>As in <a href="01_02_tensors_and_eager.html">Section 1.2</a>, code
+cells that start with <code># export:</code> go into the <code>minillm</code> package.</p>
 <pre><code class="language-python">import json
 import logging
 from pathlib import Path
@@ -260,6 +260,8 @@ key/value heads, so each head has 576 / 9 = 64 dimensions;
 counts differ. <code>LlamaForCausalLM</code> is the architecture the code must implement.</p>
 <p>A small dataclass keeps these fields typed. The field names match Hugging
 Face’s, so you can compare against any Llama-family <code>config.json</code>.</p>
+<details class="code-fold">
+<summary>Show <code>LlamaConfig</code> <span class="code-fold-lines">44 lines</span></summary>
 <pre><code class="language-python">from __future__ import annotations
 
 import json
@@ -289,9 +291,8 @@ class LlamaConfig:
     head_dim: int = 0  # 0 means hidden_size // num_attention_heads
 
     def __post_init__(self) -&gt; None:
-        if (
-            not self.head_dim
-        ):  # newer configs, such as Qwen3's, give it explicitly
+        # Newer configs, such as Qwen3's, give head_dim explicitly.
+        if not self.head_dim:
             object.__setattr__(
                 self, "head_dim", self.hidden_size // self.num_attention_heads
             )
@@ -306,6 +307,7 @@ class LlamaConfig:
             **{f.name: raw[f.name] for f in fields(cls) if f.name in raw}
         )
 </code></pre>
+</details>
 <p><small>Saved to <code>minillm/config.py</code>.</small></p>
 <pre><code class="language-python">config = LlamaConfig.from_pretrained()
 print(config)
@@ -325,18 +327,20 @@ with open(path, "rb") as f:
     header = json.loads(f.read(header_len))
 header.pop("__metadata__", None)
 print(len(header), "tensors")
-for name in list(header)[:8]:
-    print(f"{name:45} {header[name]}")
+first = list(header)[:8]
+width = max(len(name) for name in first)
+for name in first:
+    print(f"{name:{width}} {header[name]}")
 </code></pre>
 <pre><code class="language-text">272 tensors
-model.embed_tokens.weight                     {'dtype': 'BF16', 'shape': [49152, 576], 'data_offsets': [0, 56623104]}
-model.layers.0.input_layernorm.weight         {'dtype': 'BF16', 'shape': [576], 'data_offsets': [56623104, 56624256]}
-model.layers.0.mlp.down_proj.weight           {'dtype': 'BF16', 'shape': [576, 1536], 'data_offsets': [56624256, 58393728]}
-model.layers.0.mlp.gate_proj.weight           {'dtype': 'BF16', 'shape': [1536, 576], 'data_offsets': [58393728, 60163200]}
-model.layers.0.mlp.up_proj.weight             {'dtype': 'BF16', 'shape': [1536, 576], 'data_offsets': [60163200, 61932672]}
+model.embed_tokens.weight                      {'dtype': 'BF16', 'shape': [49152, 576], 'data_offsets': [0, 56623104]}
+model.layers.0.input_layernorm.weight          {'dtype': 'BF16', 'shape': [576], 'data_offsets': [56623104, 56624256]}
+model.layers.0.mlp.down_proj.weight            {'dtype': 'BF16', 'shape': [576, 1536], 'data_offsets': [56624256, 58393728]}
+model.layers.0.mlp.gate_proj.weight            {'dtype': 'BF16', 'shape': [1536, 576], 'data_offsets': [58393728, 60163200]}
+model.layers.0.mlp.up_proj.weight              {'dtype': 'BF16', 'shape': [1536, 576], 'data_offsets': [60163200, 61932672]}
 model.layers.0.post_attention_layernorm.weight {'dtype': 'BF16', 'shape': [576], 'data_offsets': [61932672, 61933824]}
-model.layers.0.self_attn.k_proj.weight        {'dtype': 'BF16', 'shape': [192, 576], 'data_offsets': [61933824, 62155008]}
-model.layers.0.self_attn.o_proj.weight        {'dtype': 'BF16', 'shape': [576, 576], 'data_offsets': [62155008, 62818560]}
+model.layers.0.self_attn.k_proj.weight         {'dtype': 'BF16', 'shape': [192, 576], 'data_offsets': [61933824, 62155008]}
+model.layers.0.self_attn.o_proj.weight         {'dtype': 'BF16', 'shape': [576, 576], 'data_offsets': [62155008, 62818560]}
 </code></pre>
 <p>The names follow the module tree of Hugging Face’s <code>LlamaForCausalLM</code>: an
 embedding, then <code>model.layers.0</code> through <code>model.layers.29</code>, each with
@@ -355,6 +359,8 @@ lm_head.weight in checkpoint: False
 </code></pre>
 <p>Where do the parameters live? Click a box to zoom in, and click the bar at
 the top to zoom back out:</p>
+<details class="code-fold">
+<summary>Show <code>part</code>, <code>layer_number</code>, <code>order</code> <span class="code-fold-lines">71 lines</span></summary>
 <pre><code class="language-python">def part(name: str) -&gt; str:
     if "embed_tokens" in name:
         return "embedding"
@@ -371,25 +377,19 @@ color_of = {
     "MLP": viz.AQUA,
     "norms": viz.VIOLET,
 }
-nodes = {
-    "SmolLM2-135M": ["", "SmolLM2-135M", 0, viz.NEUTRAL]
-}  # id -&gt; [parent, label, total, color]
+# id -&gt; [parent, label, total, color]
+nodes = {"SmolLM2-135M": ["", "SmolLM2-135M", 0, viz.NEUTRAL]}
 
 
 def layer_number(name: str) -&gt; int:
     return int(name.split(".")[2]) if ".layers." in name else -1
 
 
-def order(
-    name: str,
-) -&gt; int:  # the embedding, the layers in order, then the final norm
-    return (
-        -1
-        if "embed_tokens" in name
-        else layer_number(name)
-        if ".layers." in name
-        else 99
-    )
+def order(name: str) -&gt; int:
+    """Sorts the embedding first, then the layers in order, then the norm."""
+    if "embed_tokens" in name:
+        return -1
+    return layer_number(name) if ".layers." in name else 99
 
 
 for name in sorted(header, key=order):
@@ -433,6 +433,7 @@ fig.update_layout(
 )
 viz.show(fig)
 </code></pre>
+</details>
 <div class="plotly-figure" data-src="generated/01_03_tokens_and_weights_13_0.json"></div>
 <ul>
 <li>Memory is parameters times bytes per parameter. The checkpoint stores
@@ -450,6 +451,8 @@ has no <code>bfloat16</code> type, but the conversion is exact and cheap: a <cod
 value is the upper 16 bits of a <code>float32</code>, so shifting the bits left by 16
 gives the same number as a <code>float32</code>. MAX modules accept NumPy arrays
 directly, so this is all the loading code the model needs.</p>
+<details class="code-fold">
+<summary>Show <code>read_safetensors</code>, <code>load_checkpoint</code> <span class="code-fold-lines">44 lines</span></summary>
 <pre><code class="language-python">from __future__ import annotations
 
 import json
@@ -495,6 +498,7 @@ def load_checkpoint(model_id: str = MODEL_ID) -&gt; dict[str, np.ndarray]:
     """Downloads a model's safetensors checkpoint and returns its tensors."""
     return read_safetensors(hf_hub_download(model_id, "model.safetensors"))
 </code></pre>
+</details>
 <p><small>Saved to <code>minillm/weights.py</code>.</small></p>
 <pre><code class="language-python">weights = load_checkpoint()
 w = weights["model.embed_tokens.weight"]
@@ -550,46 +554,13 @@ from three groups onto the two directions along which they vary most
 (principal component analysis, done here with NumPy’s SVD). Hover over a
 point for its word:</p>
 <pre><code class="language-python">groups = {
-    "countries": [
-        "France",
-        "Italy",
-        "Germany",
-        "Spain",
-        "Japan",
-        "China",
-        "Brazil",
-        "Canada",
-        "Egypt",
-        "India",
-    ],
-    "fruits": [
-        "apple",
-        "banana",
-        "orange",
-        "grape",
-        "mango",
-        "lemon",
-        "cherry",
-        "peach",
-        "pear",
-        "melon",
-    ],
-    "numbers": [
-        "one",
-        "two",
-        "three",
-        "four",
-        "five",
-        "six",
-        "seven",
-        "eight",
-        "nine",
-        "ten",
-    ],
+    "countries": "France Italy Germany Spain Japan China Brazil Canada Egypt India",
+    "fruits": "apple banana orange grape mango lemon cherry peach pear melon",
+    "numbers": "one two three four five six seven eight nine ten",
 }
 words, group_of, rows = [], [], []
 for group, members in groups.items():
-    for word in members:
+    for word in members.split():
         token = tokenizer([" " + word])["input_ids"][0]
         if len(token) == 1:  # keep words that are a single token
             words.append(word)
@@ -598,8 +569,10 @@ for group, members in groups.items():
 points = np.array(rows) - np.mean(rows, axis=0)
 _, _, axes = np.linalg.svd(points, full_matrices=False)
 xy = points @ axes[:2].T
-
-fig = go.Figure()
+</code></pre>
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">30 lines</span></summary>
+<pre><code class="language-python">fig = go.Figure()
 for (group, color), symbol in zip(
     zip(groups, viz.SERIES), ["circle", "square", "diamond"]
 ):
@@ -630,12 +603,13 @@ fig.update_layout(
 )
 viz.show(fig)
 </code></pre>
-<div class="plotly-figure" data-src="generated/01_03_tokens_and_weights_24_0.json"></div>
+</details>
+<div class="plotly-figure" data-src="generated/01_03_tokens_and_weights_25_0.json"></div>
 <p>The groups separate without the model ever being told what a country or a
 fruit is: words used in similar contexts during training end up with
 similar vectors.</p>
-<p>The 30 layers you build next refine these vectors using context: what
-<code>Paris</code> means depends on the tokens around it.</p>
+<p>The layers refine these vectors using context: what <code>Paris</code> means depends
+on the tokens around it.</p>
 <h2 id="exercises"><a class="header" href="#exercises">Exercises</a></h2>
 <ol>
 <li>Find the 5 tokens whose embeddings are most similar to <code>" Paris"</code>. (Hint:

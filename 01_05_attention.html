@@ -200,6 +200,8 @@
 position to look back at “capital” and “France”. This section builds causal
 grouped-query attention, the variant SmolLM2 and most current models use,
 first from basic operations and then with MAX’s flash attention kernel.</p>
+<details class="code-fold">
+<summary>Show the setup <span class="code-fold-lines">28 lines</span></summary>
 <pre><code class="language-python">import logging
 import math
 import time
@@ -229,6 +231,7 @@ DEVICE = pick_device()  # a GPU if MAX finds one, otherwise the CPU
 config = LlamaConfig.from_pretrained()
 weights = load_checkpoint()
 </code></pre>
+</details>
 <h2 id="the-computation"><a class="header" href="#the-computation">The computation</a></h2>
 <p>Each position projects its hidden vector into three vectors: a <em>query</em>
 for what the position is looking for, a <em>key</em> for what it offers, and a
@@ -249,6 +252,8 @@ scores, and softmax turns them into zero weight.</p>
 attend to cached keys, as with the KV cache in
 <a href="01_08_kv_cache.html">Section 1.8</a>. Here the lengths are
 equal.</p>
+<details class="code-fold">
+<summary>Show <code>causal_mask</code> <span class="code-fold-lines">30 lines</span></summary>
 <pre><code class="language-python">from __future__ import annotations
 
 import math
@@ -280,6 +285,7 @@ def causal_mask(
         blocked, num_lower=None, num_upper=kv_len - q_len, exclude=True
     )
 </code></pre>
+</details>
 <p><small>Saved to <code>minillm/attention.py</code>.</small></p>
 <pre><code class="language-python">causal_mask(4, 4, DEVICE)
 </code></pre>
@@ -294,6 +300,7 @@ shared by a group of 3 query heads. This is <em>grouped-query attention</em> (GQ
 It costs little quality, and it makes the keys and values the model must
 store per token 3 times smaller, which matters once you cache them
 (<a href="01_08_kv_cache.html">Section 1.8</a>).</p>
+<p><img class="diagram diagram-light" src="assets/diagrams/grouped-query-attention.svg" alt="Grouped-query attention in SmolLM2: 9 query heads in three colored groups of three, and each group points at the one key/value head it shares, so 3 key/value heads serve all 9 query heads."><img class="diagram diagram-dark" src="assets/diagrams/grouped-query-attention-dark.svg" alt="Grouped-query attention in SmolLM2: 9 query heads in three colored groups of three, and each group points at the one key/value head it shares, so 3 key/value heads serve all 9 query heads."></p>
 <p>To compute it with plain matrix products, repeat each key/value head 3
 times with <code>broadcast_to</code>:</p>
 <pre><code class="language-python">def repeat_kv(x: Tensor, n_rep: int) -&gt; Tensor:
@@ -347,10 +354,11 @@ scores = (q.permute([0, 2, 1, 3]) @ k_full.transpose(-1, -2)) / math.sqrt(
     config.head_dim
 ) + mask
 probs = F.softmax(scores).to_numpy()[0]  # [heads, seq, seq]
-
-labels = [
-    f"{i}: {t!r}" for i, t in enumerate(tokens)
-]  # unique even when tokens repeat
+</code></pre>
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">47 lines</span></summary>
+<pre><code class="language-python"># Number the labels so that they stay unique when a token repeats.
+labels = [f"{i}: {t!r}" for i, t in enumerate(tokens)]
 pairs = [[[labels[i], labels[j]] for j in range(seq)] for i in range(seq)]
 visible = np.tri(seq, dtype=bool)  # masked cells are left blank, not drawn as 0
 heads = [
@@ -397,7 +405,8 @@ viz.show(
     )
 )
 </code></pre>
-<div class="plotly-figure" data-src="generated/01_05_attention_10_0.json"></div>
+</details>
+<div class="plotly-figure" data-src="generated/01_05_attention_11_0.json"></div>
 <p>Each row is a query position; each column is a key it attends to. Hover
 over a cell to read its weight, and move the slider to change heads. The
 upper triangle is empty: that is the causal mask. The heads differ. Heads
@@ -416,9 +425,12 @@ devices at once.</p>
 <p>For the attention itself it uses <code>flash_attention</code> from
 <code>max.nn.kernels.attention</code>, which takes grouped heads directly. Flash
 attention computes the same result as <code>naive_attention</code> but never builds the
-full <code>[seq, seq]</code> score matrix: it processes keys in blocks and keeps a
-running softmax, so memory stays proportional to the sequence length
-instead of its square.</p>
+per-head <code>[seq, seq]</code> score matrices: it processes keys in blocks and keeps
+a running softmax. This module still passes a dense <code>[seq, seq]</code> mask, one for
+the whole batch rather than one per head; production kernels take a causal flag
+instead, so their memory grows with the sequence length rather than its square.</p>
+<details class="code-fold">
+<summary>Show <code>Attention</code> <span class="code-fold-lines">51 lines</span></summary>
 <pre><code class="language-python">class Attention(Module):
     """Causal grouped-query attention with rotary position embeddings."""
 
@@ -471,6 +483,7 @@ instead of its square.</p>
     def forward(self, x: Tensor) -&gt; Tensor:
         return self.attend(*self.project(x, 0))
 </code></pre>
+</details>
 <p><small>Saved to <code>minillm/attention.py</code>.</small></p>
 <p>Load layer 0’s attention and check the module against <code>naive_attention</code>
 on the same normalized hidden states:</p>
@@ -511,11 +524,11 @@ def timed(fn) -&gt; float:
 print(f"naive: {timed(lambda: naive_attention(q, k, v, long_mask)):.0f} ms")
 print(f"flash: {timed(lambda: attn.attend(q, k, v)):.0f} ms  (includes o_proj)")
 </code></pre>
-<pre><code class="language-text">naive: 83 ms
-flash: 36 ms  (includes o_proj)
+<pre><code class="language-text">naive: 81 ms
+flash: 55 ms  (includes o_proj)
 </code></pre>
 <p>In the run shown here, on an Apple-silicon Mac with a Metal GPU, flash attention
-took about 35 ms including <code>o_proj</code>, against about 85 ms for the naive version.
+took about 55 ms including <code>o_proj</code>, against about 80 ms for the naive version.
 Treat these numbers as an example: yours depend on your hardware and vary from
 run to run. The handbook’s
 <a href="https://handbook.modular.com/kernel-optimization/flashattention/">FlashAttention</a>

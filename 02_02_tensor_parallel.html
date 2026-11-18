@@ -201,6 +201,8 @@ parallelism, the strategy servers use to run a model too big or too slow for one
 GPU. The model code doesn’t change. You change where its weights live, and MAX
 runs every layer on all three devices and adds the communication. Then you check
 that the logits match the single-device model’s.</p>
+<details class="code-fold">
+<summary>Show the setup <span class="code-fold-lines">31 lines</span></summary>
 <pre><code class="language-python">import logging
 import time
 import warnings
@@ -233,6 +235,7 @@ warnings.filterwarnings("ignore", message="The eager interpreter failed")
 config = LlamaConfig.from_pretrained()
 weights = load_checkpoint()
 </code></pre>
+</details>
 <h2 id="the-plan"><a class="header" href="#the-plan">The plan</a></h2>
 <p><a href="02_01_distributed_tensors.html">Section 2.1</a> showed the
 pattern: a column-parallel layer followed by a row-parallel layer needs one
@@ -242,6 +245,7 @@ all-reduce. Each SmolLM2 layer has two such pairs:</p>
 <tr><td>MLP</td><td><code>gate_proj</code>, <code>up_proj</code></td><td><code>down_proj</code></td></tr>
 </tbody></table>
 </div>
+<p><img class="diagram diagram-light" src="assets/diagrams/tensor-parallel-mlp.svg" alt="Tensor-parallel MLP: the input x is replicated on every device; gate and up projections are split by column, so each device holds a slice of the intermediate activation; the down projection is split by row, so each device holds a partial sum; an all-reduce adds the partial sums into the output y."><img class="diagram diagram-dark" src="assets/diagrams/tensor-parallel-mlp-dark.svg" alt="Tensor-parallel MLP: the input x is replicated on every device; gate and up projections are split by column, so each device holds a slice of the intermediate activation; the down projection is split by row, so each device holds a partial sum; an all-reduce adds the partial sums into the output y."></p>
 <p>Splitting <code>q_proj</code>’s outputs three ways gives each device 3 of the 9 query
 heads, and splitting <code>k_proj</code> and <code>v_proj</code> gives each device 1 of the 3
 key/value heads, the one those queries share under grouped-query attention
@@ -311,6 +315,8 @@ DType.float32 [576, 576] with DeviceMapping(DeviceMesh(tp=3), [Sharded(axis=1)])
 <p>Read the head assignment straight from the shards: each device’s slice of
 <code>q_proj</code> holds whole query heads, and its slice of <code>k_proj</code> holds the
 key/value head those queries share. Hover over a box to see its device:</p>
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">43 lines</span></summary>
 <pre><code class="language-python">attn = tp_model.model.layers[0].self_attn
 rows = {
     "query heads": attn.q_proj.weight,
@@ -355,6 +361,7 @@ fig.update_layout(
 )
 viz.show(fig)
 </code></pre>
+</details>
 <div class="plotly-figure" data-src="generated/02_02_tensor_parallel_8_0.json"></div>
 <p><code>Linear</code> stores its weight as <code>[out, in]</code>, so column parallel splits axis 0
 and row parallel splits axis 1. Each device now holds a third of every
@@ -374,8 +381,12 @@ print(
 </code></pre>
 <pre><code class="language-text">whole model: 163M values, device 0 holds 92M
 </code></pre>
-<p>Broken down by part, for the single-device model and for each device of
-the mesh:</p>
+<p>The whole-model count is above SmolLM2’s 135M because the model ties its LM
+head to the embedding, and the count includes that 28M-value weight twice.
+Broken down by part, for the single-device model and for each device of the
+mesh:</p>
+<details class="code-fold">
+<summary>Show <code>part</code> <span class="code-fold-lines">43 lines</span></summary>
 <pre><code class="language-python">def part(name: str) -&gt; str:
     for key, label in [
         ("embed_tokens", "embedding"),
@@ -420,6 +431,7 @@ fig.update_layout(
 )
 viz.show(fig)
 </code></pre>
+</details>
 <div class="plotly-figure" data-src="generated/02_02_tensor_parallel_12_0.json"></div>
 <p>The replicated embedding and LM head (28M values each) keep device 0 well
 above a third. Large models also split those across the vocabulary.</p>
@@ -443,7 +455,7 @@ print(
 assert len(reshards) == 2 * config.num_hidden_layers
 print(reshards[0])
 </code></pre>
-<pre><code class="language-text">forward pass in 79 s, 60 collectives inserted
+<pre><code class="language-text">forward pass in 215 s, 60 collectives inserted
 
 add(lhs, rhs) reshards rhs
   lhs    : float32[1, 5, 576]@mesh(tp=3){"tp":R}
@@ -461,13 +473,15 @@ add(lhs, rhs) reshards rhs
   rhs = transfer_to(rhs, DeviceMapping(mesh, (R,)))
   with auto_reshard(mode="silent"):
   with auto_reshard(ALL_TRANSITIONS, mode="silent"):   # also allows the cheaper rows above
-  at /Users/ehsan/workspace/modular/oss/max-llm-book/minillm/model.py:43 in forward()
+  at minillm/model.py:43 in forward()
 </code></pre>
 <p>That makes 60 collectives for 30 layers, two all-reduces per layer: one where
 the output of attention’s row-parallel <code>o_proj</code> meets the residual addition,
-and one where the MLP’s <code>down_proj</code> output does. This layout can’t do with
-fewer. Everything else, including attention itself, ran on each device
-without communication.</p>
+and one where the MLP’s <code>down_proj</code> output does. Each residual addition needs
+the full value, so a column-then-row layout needs both. Everything else,
+including attention itself, ran on each device without communication. The
+forward pass is slow because the simulated mesh runs eagerly, one operation at
+a time, on one CPU; its time says nothing about real hardware.</p>
 <h2 id="check-it"><a class="header" href="#check-it">Check it</a></h2>
 <p>The sharded model must produce the same logits as the single-device model
 from <a href="01_06_full_model.html">Section 1.6</a>:</p>

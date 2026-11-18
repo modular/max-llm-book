@@ -201,6 +201,8 @@ what changed and why. This section adds Qwen3, here the 0.6-billion-parameter
 model <code>Qwen/Qwen3-0.6B</code>. It subclasses your Llama classes, overrides only what
 differs, and verifies the result with the tools from
 <a href="ch04.html">Chapter 4</a>.</p>
+<details class="code-fold">
+<summary>Show the setup <span class="code-fold-lines">26 lines</span></summary>
 <pre><code class="language-python">import logging
 import warnings
 
@@ -217,6 +219,7 @@ from transformers import AutoModelForCausalLM
 from minillm import viz
 from minillm.device import pick_device
 from minillm.config import MODEL_ID, LlamaConfig
+from minillm.layers import apply_rope, rope_cos_sin
 from minillm.model import load_model
 from minillm.sampling import generate
 from minillm.testing import compare_outputs
@@ -227,6 +230,7 @@ warnings.filterwarnings("ignore", message="The eager interpreter failed")
 DEVICE = pick_device()  # a GPU if MAX finds one, otherwise the CPU
 QWEN3 = "Qwen/Qwen3-0.6B"
 </code></pre>
+</details>
 <h2 id="what-changed"><a class="header" href="#what-changed">What changed</a></h2>
 <p>Compare the two configs:</p>
 <pre><code class="language-python">smol, qwen = (
@@ -244,9 +248,12 @@ for field in [
     "rope_theta",
     "rms_norm_eps",
 ]:
+    if field == "vocab_size":
+        print(f"{'':22} {'SmolLM2':&gt;10} {'Qwen3':&gt;10}")
     print(f"{field:22} {getattr(smol, field):&gt;10} {getattr(qwen, field):&gt;10}")
 </code></pre>
-<pre><code class="language-text">vocab_size                  49152     151936
+<pre><code class="language-text">                          SmolLM2      Qwen3
+vocab_size                  49152     151936
 hidden_size                   576       1024
 num_hidden_layers              30         28
 num_attention_heads             9         16
@@ -259,7 +266,7 @@ rms_norm_eps                1e-05      1e-06
 <p>Four differences matter:</p>
 <ul>
 <li>A larger vocabulary, 151,936 tokens, which covers many languages and code. The
-embedding alone holds 156M parameters, about a quarter of the model.</li>
+embedding alone holds 156M parameters, about a quarter of the model’s 596M.</li>
 <li>An explicit <code>head_dim</code>: 16 heads of 128 dimensions make 2048, <em>wider</em> than the
 1024-dimension hidden state. <code>q_proj</code> projects up, and <code>o_proj</code> projects back
 down. The config class from
@@ -287,6 +294,8 @@ a learned weight \(w\) of size \(d\):</p>
 QK-norm is two <code>RMSNorm</code>s of size <code>head_dim</code> inside attention, applied to
 each head after the projection and before RoPE. The other classes only swap
 in the new attention:</p>
+<details class="code-fold">
+<summary>Show <code>Qwen3Attention</code>, <code>Qwen3DecoderLayer</code>, <code>Qwen3Model</code>, <code>Qwen3ForCausalLM</code> <span class="code-fold-lines">58 lines</span></summary>
 <pre><code class="language-python">from __future__ import annotations
 
 from max.graph import Dim
@@ -346,6 +355,7 @@ class Qwen3ForCausalLM(LlamaForCausalLM):
         super().__init__(config)
         self.model = Qwen3Model(config)
 </code></pre>
+</details>
 <p><small>Saved to <code>minillm/qwen3.py</code>.</small></p>
 <p>The new parameters are named <code>q_norm</code> and <code>k_norm</code>, as in Qwen3’s checkpoint, so
 <code>load_model</code> from <a href="01_06_full_model.html">Section 1.6</a>
@@ -362,60 +372,105 @@ print(
 </code></pre>
 <pre><code class="language-text">752M values, including the untied copy of the embedding
 </code></pre>
-<p>To see what QK-norm guarantees on real activations, run layer 0’s input norm and
-query projection on a sentence. Then scale the queries up 10 times, as
-projection weights that grew during training would. The figure compares the
-median length of the query vectors in each head, before and after <code>q_norm</code>:</p>
+<p>To see what QK-norm guarantees on real activations, run layer 0’s attention on
+a sentence: its queries and keys, with RoPE, the scores \(q \cdot k / \sqrt{d}\),
+and their softmax. Then scale the layer’s input up, which scales queries and
+keys alike, as projection weights that grew during training would. The
+<em>entropy</em> of a softmax row measures how spread out a query’s attention is: 0
+when one key takes all the weight, \(\log n\) when \(n\) keys share it equally.</p>
+<details class="code-fold">
+<summary>Show <code>softmax</code>, <code>entropy_per_head</code> <span class="code-fold-lines">43 lines</span></summary>
 <pre><code class="language-python">attn = model.model.layers[0].self_attn
 ids = AutoTokenizer(QWEN3)(
     ["Normalizing queries and keys keeps attention scores in a stable range."]
 )["input_ids"][0]
+seq = len(ids)
 h = model.model.layers[0].input_layernorm(
     model.model.embed_tokens(Tensor(np.array([ids]), device=DEVICE))
 )
-q = attn.q_proj(h).reshape([1, len(ids), attn.num_heads, attn.head_dim])
-styles = {}
-for scale, dash in [(1, "solid"), (10, "dash")]:
-    scaled = q * scale
-    styles[f"before q_norm, input x{scale}"] = (scaled, viz.ORANGE, dash)
-    styles[f"after q_norm, input x{scale}"] = (
-        attn.q_norm(scaled),
-        viz.BLUE,
-        dash,
-    )
+cos, sin = rope_cos_sin(attn.head_dim, attn.rope_theta, 0, seq, DEVICE)
+causal = np.triu(np.full((seq, seq), -np.inf), 1)
 
-fig = go.Figure()
-for name, (t, color, dash) in styles.items():
-    median = np.median(
-        np.linalg.norm(t.to_numpy()[0], axis=-1), axis=0
-    )  # per head
-    fig.add_trace(
-        go.Scatter(
-            x=np.arange(attn.num_heads),
-            y=median,
-            name=name,
-            mode="lines+markers",
-            line=dict(
-                color=color, dash=dash, width=4 if dash == "solid" else 2
-            ),
-            hovertemplate="head %{x}: %{y:.1f}&lt;extra&gt;" + name + "&lt;/extra&gt;",
-        )
+
+def softmax(z: np.ndarray) -&gt; np.ndarray:
+    e = np.exp(z.astype(np.float64) - z.max(-1, keepdims=True))
+    return e / e.sum(-1, keepdims=True)
+
+
+def entropy_per_head(scale: float, qk_norm: bool) -&gt; np.ndarray:
+    """Mean attention entropy of each query head, in nats."""
+    x = h * scale
+    q = attn.q_proj(x).reshape([1, seq, attn.num_heads, attn.head_dim])
+    k = attn.k_proj(x).reshape([1, seq, attn.num_kv_heads, attn.head_dim])
+    if qk_norm:
+        q, k = attn.q_norm(q), attn.k_norm(k)
+    q = apply_rope(q, cos, sin).to_numpy()[0]
+    k = apply_rope(k, cos, sin).to_numpy()[0]
+    k = np.repeat(k, attn.num_heads // attn.num_kv_heads, axis=1)
+    scores = np.einsum("qhd,khd-&gt;hqk", q, k) / np.sqrt(attn.head_dim)
+    p = softmax(scores + causal)
+    # Position 0 sees only itself, so its entropy is always 0.
+    return -(p * np.log(p + 1e-30)).sum(-1)[:, 1:].mean(-1)
+
+
+entropy = {
+    (scale, qk_norm): entropy_per_head(scale, qk_norm)
+    for scale in [1, 3, 10]
+    for qk_norm in [False, True]
+}
+for (scale, qk_norm), e in entropy.items():
+    label = "with" if qk_norm else "without"
+    print(
+        f"input x{scale:&lt;3} {label:7} QK-norm: mean entropy {e.mean():.2f} nats"
     )
-fig.update_layout(
-    title="Median query vector length per head, Qwen3 layer 0",
-    height=440,
-    xaxis=dict(title="query head", dtick=1),
-    yaxis=dict(title="length (log scale)", type="log", dtick=1),
-)
-viz.show(fig)
 </code></pre>
-<div class="plotly-figure" data-src="generated/06_01_qwen3_10_0.json"></div>
-<p>Without the norm, query lengths grow with the queries: queries 10 times
-larger are 10 times longer, and scores grow 100 times once the keys grow
-too. After <code>q_norm</code>, the two blue lines lie on top of each other.
-Each query’s length now depends only on its direction and the learned
-per-dimension scale, which also gives each head its own typical size, so no
-input can make a score blow up.</p>
+</details>
+<pre><code class="language-text">input x1   without QK-norm: mean entropy 1.87 nats
+input x1   with    QK-norm: mean entropy 0.77 nats
+input x3   without QK-norm: mean entropy 1.39 nats
+input x3   with    QK-norm: mean entropy 0.77 nats
+input x10  without QK-norm: mean entropy 0.18 nats
+input x10  with    QK-norm: mean entropy 0.77 nats
+</code></pre>
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">26 lines</span></summary>
+<pre><code class="language-python">steps = [
+    [
+        go.Bar(
+            x=np.arange(attn.num_heads),
+            y=entropy[scale, qk_norm],
+            name=f"{'after' if qk_norm else 'before'} QK-norm",
+            marker_color=viz.BLUE if qk_norm else viz.ORANGE,
+            hovertemplate="head %{x}: %{y:.2f} nats&lt;extra&gt;%{fullData.name}&lt;/extra&gt;",
+        )
+        for qk_norm in [False, True]
+    ]
+    for scale in [1, 3, 10]
+]
+fig = go.Figure(
+    layout=dict(
+        title="Attention entropy per head, Qwen3 layer 0",
+        height=460,
+        barmode="group",
+        xaxis=dict(title="query head", dtick=1),
+        yaxis=dict(
+            title="mean entropy (nats)",
+            range=[0, 1.1 * max(e.max() for e in entropy.values())],
+        ),
+    )
+)
+viz.show(viz.with_slider(fig, steps, ["x1", "x3", "x10"], "input scaled "))
+</code></pre>
+</details>
+<div class="plotly-figure" data-src="generated/06_01_qwen3_11_0.json"></div>
+<p>Move the slider. Without the norm (orange), the attention depends on the scale.
+Scaling the input by 10 makes queries and keys 10 times longer and the scores
+100 times larger, and the softmax collapses: the orange bars fall close to 0,
+so each query attends to almost a single key. At x1 the orange bars sit higher
+than the blue ones, because Qwen3’s raw queries and keys are small; the trained
+model always normalizes them. The blue bars don’t move at all. After <code>q_norm</code> and <code>k_norm</code>, a query’s or key’s length depends
+only on its direction and the learned per-dimension scale, so no input can make
+a score blow up.</p>
 <h2 id="verify-it"><a class="header" href="#verify-it">Verify it</a></h2>
 <p>Compare with Hugging Face’s PyTorch Qwen3 on a few prompts, using the metrics
 from <a href="04_02_logit_verification.html">Section 4.2</a>:</p>
@@ -425,16 +480,12 @@ reference = AutoModelForCausalLM.from_pretrained(
 ).eval()
 
 
-def softmax(z: np.ndarray) -&gt; np.ndarray:
-    e = np.exp(z.astype(np.float64) - z.max(-1, keepdims=True))
-    return e / e.sum(-1, keepdims=True)
-
-
-for text in [
-    "The capital of France is",
-    "def add(a, b):\n    return",
-    "Le chat est assis sur",
-]:
+prompts = {
+    "english": "The capital of France is",
+    "code": "def add(a, b):\n    return",
+    "french": "Le chat est assis sur",
+}
+for name, text in prompts.items():
     ids = tokenizer([text])["input_ids"][0]
     ours = compiled(Tensor(np.array([ids]), device=DEVICE)).to_numpy()[0]
     with torch.no_grad():
@@ -444,13 +495,13 @@ for text in [
     kl = float((p * (np.log(p + 1e-30) - np.log(q + 1e-30))).sum(-1).mean())
     top1 = (ours.argmax(-1) == theirs.argmax(-1)).mean()
     print(
-        f"{text[:24]!r:28} max err {r.max_abs_err:.1e}  KL {kl:.1e}  top-1 {top1:.0%}"
+        f"{name:8} max err {r.max_abs_err:.1e}  KL {kl:.1e}  top-1 {top1:.0%}"
     )
     assert top1 &gt;= 0.99 and kl &lt; 1e-6
 </code></pre>
-<pre><code class="language-text">'The capital of France is'   max err 1.4e-04  KL 1.0e-10  top-1 100%
-'def add(a, b):\n    retur'  max err 1.1e-04  KL 1.9e-11  top-1 100%
-'Le chat est assis sur'      max err 8.5e-05  KL 7.8e-11  top-1 100%
+<pre><code class="language-text">english  max err 1.4e-04  KL 1.0e-10  top-1 100%
+code     max err 1.1e-04  KL 1.9e-11  top-1 100%
+french   max err 8.5e-05  KL 7.8e-11  top-1 100%
 </code></pre>
 <pre><code class="language-python">def next_logits(ids: list[int]) -&gt; Tensor:
     return compiled(Tensor(np.array([ids]), device=DEVICE))[0, -1]
@@ -470,8 +521,11 @@ techniques that <a href="ch05.html">Chapter 5</a> builds:</p>
 <pre><code class="language-bash">max serve --model Qwen/Qwen3-0.6B --quantization-encoding float32 --no-prefer-module-v3
 </code></pre>
 <p><code>--no-prefer-module-v3</code> selects MAX’s text-generation implementation of
-Qwen3. Without it, current nightly builds pick Qwen3’s embedding variant for
-this checkpoint and fail to start.</p>
+Qwen3. By default MAX prefers an architecture’s module-based implementation
+(<a href="07_01_serve_your_model.html">Section 7.1</a> explains
+this preference), and while the only module-based one registered under Qwen3’s
+architecture name is the embedding model, <code>max serve</code> picks it for this
+checkpoint and fails to start.</p>
 <p>Qwen3 is also a <em>reasoning</em> model: by default it thinks step by step inside
 <code>&lt;think&gt;</code> tags before it answers, which costs tokens and improves answers to
 hard questions. Its chat template has an <code>enable_thinking</code> switch that turns

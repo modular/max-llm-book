@@ -202,11 +202,11 @@ waits for its first token and for each token after that. This section benchmarks
 MAX’s SmolLM2 and the architecture you served in
 <a href="07_01_serve_your_model.html">Section 7.1</a>, and explains
 the numbers.</p>
+<details class="code-fold">
+<summary>Show the setup <span class="code-fold-lines">15 lines</span></summary>
 <pre><code class="language-python">import json
 import subprocess
 import tempfile
-import time
-import urllib.request
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
@@ -216,11 +216,13 @@ from plotly.subplots import make_subplots
 
 from minillm import viz
 from minillm.config import MODEL_ID
+from minillm.server import start_max_serve
 
 WORKDIR = Path(tempfile.mkdtemp())
 </code></pre>
+</details>
 <h2 id="what-to-measure"><a class="header" href="#what-to-measure">What to measure</a></h2>
-<p>Four numbers describe a serving run. The handbook’s
+<p>These numbers describe a serving run. The handbook’s
 <a href="https://handbook.modular.com/llm-inference-basics/llm-inference-metrics/">LLM inference metrics</a>
 page defines them in detail:</p>
 <ul>
@@ -246,44 +248,28 @@ tokens per request, and keeps at most 8 in flight:</p>
 </code></pre>
 <p>The <code>random</code> dataset gives every run the same shape, which suits
 comparisons. The default dataset, <code>sharegpt</code>, replays real chat
-conversations with varied lengths. The two helpers below start a server and
-run a benchmark from Python, then read the result file:</p>
+conversations with varied lengths. The helpers below start a server, run a
+benchmark from Python with the same flags, and read the result file, a JSON
+object with the summary metrics (<code>request_throughput</code>, <code>mean_ttft_ms</code>,
+<code>p95_ttft_ms</code>, and so on) and one record per request (<code>request_records</code>):</p>
+<details class="code-fold">
+<summary>Show <code>server</code>, <code>benchmark</code>, <code>summary</code>, <code>show</code> <span class="code-fold-lines">67 lines</span></summary>
 <pre><code class="language-python">@contextmanager
 def server(*flags: str) -&gt; Iterator[None]:
-    process = subprocess.Popen(
-        [
-            "max",
-            "serve",
-            "--model",
-            MODEL_ID,
-            "--port",
-            "8000",
-            "--quantization-encoding",
-            "float32",
-            *flags,
-        ],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
+    process = start_max_serve(
+        MODEL_ID, "--quantization-encoding", "float32", *flags
     )
     try:
-        while True:
-            try:
-                urllib.request.urlopen("http://localhost:8000/health")
-                break
-            except OSError:
-                if process.poll() is not None:
-                    raise RuntimeError(
-                        "max serve exited; run it in a terminal to see why"
-                    )
-                time.sleep(1)
         yield
     finally:
         process.terminate()
         process.wait()
 
 
-def benchmark(concurrency: int, prompts: int) -&gt; dict[str, float]:
-    result = WORKDIR / f"result_{concurrency}.json"
+def benchmark(concurrency: int, *count: str) -&gt; dict:
+    """Runs ``max benchmark`` and returns its result file. ``count`` is
+    ``--num-prompts N`` or ``--num-prompts-multiplier M``."""
+    result = WORKDIR / f"result_{len(list(WORKDIR.glob('*.json')))}.json"
     subprocess.run(
         [
             "max",
@@ -298,10 +284,9 @@ def benchmark(concurrency: int, prompts: int) -&gt; dict[str, float]:
             "128",
             "--random-output-len",
             "32",
-            "--num-prompts",
-            str(prompts),
             "--max-concurrency",
             str(concurrency),
+            *count,
             "--result-filename",
             str(result),
             "--log-dir",
@@ -311,9 +296,12 @@ def benchmark(concurrency: int, prompts: int) -&gt; dict[str, float]:
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
-    run = json.loads(result.read_text())
+    return json.loads(result.read_text())
+
+
+def summary(run: dict) -&gt; dict[str, float]:
     return {
-        "concurrency": concurrency,
+        "concurrency": run["max_concurrency"],
         "requests/s": run["request_throughput"],
         "output tokens/s": run["total_output_tokens"] / run["duration"],
         "TTFT (ms)": run["mean_ttft_ms"],
@@ -321,7 +309,8 @@ def benchmark(concurrency: int, prompts: int) -&gt; dict[str, float]:
     }
 
 
-def show(rows: list[dict[str, float]]) -&gt; None:
+def show(runs: list[dict]) -&gt; None:
+    rows = [summary(run) for run in runs]
     print("".join(f"{name:&gt;17}" for name in rows[0]))
     for row in rows:
         print(
@@ -333,17 +322,18 @@ def show(rows: list[dict[str, float]]) -&gt; None:
             )
         )
 </code></pre>
-<p>At concurrency 8, <code>max benchmark</code> leaves the first and last 8 requests out
-of its statistics, because the server is still filling up or draining while
-they run. The runs at concurrency 8 therefore send more requests.</p>
+</details>
 <h2 id="maxs-smollm2"><a class="header" href="#maxs-smollm2">MAX’s SmolLM2</a></h2>
 <pre><code class="language-python">with server():
-    max_runs = [benchmark(1, prompts=16), benchmark(8, prompts=32)]
+    max_runs = [
+        benchmark(1, "--num-prompts", "16"),
+        benchmark(8, "--num-prompts", "32"),
+    ]
 show(max_runs)
 </code></pre>
 <pre><code class="language-text">      concurrency       requests/s  output tokens/s        TTFT (ms)        TPOT (ms)
-                1              1.4             45.2             80.7             20.2
-                8              8.6            275.6            275.2             21.1
+                1              1.5             46.6             85.4             19.4
+                8              8.5            271.8            236.0             22.7
 </code></pre>
 <p>With 8 requests in flight, the server batches them into each decode step.
 Throughput rises several times, while TPOT barely changes: one decode step costs
@@ -353,35 +343,68 @@ little of it is arithmetic per sequence. The handbook’s
 <a href="https://handbook.modular.com/inference-optimization/static-dynamic-continuous-batching/">batching</a>
 page explains why. TTFT rises because requests that arrive together are
 prefilled together, and a new request waits for the current step to finish.</p>
+<p>The concurrency-8 run sends more requests because <code>max benchmark</code> doesn’t count
+all of them. A run this short reports over a trimmed window: at concurrency
+above 1 it leaves out the first <code>max_concurrency</code> requests sent and the last
+<code>max_concurrency</code> completed, because the server is still filling up or draining
+while they run, and divides by the time from the first counted request’s
+submission to the last one’s completion. With at least 100 requests at
+concurrency above 1, it first looks for a steady-state window automatically and
+trims only when it finds none. Either way, the result file says which requests
+counted (<code>measured</code> in each request record).</p>
 <h2 id="your-architecture"><a class="header" href="#your-architecture">Your architecture</a></h2>
 <p>Now run the same benchmark against the package from
 <a href="07_01_serve_your_model.html">Section 7.1</a>:</p>
 <pre><code class="language-python">with server("--custom-architectures", "minillm.serve", "--no-prefer-module-v3"):
     ours = [
-        benchmark(1, prompts=8),
-        benchmark(8, prompts=24),
+        benchmark(1, "--num-prompts", "8"),
+        benchmark(8, "--num-prompts", "24"),
     ]  # fewer: this server is slow
 show(ours)
 </code></pre>
 <pre><code class="language-text">      concurrency       requests/s  output tokens/s        TTFT (ms)        TPOT (ms)
-                1              0.5             14.4             73.5             69.1
-                8              0.2              6.3          18269.0             96.8
+                1              0.5             14.7             82.3             67.7
+                8              0.2              6.5          17743.1             94.3
 </code></pre>
-<pre><code class="language-python">max_gain = max_runs[1]["requests/s"] / max_runs[0]["requests/s"]
-ours_gain = ours[1]["requests/s"] / ours[0]["requests/s"]
-print(
-    f"throughput gain from concurrency 8: MAX's {max_gain:.1f}x, yours {ours_gain:.1f}x"
-)
-assert max_gain &gt; 1.5 and ours_gain &lt; 1.5
+<pre><code class="language-python">def gain(runs: list[dict]) -&gt; float:
+    return runs[1]["request_throughput"] / runs[0]["request_throughput"]
 
-metrics = ["requests/s", "output tokens/s", "TTFT (ms)", "TPOT (ms)"]
+
+def gain_all_requests(runs: list[dict]) -&gt; float:
+    rates = []
+    for run in runs:
+        records = run["request_records"]
+        start = min(r["submit_time"] for r in records)
+        end = max(r["complete_time"] for r in records)
+        rates.append(len(records) / (end - start))
+    return rates[1] / rates[0]
+
+
+print(
+    f"throughput gain from concurrency 8: MAX's {gain(max_runs):.1f}x, "
+    f"yours {gain(ours):.1f}x"
+)
+print(
+    f"over every request, not just the counted ones: "
+    f"MAX's {gain_all_requests(max_runs):.1f}x, "
+    f"yours {gain_all_requests(ours):.1f}x"
+)
+assert gain(max_runs) &gt; 1.5 and gain_all_requests(ours) &lt; 1.5
+</code></pre>
+<pre><code class="language-text">throughput gain from concurrency 8: MAX's 5.8x, yours 0.4x
+over every request, not just the counted ones: MAX's 5.2x, yours 0.7x
+</code></pre>
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">32 lines</span></summary>
+<pre><code class="language-python">metrics = ["requests/s", "output tokens/s", "TTFT (ms)", "TPOT (ms)"]
 fig = make_subplots(
     rows=1, cols=4, horizontal_spacing=0.07, subplot_titles=metrics
 )
-for name, rows, color in [
+for name, runs, color in [
     ("MAX's SmolLM2", max_runs, viz.BLUE),
     ("yours (Section 7.1)", ours, viz.ORANGE),
 ]:
+    rows = [summary(run) for run in runs]
     for col, metric in enumerate(metrics, start=1):
         fig.add_trace(
             go.Bar(
@@ -396,6 +419,7 @@ for name, rows, color in [
             row=1,
             col=col,
         )
+fig.update_yaxes(type="log", title_text="ms (log scale)", row=1, col=3)
 fig.update_layout(
     title="Serving SmolLM2 at concurrency 1 and 8",
     barmode="group",
@@ -405,9 +429,8 @@ fig.update_layout(
 )
 viz.show(fig)
 </code></pre>
-<pre><code class="language-text">throughput gain from concurrency 8: MAX's 6.1x, yours 0.4x
-</code></pre>
-<div class="plotly-figure" data-src="generated/07_02_benchmark_serving_9_1.json"></div>
+</details>
+<div class="plotly-figure" data-src="generated/07_02_benchmark_serving_10_0.json"></div>
 <p>The two servers differ in two ways, and earlier sections explain both:</p>
 <ul>
 <li>TPOT is several times higher. The pipeline model from
@@ -420,6 +443,82 @@ grows with the sequence. The KV cache from
 so the server runs one request at a time and queues the rest. The queue shows
 up in TTFT: a request waits for the ones ahead of it to finish completely.</li>
 </ul>
+<p>The reported throughput even drops, to half the concurrency-1 rate or less,
+while counted over every request of the run it drops much less. The trim
+explains the difference. Here is every request of your server’s concurrency-8
+run, from the result file’s request records. The shaded span is the window that
+<code>max benchmark</code> divides by:</p>
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">56 lines</span></summary>
+<pre><code class="language-python">records = sorted(ours[1]["request_records"], key=lambda r: r["submit_time"])
+start = records[0]["submit_time"]
+counted = [r for r in records if r["measured"]]
+window = (
+    min(r["submit_time"] for r in counted) - start,
+    max(r["complete_time"] for r in counted) - start,
+)
+rows = [
+    f"request {i}" + ("" if r["measured"] else " (not counted)")
+    for i, r in enumerate(records)
+]
+fig = go.Figure(
+    [
+        go.Bar(
+            y=rows,
+            x=[r["ttft_ms"] / 1000 for r in records],
+            base=[r["submit_time"] - start for r in records],
+            orientation="h",
+            name="waiting, then prefill",
+            marker_color=viz.MUTED,
+            hovertemplate="%{y}: first token after %{x:.1f} s&lt;extra&gt;&lt;/extra&gt;",
+        ),
+        go.Bar(
+            y=rows,
+            x=[(r["latency_ms"] - r["ttft_ms"]) / 1000 for r in records],
+            base=[
+                r["submit_time"] - start + r["ttft_ms"] / 1000 for r in records
+            ],
+            orientation="h",
+            name="generating",
+            marker_color=[
+                viz.ORANGE if r["measured"] else viz.GRID for r in records
+            ],
+            hovertemplate="%{y}: generating for %{x:.1f} s&lt;extra&gt;&lt;/extra&gt;",
+        ),
+    ]
+)
+fig.add_vrect(
+    x0=window[0],
+    x1=window[1],
+    fillcolor=viz.ORANGE,
+    opacity=0.08,
+    line_width=0,
+    annotation_text=(
+        f"counted: {len(counted)} requests in {window[1] - window[0]:.0f} s"
+    ),
+    annotation_position="top left",
+)
+fig.update_layout(
+    title="Your server at concurrency 8: every request of the run",
+    barmode="overlay",
+    height=560,
+    xaxis_title="seconds since the first request was sent",
+    yaxis=dict(autorange="reversed", showgrid=False),
+)
+viz.show(fig)
+</code></pre>
+</details>
+<div class="plotly-figure" data-src="generated/07_02_benchmark_serving_12_0.json"></div>
+<p>The first 8 requests are sent at once and finish one after another. Each
+finished request frees a client slot, so the counted requests, 8 to 15, are
+sent while 7 earlier requests still wait in the server’s queue. Their window
+also holds the service time of those 7 uncounted requests: about 15 requests’
+work, credited to 8. Over every request, from the first submission to the last
+completion, throughput stays close to the concurrency-1 rate, as it should for
+a server that runs one request at a time. The trim suits a server that batches,
+where the ramp-up and the drain distort the numbers. For a server that
+serializes requests, read the untrimmed rate, or pass
+<code>--skip-first-n-requests 0 --skip-last-n-requests 0</code>.</p>
 <p>The engine in <a href="ch05.html">Chapter 5</a> fixed both with a
 paged KV cache and continuous batching. MAX’s own architectures get them from
 MAX’s serving stack, which is why a production architecture implements a decoder
@@ -427,18 +526,108 @@ on MAX’s paged KV cache
 (<a href="07_01_serve_your_model.html">Section 7.1</a> links the
 guide).</p>
 <h2 id="reading-benchmarks-well"><a class="header" href="#reading-benchmarks-well">Reading benchmarks well</a></h2>
+<p>Measure a server at several concurrency levels, not one, and plot latency
+against throughput. <code>--max-concurrency 1,2,4,8,16,32</code> runs such a sweep in one
+command. Pair it with <code>--num-prompts-multiplier 8</code> instead of a fixed
+<code>--num-prompts</code>: each level then sends 8 requests per slot, so the trim never
+uses up a level’s requests, as a fixed 32 would at concurrency 32. The cell
+below runs the levels one at a time with the same flag, against MAX’s SmolLM2:</p>
+<pre><code class="language-python">with server():
+    benchmark(1, "--num-prompts", "2")  # warm up the new server
+    sweep = [
+        benchmark(c, "--num-prompts-multiplier", "8")
+        for c in [1, 2, 4, 8, 16, 32]
+    ]
+show(sweep)
+</code></pre>
+<pre><code class="language-text">      concurrency       requests/s  output tokens/s        TTFT (ms)        TPOT (ms)
+                1              1.4             45.3            109.9             19.2
+                2              2.8             88.0             95.6             20.4
+                4              4.8            153.1            148.1             22.2
+                8              8.3            265.0            280.8             22.1
+               16             10.8            346.3            609.3             24.2
+               32             14.2            455.9            999.4             33.3
+</code></pre>
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">55 lines</span></summary>
+<pre><code class="language-python">TARGET_MS = 500
+rows = [summary(run) for run in sweep]
+throughput = [r["output tokens/s"] for r in rows]
+p95_ttft = [run["p95_ttft_ms"] for run in sweep]
+meets = [t &lt;= TARGET_MS for t in p95_ttft]
+best = max(
+    (i for i, ok in enumerate(meets) if ok),
+    key=lambda i: throughput[i],
+    default=None,
+)
+fig = go.Figure(
+    go.Scatter(
+        x=throughput,
+        y=p95_ttft,
+        mode="lines+markers+text",
+        text=[f"c = {r['concurrency']}" for r in rows],
+        textposition="top left",
+        marker=dict(
+            size=10, color=[viz.BLUE if ok else viz.RED for ok in meets]
+        ),
+        line=dict(color=viz.MUTED),
+        customdata=[
+            [r["concurrency"], run["mean_tpot_ms"]]
+            for r, run in zip(rows, sweep)
+        ],
+        hovertemplate="concurrency %{customdata[0]}: %{x:.0f} tokens/s, "
+        "p95 TTFT %{y:.0f} ms, mean TPOT %{customdata[1]:.1f} ms&lt;extra&gt;&lt;/extra&gt;",
+    )
+)
+fig.add_hline(
+    y=TARGET_MS,
+    line=dict(color=viz.INK_SECONDARY, dash="dash"),
+    annotation_text=f"target: p95 TTFT {TARGET_MS} ms",
+    annotation_position="top left",
+)
+if best is not None:
+    fig.add_annotation(
+        x=throughput[best],
+        y=p95_ttft[best],
+        text="highest throughput&lt;br&gt;within the target",
+        showarrow=True,
+        arrowcolor=viz.INK_SECONDARY,
+        ax=40,
+        ay=40,
+    )
+fig.update_layout(
+    title="MAX's SmolLM2: latency against throughput as concurrency rises",
+    height=440,
+    showlegend=False,
+    xaxis=dict(title="output tokens/s", rangemode="tozero"),
+    yaxis=dict(
+        title="p95 time to first token (ms, log scale)", type="log", dtick=1
+    ),
+)
+viz.show(fig)
+</code></pre>
+</details>
+<div class="plotly-figure" data-src="generated/07_02_benchmark_serving_15_0.json"></div>
+<p>Each point is one concurrency level, and red points miss a target of a
+95th-percentile TTFT under 500 ms. Throughput keeps rising with concurrency, but
+TTFT rises faster once the batch fills. In the run on this page, the highest
+throughput within the target came at concurrency 8, and concurrency 16 added
+about a third more throughput at more than twice the p95 TTFT. The levels
+at 16 and 32 send 128 and 256 requests, enough for <code>max benchmark</code>’s
+steady-state window; the others are trimmed. Your numbers depend on your
+hardware.</p>
 <ul>
 <li>Benchmark the workload you will serve. Input and output lengths change
 the results a lot: long prompts stress prefill and TTFT, and long answers
 stress decode and TPOT.</li>
-<li>Sweep concurrency, for example <code>--max-concurrency 1,4,16,64</code>, and plot
-throughput against TTFT or TPOT. Throughput levels off once the GPU is
-busy, while latency keeps rising. The useful operating point is just
-before throughput levels off.</li>
+<li>Sweep concurrency, as above, with <code>--num-prompts-multiplier</code> rather than a
+fixed <code>--num-prompts</code>. Throughput grows ever more slowly once the hardware is
+busy, while latency keeps rising.</li>
 <li>Set a latency target first, such as a TTFT under 500 ms at the 95th
 percentile, then find the highest throughput that meets it. The result
 file stores percentiles (<code>p95_ttft_ms</code>, <code>p99_tpot_ms</code>, and so on) next to
-the means.</li>
+the means, and <code>--goodput ttft:500 tpot:50</code> adds the share of requests that
+met every target (<code>goodput_attainment</code>).</li>
 </ul>
 <p>The handbook’s
 <a href="https://handbook.modular.com/inference-optimization/llm-performance-benchmarks/">LLM performance benchmarks</a>
@@ -446,8 +635,10 @@ page covers benchmark design, and <code>max benchmark --help</code> lists the ot
 datasets and options.</p>
 <h2 id="exercises"><a class="header" href="#exercises">Exercises</a></h2>
 <ol>
-<li>Sweep the concurrency of MAX’s SmolLM2 over 1, 2, 4, 8, 16, and 32. Where
-does throughput stop growing, and what happens to TTFT after that?</li>
+<li>Extend the sweep of MAX’s SmolLM2 to concurrency 64 and 128 with
+<code>--num-prompts-multiplier 4</code> and <code>--goodput ttft:500</code>. Where does
+throughput stop growing, and at which level does <code>goodput_attainment</code> fall
+below 90%?</li>
 <li>Repeat the MAX run with <code>--random-input-len 1024</code>. Which metric changes most,
 and why?</li>
 <li>Do the second exercise of

@@ -204,6 +204,8 @@ MLP, and rotary position embeddings (RoPE), which attention uses to know
 where each token is. Each piece is a few lines with <code>max.nn</code> and
 <code>max.functional</code>, and each is checked against a NumPy version of its
 formula, using the real weights of layer 0.</p>
+<details class="code-fold">
+<summary>Show the setup <span class="code-fold-lines">20 lines</span></summary>
 <pre><code class="language-python">import logging
 
 import numpy as np
@@ -225,6 +227,7 @@ DEVICE = pick_device()  # a GPU if MAX finds one, otherwise the CPU
 config = LlamaConfig.from_pretrained()
 weights = load_checkpoint()
 </code></pre>
+</details>
 <p>A layer’s weights are the checkpoint entries under its name prefix. This
 helper selects them and strips the prefix, so a module can load them with
 <code>load_state_dict</code>:</p>
@@ -284,6 +287,8 @@ compare(to_np(norm(x)), expected)
 dimensions are scaled close to zero, a few stand out several times larger, and
 nearly half are negative, so the norm also flips their sign. Hover over a bar to
 read its value:</p>
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">16 lines</span></summary>
 <pre><code class="language-python">fig = go.Figure(
     go.Bar(
         x=np.arange(config.hidden_size),
@@ -301,6 +306,7 @@ fig.update_layout(
 )
 viz.show(fig)
 </code></pre>
+</details>
 <div class="plotly-figure" data-src="generated/01_04_building_blocks_11_0.json"></div>
 <h2 id="the-swiglu-mlp"><a class="header" href="#the-swiglu-mlp">The SwiGLU MLP</a></h2>
 <p>The MLP transforms each position independently. SmolLM2 uses a <em>gated</em>
@@ -311,6 +317,8 @@ size:</p>
 <p>where \(\mathrm{SiLU}(z) = z \cdot \sigma(z)\). The attribute names match the
 checkpoint (<code>gate_proj</code>, <code>up_proj</code>, <code>down_proj</code>), so <code>load_state_dict</code> needs
 no renaming.</p>
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">23 lines</span></summary>
 <pre><code class="language-python">z = np.linspace(-6, 6, 241)
 fig = go.Figure(
     [
@@ -335,6 +343,7 @@ fig.update_layout(
 )
 viz.show(fig)
 </code></pre>
+</details>
 <div class="plotly-figure" data-src="generated/01_04_building_blocks_13_0.json"></div>
 <pre><code class="language-python">from __future__ import annotations
 
@@ -402,6 +411,8 @@ represent every integer position above 256 exactly. Lengths are typed
 instead of numbers;
 <a href="01_02_tensors_and_eager.html#modules-and-compilation">Section 1.2</a>
 shows where they come from.</p>
+<details class="code-fold">
+<summary>Show <code>rope_cos_sin</code>, <code>rotate_half</code>, <code>apply_rope</code> <span class="code-fold-lines">33 lines</span></summary>
 <pre><code class="language-python">def rope_cos_sin(
     head_dim: int,
     theta: float,
@@ -436,6 +447,7 @@ def apply_rope(x: Tensor, cos: Tensor, sin: Tensor) -&gt; Tensor:
     sin = sin.reshape([1, seq, 1, dim])
     return x * cos + rotate_half(x) * sin
 </code></pre>
+</details>
 <p><small>Saved to <code>minillm/layers.py</code>.</small></p>
 <p>Each line is one pair’s rotation at a position; move the slider to
 advance the position. Pair 0 turns a full radian per token,
@@ -444,10 +456,12 @@ while pair 31 has barely moved after 24 tokens:</p>
 cos_t, sin_t = rope_cos_sin(
     config.head_dim, config.rope_theta, 0, positions, DEVICE
 )
-angles = np.arctan2(
-    to_np(sin_t), to_np(cos_t)
-)  # [position, head_dim], one angle per pair
-pairs = [0, 2, 8, 31]
+# One angle per pair and position: [position, head_dim].
+angles = np.arctan2(to_np(sin_t), to_np(cos_t))
+</code></pre>
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">33 lines</span></summary>
+<pre><code class="language-python">pairs = [0, 2, 8, 31]
 steps = []
 for pos in range(positions):
     group = []
@@ -481,7 +495,41 @@ viz.show(
     )
 )
 </code></pre>
-<div class="plotly-figure" data-src="generated/01_04_building_blocks_19_0.json"></div>
+</details>
+<div class="plotly-figure" data-src="generated/01_04_building_blocks_20_0.json"></div>
+<p>The whole <code>cos</code> table shows every pair at once. Each row is a position and
+each column a dimension. The left columns, the fast pairs, cycle every few
+positions; toward the middle the stripes widen, and the last pairs stay near
+1 over all 256 positions. The right half repeats the left half, because
+element <em>i</em> and element <em>i + 32</em> form one pair and share its angle:</p>
+<pre><code class="language-python">table_cos, _ = rope_cos_sin(config.head_dim, config.rope_theta, 0, 256, DEVICE)
+table_cos = to_np(table_cos)
+half = config.head_dim // 2
+assert np.array_equal(table_cos[:, :half], table_cos[:, half:])
+</code></pre>
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">18 lines</span></summary>
+<pre><code class="language-python">fig = go.Figure(
+    go.Heatmap(
+        z=table_cos,
+        zmin=-1,
+        zmax=1,
+        colorscale=viz.DIVERGING,
+        colorbar=dict(title="cos", thickness=12),
+        hovertemplate="position %{y}, dimension %{x}: %{z:.2f}&lt;extra&gt;&lt;/extra&gt;",
+    )
+)
+fig.add_vline(x=half - 0.5, line=dict(color=viz.INK_SECONDARY, dash="dot"))
+fig.update_layout(
+    title="The RoPE cos table: positions by dimensions",
+    height=520,
+    xaxis=dict(title="dimension", showgrid=False),
+    yaxis=dict(title="position", autorange="reversed", showgrid=False),
+)
+viz.show(fig)
+</code></pre>
+</details>
+<div class="plotly-figure" data-src="generated/01_04_building_blocks_23_0.json"></div>
 <p>RoPE relies on two properties, and both are easy to check. First, a
 rotation doesn’t change a vector’s length:</p>
 <pre><code class="language-python">q = Tensor(
@@ -547,14 +595,20 @@ def rope_np(v: np.ndarray, pos: int) -&gt; np.ndarray:
 
 
 distances = np.arange(49)
-fig = go.Figure(
+sweeps = {
+    k_pos: [
+        rope_np(q_vec, k_pos + d) @ rope_np(k_vec, k_pos) for d in distances
+    ]
+    for k_pos in (10, 110)
+}
+</code></pre>
+<details class="code-fold">
+<summary>Show the code <span class="code-fold-lines">22 lines</span></summary>
+<pre><code class="language-python">fig = go.Figure(
     [
         go.Scatter(
             x=distances,
-            y=[
-                rope_np(q_vec, k_pos + d) @ rope_np(k_vec, k_pos)
-                for d in distances
-            ],
+            y=sweeps[k_pos],
             name=f"key at position {k_pos}",
             line=dict(color=color, dash=dash, width=width),
             hovertemplate="distance %{x}: %{y:.3f}&lt;extra&gt;&lt;/extra&gt;",
@@ -573,15 +627,17 @@ fig.update_layout(
 )
 viz.show(fig)
 </code></pre>
-<div class="plotly-figure" data-src="generated/01_04_building_blocks_25_0.json"></div>
+</details>
+<div class="plotly-figure" data-src="generated/01_04_building_blocks_30_0.json"></div>
 <p>Because scores depend only on relative position, RoPE generalizes well,
 and most open models use it.</p>
 <h2 id="exercises"><a class="header" href="#exercises">Exercises</a></h2>
 <ol>
 <li>Replace <code>RMSNorm</code> with a version you write from <code>F.rsqrt</code>, <code>.mean</code>, and
 <code>*</code>, and check that it gives the same output.</li>
-<li>Plot <code>cos</code> from <code>rope_cos_sin</code> for 512 positions as an image (positions
-by dimensions). Which dimensions change fastest?</li>
+<li>Redraw the <code>cos</code> table with <code>rope_theta=10000</code>, the original RoPE base.
+Which pairs change, and why might a long-context model choose a larger
+base?</li>
 <li>Run the RMSNorm check with <code>bfloat16</code> instead of <code>float32</code> (cast the input
 and the module’s weight). How large is the error, and why do real models
 compute norms in <code>float32</code>?</li>

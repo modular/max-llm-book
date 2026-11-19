@@ -214,9 +214,9 @@ import warnings
 import numpy as np
 import plotly.graph_objects as go
 from max.dtype import DType
+from max.graph import TensorType
 from max.pipelines import AutoTokenizer
 from max.tensor import Tensor
-from max.tensor.tensor import TensorType
 from plotly.subplots import make_subplots
 
 from minillm import viz
@@ -243,7 +243,7 @@ from collections.abc import Callable
 from max import functional as F
 from max.dtype import DType
 from max.nn import ModuleList
-from max.nn.kernels.attention import flash_attention
+from max.nn.kernels import flash_attention
 from max.tensor import Tensor
 
 from minillm.attention import Attention
@@ -381,7 +381,7 @@ class StepModel(LlamaForCausalLM):
 batch size, the number of new tokens <code>q</code>, and the past length:</p>
 <pre><code class="language-python">import numpy as np
 from max.driver import Device
-from max.tensor.tensor import TensorType
+from max.graph import TensorType
 
 
 def compile_step(model: StepModel, config: LlamaConfig, device: Device) -&gt; Step:
@@ -407,7 +407,7 @@ step = compile_step(
 )
 print(f"compiled the step model in {time.perf_counter() - start:.0f} s")
 </code></pre>
-<pre><code class="language-text">compiled the step model in 51 s
+<pre><code class="language-text">compiled the step model in 13 s
 </code></pre>
 <h2 id="the-cache-and-the-batch"><a class="header" href="#the-cache-and-the-batch">The cache and the batch</a></h2>
 <p>The engine stores each sequence’s keys and values in a cache object. The
@@ -722,8 +722,8 @@ sequential = make_workload(tokenizer)
 serve_one_at_a_time(sequential)
 report(sequential)
 </code></pre>
-<pre><code class="language-text">TTFT: first request 328 ms, median 24279 ms, worst 44820 ms
-160 tokens in 47.8 s = 3.3 tokens/s
+<pre><code class="language-text">TTFT: first request 296 ms, median 16553 ms, worst 30666 ms
+160 tokens in 35.6 s = 4.5 tokens/s
 </code></pre>
 <p>Eight users sent their requests at the same moment. The first one got a token
 almost at once. The last one waited for every request ahead of it to finish, so

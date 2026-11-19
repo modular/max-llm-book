@@ -521,10 +521,9 @@ serializes requests, read the untrimmed rate, or pass
 <code>--skip-first-n-requests 0 --skip-last-n-requests 0</code>.</p>
 <p>The engine in <a href="ch05.html">Chapter 5</a> fixed both with a
 paged KV cache and continuous batching. MAX’s own architectures get them from
-MAX’s serving stack, which is why a production architecture implements a decoder
-on MAX’s paged KV cache
-(<a href="07_01_serve_your_model.html">Section 7.1</a> links the
-guide).</p>
+MAX’s serving stack, which is why a production architecture registers a
+decoder on MAX’s paged KV cache, as the second registration in
+<a href="07_01_serve_your_model.html">Section 7.1</a> does.</p>
 <h2 id="reading-benchmarks-well"><a class="header" href="#reading-benchmarks-well">Reading benchmarks well</a></h2>
 <p>Measure a server at several concurrency levels, not one, and plot latency
 against throughput. <code>--max-concurrency 1,2,4,8,16,32</code> runs such a sweep in one

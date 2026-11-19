@@ -208,8 +208,8 @@ import numpy as np
 import plotly.graph_objects as go
 from max.driver import CPU
 from max.dtype import DType
+from max.graph import TensorType
 from max.tensor import Tensor, default_device, default_dtype
-from max.tensor.tensor import TensorType
 
 from minillm import viz
 from minillm.bench import benchmark
@@ -234,15 +234,15 @@ model, or in the code around it?</p>
     --quantization-encoding float32 --prompt "hello" --max-new-tokens 16 \
     --num-warmups 1 --profile 2&gt;&amp;1 | grep -A 8 "=== Top"
 </code></pre>
-<pre><code class="language-text">=== Top 15 Python/CPU functions (93.9% of CPU time, 321.38 ms total) ===
+<pre><code class="language-text">=== Top 15 Python/CPU functions (94.4% of CPU time, 307.64 ms total) ===
      %       total     calls  function
- 47.1%   151.33 ms        64  ~:0&lt;built-in method numpy.from_dlpack&gt;
- 44.1%   141.86 ms        32  max/engine/api.py:118(_Model_execute)
-  0.5%     1.45 ms        16  max/pipelines/lib/pipeline_variants/text_generation.py:597(execute)
-  0.3%     1.05 ms        16  max/pipelines/sampling/sampling_logits_processor.py:109(_packed_rows_to_device)
-  0.3%   844.17 us        16  max/pipelines/lib/module_registration.py:763(prepare_initial_token_inputs)
-  0.2%   667.59 us        16  max/pipelines/lib/pipeline_variants/text_generation.py:610(_execute)
-  0.2%   658.54 us        16  max/driver/buffer.py:143(inplace_copy_from)
+ 49.0%   150.85 ms        64  ~:0&lt;built-in method numpy.from_dlpack&gt;
+ 43.0%   132.25 ms        32  max/engine/api.py:118(_Model_execute)
+  0.3%     1.04 ms        16  max/pipelines/lib/pipeline_variants/text_generation.py:597(execute)
+  0.3%   970.84 us        16  max/pipelines/sampling/sampling_logits_processor.py:109(_packed_rows_to_device)
+  0.3%   781.75 us        16  max/pipelines/lib/module_registration.py:763(prepare_initial_token_inputs)
+  0.2%   589.67 us        16  max/pipelines/sampling/sampling_logits_processor.py:695(create)
+  0.2%   586.50 us        16  max/pipelines/lib/pipeline_variants/text_generation.py:610(_execute)
 </code></pre>
 <p>The time is in the model: <code>_Model_execute</code>, the call into the compiled graph,
 and, on a GPU, <code>numpy.from_dlpack</code>, which reads the logits back to the host and
@@ -261,8 +261,8 @@ must be in place when the process starts, so the code runs as a separate script:
 <pre><code class="language-python">%%writefile trace_mlp.py
 import numpy as np
 from max.dtype import DType
+from max.graph import TensorType
 from max.tensor import Tensor, default_device, default_dtype
-from max.tensor.tensor import TensorType
 
 from minillm.config import LlamaConfig
 from minillm.device import pick_device
@@ -340,16 +340,16 @@ for tokens in [1, 256]:
         print(f"  {name:16} {t:7.2f} ms  {t / total:5.0%}")
 </code></pre>
 </details>
-<pre><code class="language-text">1 token(s): 139.5 ms in total
-  attention (x30)    56.17 ms    40%
-  MLP (x30)          30.12 ms    22%
-  norms (x61)        50.82 ms    36%
-  LM head             2.42 ms     2%
-256 token(s): 290.6 ms in total
-  attention (x30)   118.63 ms    41%
-  MLP (x30)          68.72 ms    24%
-  norms (x61)        63.74 ms    22%
-  LM head            39.53 ms    14%
+<pre><code class="language-text">1 token(s): 49.2 ms in total
+  attention (x30)    23.31 ms    47%
+  MLP (x30)          10.01 ms    20%
+  norms (x61)        13.80 ms    28%
+  LM head             2.05 ms     4%
+256 token(s): 156.0 ms in total
+  attention (x30)    73.32 ms    47%
+  MLP (x30)          33.32 ms    21%
+  norms (x61)        20.77 ms    13%
+  LM head            28.61 ms    18%
 </code></pre>
 <details class="code-fold">
 <summary>Show the code <span class="code-fold-lines">25 lines</span></summary>
@@ -410,8 +410,8 @@ for tokens in [1, 256]:
         f" sum of parts {parts_ms:6.1f} ms ({parts_ms / whole_ms:.1f}x)"
     )
 </code></pre>
-<pre><code class="language-text">  1 token(s): whole model   58.3 ms, sum of parts  139.5 ms (2.4x)
-256 token(s): whole model  119.8 ms, sum of parts  290.6 ms (2.4x)
+<pre><code class="language-text">  1 token(s): whole model   24.0 ms, sum of parts   49.2 ms (2.0x)
+256 token(s): whole model   84.0 ms, sum of parts  156.0 ms (1.9x)
 </code></pre>
 <p>At both shapes the whole model takes less than half the time its parts add up
 to. The difference is what the 122 separate calls cost: each one launches its

@@ -215,9 +215,9 @@ from max import functional as F
 from max.driver import CPU
 from max.dtype import DType
 from max.functional import random
+from max.graph import TensorType
 from max.pipelines import AutoModel, AutoTokenizer
 from max.tensor import Tensor
-from max.tensor.tensor import TensorType
 
 from minillm import viz
 from minillm.device import pick_device
@@ -341,7 +341,7 @@ print("sampled:", (counts / 2000).round(3))
 print("softmax:", F.softmax(toy).to_numpy().round(3))
 assert np.abs(counts / 2000 - F.softmax(toy).to_numpy()).max() &lt; 0.05
 </code></pre>
-<pre><code class="language-text">sampled: [0.558 0.214 0.121 0.08  0.027]
+<pre><code class="language-text">sampled: [0.546 0.209 0.138 0.079 0.028]
 softmax: [0.559 0.205 0.125 0.084 0.028]
 </code></pre>
 <h2 id="top-k-and-top-p"><a class="header" href="#top-k-and-top-p">Top-k and top-p</a></h2>
@@ -602,12 +602,12 @@ for length in lengths:
     step_ms.append(float(np.median(times)))
     print(f"{length:5} tokens: {step_ms[-1]:6.1f} ms per new token")
 </code></pre>
-<pre><code class="language-text">   16 tokens:   69.3 ms per new token
-   64 tokens:  110.7 ms per new token
-  256 tokens:   87.1 ms per new token
-  512 tokens:  192.9 ms per new token
- 1024 tokens:  560.4 ms per new token
- 2048 tokens: 1801.7 ms per new token
+<pre><code class="language-text">   16 tokens:   57.7 ms per new token
+   64 tokens:   60.1 ms per new token
+  256 tokens:   70.9 ms per new token
+  512 tokens:  179.8 ms per new token
+ 1024 tokens:  563.3 ms per new token
+ 2048 tokens: 1839.3 ms per new token
 </code></pre>
 <details class="code-fold">
 <summary>Show the code <span class="code-fold-lines">17 lines</span></summary>

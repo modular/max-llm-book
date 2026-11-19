@@ -263,7 +263,7 @@ from max.driver import Device
 from max.dtype import DType
 from max.graph import Dim
 from max.nn import Linear, Module
-from max.nn.kernels.attention import flash_attention
+from max.nn.kernels import flash_attention
 from max.tensor import Tensor
 from max.tensor.sharding import DeviceMesh
 
@@ -423,7 +423,7 @@ hold <code>x</code>. Here that is one device; in
 <a href="ch02.html">Chapter 2</a> the same code runs on several
 devices at once.</p>
 <p>For the attention itself it uses <code>flash_attention</code> from
-<code>max.nn.kernels.attention</code>, which takes grouped heads directly. Flash
+<code>max.nn.kernels</code>, which takes grouped heads directly. Flash
 attention computes the same result as <code>naive_attention</code> but never builds the
 per-head <code>[seq, seq]</code> score matrices: it processes keys in blocks and keeps
 a running softmax. This module still passes a dense <code>[seq, seq]</code> mask, one for
@@ -524,8 +524,8 @@ def timed(fn) -&gt; float:
 print(f"naive: {timed(lambda: naive_attention(q, k, v, long_mask)):.0f} ms")
 print(f"flash: {timed(lambda: attn.attend(q, k, v)):.0f} ms  (includes o_proj)")
 </code></pre>
-<pre><code class="language-text">naive: 81 ms
-flash: 55 ms  (includes o_proj)
+<pre><code class="language-text">naive: 93 ms
+flash: 41 ms  (includes o_proj)
 </code></pre>
 <p>In the run shown here, on an Apple-silicon Mac with a Metal GPU, flash attention
 took about 55 ms including <code>o_proj</code>, against about 80 ms for the naive version.

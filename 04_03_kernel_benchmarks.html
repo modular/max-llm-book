@@ -210,9 +210,9 @@ import numpy as np
 import plotly.graph_objects as go
 from max.driver import CPU
 from max.dtype import DType
+from max.graph import TensorType
 from max.nn import Linear
 from max.tensor import Tensor, default_device, default_dtype
-from max.tensor.tensor import TensorType
 from plotly.subplots import make_subplots
 
 from minillm import viz
@@ -330,13 +330,13 @@ for tokens in [1, 4, 16, 64, 256, 1024, 2048]:
     )
 </code></pre>
 </details>
-<pre><code class="language-text">    1 tokens  median    0.61 ms  p90    1.05 ms      2.9 GFLOP/s     5.8 GB/s
-    4 tokens  median    0.59 ms  p90    0.96 ms     12.0 GFLOP/s     6.1 GB/s
-   16 tokens  median    0.55 ms  p90    0.89 ms     51.4 GFLOP/s     6.7 GB/s
-   64 tokens  median    0.87 ms  p90    1.52 ms    130.3 GFLOP/s     4.7 GB/s
-  256 tokens  median    3.50 ms  p90    7.99 ms    129.6 GFLOP/s     1.6 GB/s
- 1024 tokens  median    8.10 ms  p90   11.07 ms    223.6 GFLOP/s     1.5 GB/s
- 2048 tokens  median   15.34 ms  p90   21.45 ms    236.3 GFLOP/s     1.4 GB/s
+<pre><code class="language-text">    1 tokens  median    0.56 ms  p90    0.63 ms      3.1 GFLOP/s     6.3 GB/s
+    4 tokens  median    0.35 ms  p90    0.66 ms     20.3 GFLOP/s    10.2 GB/s
+   16 tokens  median    0.39 ms  p90    0.47 ms     72.0 GFLOP/s     9.3 GB/s
+   64 tokens  median    0.86 ms  p90    1.25 ms    131.0 GFLOP/s     4.7 GB/s
+  256 tokens  median    2.07 ms  p90    2.97 ms    218.5 GFLOP/s     2.8 GB/s
+ 1024 tokens  median    8.22 ms  p90   11.20 ms    220.3 GFLOP/s     1.5 GB/s
+ 2048 tokens  median   10.09 ms  p90   14.24 ms    359.1 GFLOP/s     2.1 GB/s
 </code></pre>
 <details class="code-fold">
 <summary>Show the code <span class="code-fold-lines">82 lines</span></summary>
@@ -482,12 +482,12 @@ print(
 )
 </code></pre>
 <pre><code class="language-text">shape (batch x seq)       time per call       tokens/s
-    1 x 1      median    1.02 ms  p90    1.14 ms        977
-    8 x 1      median    1.26 ms  p90    1.39 ms       6339
-   32 x 1      median    1.57 ms  p90    1.77 ms      20389
-    1 x 128    median    4.57 ms  p90    5.53 ms      28021
-    1 x 512    median   11.02 ms  p90   16.52 ms      46458
-a decode step for 32 sequences costs 1.5x one sequence's
+    1 x 1      median    1.42 ms  p90    3.23 ms        704
+    8 x 1      median    1.47 ms  p90    2.30 ms       5429
+   32 x 1      median    1.68 ms  p90    2.35 ms      19027
+    1 x 128    median    2.65 ms  p90    3.15 ms      48343
+    1 x 512    median    8.16 ms  p90    8.84 ms      62743
+a decode step for 32 sequences costs 1.2x one sequence's
 </code></pre>
 <details class="code-fold">
 <summary>Show the code <span class="code-fold-lines">32 lines</span></summary>

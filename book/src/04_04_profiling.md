@@ -114,9 +114,10 @@ Overwriting trace_mlp.py
 [OP] LAUNCH matmul [id=26] target=gpu:0
 ```
 
-Each matmul logs a second `LAUNCH` line from inside the kernel, whose name MAX
-joins to the graph operation's name with no space (`matmulmo.matmul`); the
-`grep -v` drops those, which leaves one line per kernel the graph launches.
+Each matmul logs a second `LAUNCH` line from inside the kernel. That line names
+the kernel and, in parentheses, the graph operation it serves
+(`matmul(mo.matmul)`, or `matmul(Epilogue(mo.matmul, ...))` for the fused one);
+the `grep -v` drops it, which leaves one line per kernel the graph launches.
 
 The MLP has five operations in your Python (three matmuls, `silu`, and a
 multiply), more in the traced graph you saw in

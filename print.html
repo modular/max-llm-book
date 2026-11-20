@@ -6527,9 +6527,10 @@ run(Tensor(np.ones((4, 576), np.float32), device=DEVICE)).to_numpy()
 [OP] LAUNCH Epilogue(matmul, Elementwise(silu, mul), operandIndices=[0]) [id=24] target=gpu:0
 [OP] LAUNCH matmul [id=26] target=gpu:0
 </code></pre>
-<p>Each matmul logs a second <code>LAUNCH</code> line from inside the kernel, whose name MAX
-joins to the graph operation’s name with no space (<code>matmulmo.matmul</code>); the
-<code>grep -v</code> drops those, which leaves one line per kernel the graph launches.</p>
+<p>Each matmul logs a second <code>LAUNCH</code> line from inside the kernel. That line names
+the kernel and, in parentheses, the graph operation it serves
+(<code>matmul(mo.matmul)</code>, or <code>matmul(Epilogue(mo.matmul, ...))</code> for the fused one);
+the <code>grep -v</code> drops it, which leaves one line per kernel the graph launches.</p>
 <p>The MLP has five operations in your Python (three matmuls, <code>silu</code>, and a
 multiply), more in the traced graph you saw in
 <a href="03_02_graph_api.html">Section 3.2</a>, and three kernels
